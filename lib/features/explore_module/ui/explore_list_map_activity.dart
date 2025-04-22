@@ -50,6 +50,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
       'assets/images/car_loction.png',
     );
   }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -80,8 +81,8 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           Marker(
             markerId: MarkerId("Current Location"),
             position: _current,
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueRed),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           ),
         );
       });
@@ -139,7 +140,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                 markerId: MarkerId(name),
                 position: LatLng(lat, lng),
                 onTap: () {
-                 /* _showBottomSheet(name, lat, lng, place.vicinity ?? "",
+                  /* _showBottomSheet(name, lat, lng, place.vicinity ?? "",
                       place.placeId ?? "");*/
                 },
                 //infoWindow: InfoWindow(title: name),
@@ -205,8 +206,8 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
         servicesData.clear();
         servicesData.addAll(data.data!);
         for (var place in servicesData) {
-          double lat = place.location?.coordinates?.lat??0.0;
-          double lng = place.location?.coordinates?.long??0.0;
+          double lat = place.location?.coordinates?.lat ?? 0.0;
+          double lng = place.location?.coordinates?.long ?? 0.0;
           String name = place.displayName ?? "";
           setState(() {
             print("=======================$lat =====================$lng");
@@ -215,12 +216,19 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                 markerId: MarkerId(name),
                 position: LatLng(lat, lng),
                 onTap: () {
-                  if(place.services.length>0){
-                    CommonWidget.navigateToScreen(context,
-                        SeviceListScreen(place.services));
-                  }else
-                  _showBottomSheet(name, lat, lng, place.location?.name ?? "",
-                      place.sId ?? "", place.distance??0.0);
+                  if (place.services.length > 0) {
+                    CommonWidget.navigateToScreen(
+                        context, SeviceListScreen(place.services));
+                  } else
+                    _showBottomSheet(
+                      name,
+                      lat,
+                      lng,
+                      place.location?.name ?? "",
+                      place.sId ?? "",
+                      place.distance ?? 0.0,
+                      displayPicture: place.displayPicture, // ✅ Add this
+                    );
                 },
                 //infoWindow: InfoWindow(title: name),
                 // icon: place.services.length>0?(carIcon ?? BitmapDescriptor.defaultMarker): BitmapDescriptor.defaultMarkerWithHue(
@@ -317,88 +325,105 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
             ),
           if (isList)
             Expanded(
-                child: Container(
-              margin: EdgeInsets.all(15),
-              child: ListView.builder(
+              child: Container(
+                margin: const EdgeInsets.all(15),
+                child: ListView.builder(
                   shrinkWrap: true,
                   padding: EdgeInsets.zero,
                   itemCount: servicesData.length,
                   itemBuilder: (context, index) {
+                    final service = servicesData[index];
+
                     return GestureDetector(
                       onTap: () {
-                        if (servicesData[index].services.length > 0) {
-                          CommonWidget.navigateToScreen(context,
-                              SeviceListScreen(servicesData[index].services));
+                        if (service.services.isNotEmpty) {
+                          CommonWidget.navigateToScreen(
+                            context,
+                            SeviceListScreen(service.services),
+                          );
                         } else {
                           _showBottomSheet(
-                              servicesData[index].displayName ?? "",
-                              servicesData[index].location?.coordinates?.lat ?? 0.0,
-                              servicesData[index].location?.coordinates?.long ?? 0.0,
-                              servicesData[index].location?.name ?? "",
-                              servicesData[index].sId ?? "", servicesData[index].distance??0.0);
+                            service.displayName ?? "",
+                            service.location?.coordinates?.lat ?? 0.0,
+                            service.location?.coordinates?.long ?? 0.0,
+                            service.location?.name ?? "",
+                            service.sId ?? "",
+                            service.distance ?? 0.0,
+                            displayPicture:
+                                service.displayPicture, // ✅ add this line
+                          );
                         }
                       },
-                      child: Container(
-                          margin: EdgeInsets.only(bottom: 10),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CommonWidget.getTextWidget600(
-                                  servicesData[index].displayName ?? "", 18,
-                                  textAlign: TextAlign.start,
-                                  color: ColorClass.base_color),
-                              SizedBox(
-                                height: 0,
-                              ),
-                              Row(
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Image with rounded top corners
+                            Image.network(
+                              service.displayPicture ?? "",
+                              height: 180,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  CommonWidget.getImagePath("loading.png"),
+                                  height: 180,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: CommonWidget.getTextWidget500(
-                                        servicesData[index].location?.name ??
-                                            "",
-                                        textAlign: TextAlign.start,
-                                        color: ColorClass.base_color),
+                                  CommonWidget.getTextWidget600(
+                                    service.displayName ?? "",
+                                    16,
+                                    color: ColorClass.base_color,
                                   ),
-                                  CommonWidget.getTextWidget500(
-                                    "${((servicesData[index].distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",color: Colors.grey[500]!
-                                  )
+                                  const SizedBox(height: 1),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: CommonWidget.getTextWidget500(
+                                            service.location?.name ?? "",
+                                            color: const Color.fromARGB(
+                                                223, 97, 97, 97)!,
+                                            size: 13,
+                                            textAlign: TextAlign.left),
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          CommonWidget.getTextWidget500(
+                                              "${((service.distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",
+                                              color: Colors.grey[600]!,
+                                              textAlign: TextAlign.right),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
-                              SizedBox(
-                                height: 10,
-                              ),
-                              Image.network(
-                                servicesData[index].displayPicture ?? "",
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (
-                                  BuildContext context,
-                                  Object error,
-                                  StackTrace? stackTrace,
-                                ) {
-                                  return Image.asset(
-                                    CommonWidget.getImagePath("loading.png"),
-                                    width: double.infinity,
-                                    // Adjust the width as needed
-                                    height: 200,
-                                    fit: BoxFit.fill,
-                                  );
-                                },
-                              ),
-                              SizedBox(
-                                height: 20,
-                              ),
-                              Divider(
-                                height: 1,
-                                color: ColorClass.base_color,
-                              )
-                            ],
-                          )),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
-                  }),
-            ))
+                  },
+                ),
+              ),
+            )
         ],
       ),
       /*floatingActionButton: FloatingActionButton.extended(
@@ -412,38 +437,98 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
   }
 
   void _showBottomSheet(
-      String name, double lat, double lng, String address, String placeId ,num distance) {
+    String name,
+    double lat,
+    double lng,
+    String address,
+    String placeId,
+    num distance, {
+    String? displayPicture,
+  }) {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: Colors.white,
       builder: (BuildContext context) {
         return Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              if (displayPicture != null && displayPicture.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    displayPicture,
+                    height: 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        CommonWidget.getImagePath("loading.png"),
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  ),
+                ),
+              SizedBox(height: 20),
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
               SizedBox(height: 8),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: Text("Addesss : $address"),),
-                  CommonWidget.getTextWidget500(
-                      "${((distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",color: Colors.grey[500]!
+                  Expanded(
+                    child: Text(
+                      "Address: $address",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "${((distance) / 1609.34).toStringAsFixed(2)} miles",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   )
                 ],
               ),
-
-              SizedBox(height: 16),
-              ElevatedButton(
-                //onPressed: () => openGoogleMapsNavigation(lat, lng),
-                onPressed: () => getServices(context, placeId, lat, lng),
-                // Open Google Maps
-                child: Text("Open in Google Maps"),
+              SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.map),
+                  label: Text("Open in Google Maps"),
+                  onPressed: () => getServices(context, placeId, lat, lng),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: Colors.green[500],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

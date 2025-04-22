@@ -462,16 +462,23 @@ class CommonWidget {
     );
   }
 
-  static Widget getTextWidget500(String title,
-      {textAlign = TextAlign.center,
-        double size = 16,
-        Color color = Colors.black}) {
-    return Text(
-      title,
-      style: TextStyle(fontFamily: "Pop500", color: color, fontSize: size),
-      textAlign: textAlign,
-    );
-  }
+static Widget getTextWidget500(
+  String title, {
+  TextAlign textAlign = TextAlign.center,
+  double size = 16,
+  Color color = Colors.black,
+  int maxLines = 1,
+  TextOverflow overflow = TextOverflow.ellipsis,
+}) {
+  return Text(
+    title,
+    style: TextStyle(fontFamily: "Pop500", color: color, fontSize: size),
+    textAlign: textAlign,
+    maxLines: maxLines,
+    overflow: overflow,
+  );
+}
+
 
   static Widget getTextWidget400(String title, double textsize,
       {textAlign = TextAlign.center, Color color = Colors.black}) {

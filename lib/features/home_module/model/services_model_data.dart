@@ -41,16 +41,22 @@ class ServicesData {
   int? distance;
   List<Services> services = [];
 
+  var serviceTitle;
+
+  var totalReviews;
+
+  var averageRating;
+
   ServicesData(
       {this.sId,
-        this.displayName,
-        this.officialEmail,
-        this.mobile,
-        this.displayPicture,
-        this.location,
-        this.isShopOpen,
-        this.distance,
-        services});
+      this.displayName,
+      this.officialEmail,
+      this.mobile,
+      this.displayPicture,
+      this.location,
+      this.isShopOpen,
+      this.distance,
+      services});
 
   ServicesData.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -62,7 +68,8 @@ class ServicesData {
         ? new Location.fromJson(json['location'])
         : null;
     isShopOpen = json['isShopOpen'];
-    distance = json['distance'];
+    distance = (json['distance'] as num?)?.toInt();
+
     if (json['services'] != null) {
       services = <Services>[];
       json['services'].forEach((v) {
@@ -165,28 +172,28 @@ class Services {
 
   Services(
       {this.sId,
-        this.serviceTitle,
-        this.timeSlotCapacity,
-        this.price,
-        this.categoryName,
-        this.categoryId,
-        this.detailImages,
-        this.coverImage,
-        this.mobile,
-        this.location,
-        this.createdBy,
-        this.vendorId,
-        this.promotionPlanPrice,
-        this.promotionSerialNumber,
-        this.isActive,
-        this.isDeleted,
-        this.timeSlots,
-        this.totalReviews,
-        this.averageRating,
-        this.createdAt,
-        this.updatedAt,
-        this.iV,
-        this.category});
+      this.serviceTitle,
+      this.timeSlotCapacity,
+      this.price,
+      this.categoryName,
+      this.categoryId,
+      this.detailImages,
+      this.coverImage,
+      this.mobile,
+      this.location,
+      this.createdBy,
+      this.vendorId,
+      this.promotionPlanPrice,
+      this.promotionSerialNumber,
+      this.isActive,
+      this.isDeleted,
+      this.timeSlots,
+      this.totalReviews,
+      this.averageRating,
+      this.createdAt,
+      this.updatedAt,
+      this.iV,
+      this.category});
 
   Services.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -261,8 +268,6 @@ class Services {
   }
 }
 
-
-
 class TimeSlots {
   String? slot;
   int? capacity;
@@ -301,14 +306,14 @@ class Category {
 
   Category(
       {this.sId,
-        this.categoryTitle,
-        this.logoImage,
-        this.categoryDescription,
-        this.isActive,
-        this.isDeleted,
-        this.createdAt,
-        this.updatedAt,
-        this.iV});
+      this.categoryTitle,
+      this.logoImage,
+      this.categoryDescription,
+      this.isActive,
+      this.isDeleted,
+      this.createdAt,
+      this.updatedAt,
+      this.iV});
 
   Category.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];

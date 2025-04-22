@@ -98,63 +98,141 @@ class _HomeActivityState extends State<HomeActivity> {
           ),
           Expanded(
               child: Container(
-            margin: EdgeInsets.all(15),
+            margin: EdgeInsets.only(top: 30, left: 15, right: 15),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CommonWidget.getTextWidget500("Categories"),
-                Container(
-                  height: 100,
-                  child: ListView.builder(
+                // CommonWidget.getTextWidget500("Categories"),
+                Center(
+                  child: Container(
+                    height: 120, // Adjust the height if needed
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: ListView.builder(
                       itemCount: categoryData.length,
-                      padding: EdgeInsets.zero,
+                      padding: EdgeInsets.symmetric(
+                          horizontal:
+                              15), // Add padding on left and right for center alignment
                       shrinkWrap: true,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: () {
-                            CommonWidget.navigateToScreen(context,
-                                CategoriesListActivity(categoryData[index]));
+                            CommonWidget.navigateToScreen(
+                              context,
+                              CategoriesListActivity(categoryData[index]),
+                            );
                           },
                           child: Container(
-                            margin: EdgeInsets.only(right: 30),
-                            width: 60,
-                            height: 70,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Image.network(
-                                  categoryData[index].logoImage ?? "",
-                                  height: 50,
-                                  width: 50,
-                                  color: ColorClass.base_color,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/car_image.png',
-                                      fit: BoxFit.cover,
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                            margin: EdgeInsets.only(
+                                right: 20), // Spacing between items
+                            width: 80, // Adjust the width to suit your design
+                            height:
+                                100, // Adjust the height to suit your design
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(
+                                  12), // Rounded corners for modern design
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 4,
+                                  offset: Offset(2, 2),
                                 ),
+                              ], // Shadow effect for depth
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .center, // Centering the contents vertically
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .center, // Centering the contents horizontally
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(
+                                      12), // Rounded image corners
+                                  child: Image.network(
+                                    categoryData[index].logoImage ?? "",
+                                    height: 50,
+                                    width: 50,
+                                    fit: BoxFit
+                                        .contain, // Make sure image fits within the container
+                                    color: ColorClass.base_color,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/car_image.png',
+                                        fit: BoxFit.contain,
+                                        height: 50,
+                                        width: 50,
+                                      );
+                                    },
+                                  ),
+                                ),
+                                SizedBox(
+                                    height: 8), // Space between image and text
                                 CommonWidget.getTextWidget300(
-                                    categoryData[index].categoryTitle ?? "", 14,
-                                    color: ColorClass.base_color),
+                                  categoryData[index].categoryTitle ?? "",
+                                  14,
+                                  color: ColorClass.base_color,
+                                  textAlign: TextAlign
+                                      .center, // Center text horizontally
+                                ),
                               ],
                             ),
                           ),
                         );
-                      }),
+                      },
+                    ),
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CommonWidget.getTextWidget500("Specialists"),
-                    CommonWidget.getTextWidget300("See All", 14,
-                        color: ColorClass.base_color)
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CommonWidget.getTextWidget500("Specialists"),
+                      GestureDetector(
+                        onTap: () {
+                          // Add navigation or action here
+                          print("See All tapped");
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 4.0),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8.0),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.1),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                "See All",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w300,
+                                      fontSize: 14,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(
                   height: 10,
@@ -168,20 +246,32 @@ class _HomeActivityState extends State<HomeActivity> {
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () {if (servicesData[index].services.length > 0) {
-                            CommonWidget.navigateToScreen(context,
-                                SeviceListScreen(servicesData[index].services));
-                          } else {
-                            _showBottomSheet(
-                                servicesData[index].displayName ?? "",
-                                servicesData[index].location?.coordinates?.lat ?? 0.0,
-                                servicesData[index].location?.coordinates?.long ?? 0.0,
-                                servicesData[index].location?.name ?? "",
-                                servicesData[index].sId ?? "", servicesData[index].distance??0.0);
-                          }
+                          onTap: () {
+                            if (servicesData[index].services.length > 0) {
+                              CommonWidget.navigateToScreen(
+                                  context,
+                                  SeviceListScreen(
+                                      servicesData[index].services));
+                            } else {
+                              _showBottomSheet(
+                                  servicesData[index].displayName ?? "",
+                                  servicesData[index]
+                                          .location
+                                          ?.coordinates
+                                          ?.lat ??
+                                      0.0,
+                                  servicesData[index]
+                                          .location
+                                          ?.coordinates
+                                          ?.long ??
+                                      0.0,
+                                  servicesData[index].location?.name ?? "",
+                                  servicesData[index].sId ?? "",
+                                  servicesData[index].distance ?? 0.0);
+                            }
                           },
                           child: Container(
-                            margin: EdgeInsets.only(right: 30),
+                            margin: EdgeInsets.only(right: 10),
                             width: 110,
                             height: 140,
                             child: Column(
@@ -193,8 +283,8 @@ class _HomeActivityState extends State<HomeActivity> {
                                       BorderRadius.all(Radius.circular(20)),
                                   child: Image.network(
                                     servicesData[index].displayPicture ?? "",
-                                    height: 100,
-                                    width: 100,
+                                    height: 105,
+                                    width: 105,
                                     fit: BoxFit.fill,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Image.asset(
@@ -206,24 +296,32 @@ class _HomeActivityState extends State<HomeActivity> {
                                     },
                                   ),
                                 ),
-                                // CommonWidget.getTextWidget500(
-                                //     servicesData[index].serviceTitle ?? "", size: 12,
-                                //     color: ColorClass.base_color),
-                                // if (servicesData[index].totalReviews != 0 &&
-                                //     servicesData[index].totalReviews != null)
-                                //   Row(
-                                //     mainAxisAlignment: MainAxisAlignment.center,
-                                //     children: [
-                                //       Image.asset(
-                                //         CommonWidget.getImagePath("stars1.png"),
-                                //         height: 15,
-                                //         width: 15,
-                                //       ),
-                                //       CommonWidget.getTextWidget300(
-                                //           " ${servicesData[index].averageRating.toString() ?? ""} (${servicesData[index].totalReviews.toString() ?? ""} views)",
-                                //           10)
-                                //     ],
-                                //   ),
+                                Padding(
+                                  padding: const EdgeInsets.all(
+                                      8.0), // Adjust the value as needed
+                                  child: CommonWidget.getTextWidget500(
+                                    servicesData[index].displayName ?? "",
+                                    size: 12,
+                                    color: ColorClass.base_color,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (servicesData[index].totalReviews != 0 &&
+                                    servicesData[index].totalReviews != null)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        CommonWidget.getImagePath("stars1.png"),
+                                        height: 15,
+                                        width: 15,
+                                      ),
+                                      CommonWidget.getTextWidget300(
+                                          " ${servicesData[index].averageRating.toString() ?? ""} (${servicesData[index].totalReviews.toString() ?? ""} views)",
+                                          10)
+                                    ],
+                                  ),
                               ],
                             ),
                           ),
@@ -347,8 +445,8 @@ class _HomeActivityState extends State<HomeActivity> {
     );
   }
 
-  void _showBottomSheet(
-      String name, double lat, double lng, String address, String placeId ,num distance) {
+  void _showBottomSheet(String name, double lat, double lng, String address,
+      String placeId, num distance) {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
@@ -367,13 +465,14 @@ class _HomeActivityState extends State<HomeActivity> {
               SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: Text("Addesss : $address"),),
+                  Expanded(
+                    child: Text("Addesss : $address"),
+                  ),
                   CommonWidget.getTextWidget500(
-                      "${((distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",color: Colors.grey[500]!
-                  )
+                      "${((distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",
+                      color: Colors.grey[500]!)
                 ],
               ),
-
               SizedBox(height: 16),
               ElevatedButton(
                 //onPressed: () => openGoogleMapsNavigation(lat, lng),
@@ -387,7 +486,9 @@ class _HomeActivityState extends State<HomeActivity> {
       },
     );
   }
-  getServicesNew(BuildContext context, String id, double lat, double lng) async {
+
+  getServicesNew(
+      BuildContext context, String id, double lat, double lng) async {
     var response = await dataManager!.postPlaceId(context, id);
     var data = CommonBean.fromJson(jsonDecode(response.body));
     if (data.status == "success") {
@@ -398,6 +499,7 @@ class _HomeActivityState extends State<HomeActivity> {
       openGoogleMapsNavigation(lat, lng);
     }
   }
+
   void openGoogleMapsNavigation(double lat, double lng) async {
     Uri googleUrl = Uri.parse(
         "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng");
