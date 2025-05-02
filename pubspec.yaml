@@ -77,6 +77,7 @@ dependencies:
   flutter_timezone: ^4.0.0
   flutter_rating_stars: ^1.1.0
   google_maps_flutter: ^2.10.1
+  carousel_slider: ^5.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

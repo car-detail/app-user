@@ -11,6 +11,7 @@ import 'package:car_app/features/specialists_module/ui/specialists_activity.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../Common/PromoCarousel.dart';
 
 import '../../../Common/CommonBean.dart';
 import '../../categories_module/ui/sevice_list_screen.dart';
@@ -437,6 +438,16 @@ class _HomeActivityState extends State<HomeActivity> {
                           );
                         }),
                   ),
+                     Container(
+            child: Column(
+              children: [
+                SizedBox(height: 30), // Add spacing from top
+                PromoCarousel(), // 👈 Add the carousel here
+                SizedBox(height: 20),
+                // Other existing widgets...
+              ],
+            ),
+          ),
               ],
             ),
           ))

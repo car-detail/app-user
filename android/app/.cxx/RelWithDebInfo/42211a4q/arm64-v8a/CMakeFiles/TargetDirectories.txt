@@ -1,0 +1,2 @@
+E:/Projects/CarDetail/app-user/android/app/.cxx/RelWithDebInfo/42211a4q/arm64-v8a/CMakeFiles/edit_cache.dir
+E:/Projects/CarDetail/app-user/android/app/.cxx/RelWithDebInfo/42211a4q/arm64-v8a/CMakeFiles/rebuild_cache.dir
