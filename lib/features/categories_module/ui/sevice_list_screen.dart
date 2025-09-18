@@ -6,19 +6,19 @@ import '../../home_module/model/services_model_data.dart';
 import '../../specialists_module/ui/specialists_activity.dart';
 
 class SeviceListScreen extends StatefulWidget {
-  List<Services> services;
-  SeviceListScreen(this.services,{super.key});
+  List<dynamic> items; // Can contain both Services and ServicesData
+  SeviceListScreen(this.items,{super.key});
 
   @override
   State<SeviceListScreen> createState() => _SeviceListScreenState();
 }
 
 class _SeviceListScreenState extends State<SeviceListScreen> {
-  List<Services> servicesData = [];
+  List<dynamic> itemsData = [];
   @override
   void initState() {
     setState(() {
-      servicesData  = widget.services;
+      itemsData = widget.items;
     });
   super.initState();
   }
@@ -26,108 +26,602 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Column(
         children: [
           CommonWidget.gettopbar(
             "Services",
             context,
           ),
-            Expanded(child: Container(
-              margin: EdgeInsets.all(15),
-              child: ListView.builder(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  itemCount: servicesData.length,
-                  itemBuilder: (context, index){
-                    return GestureDetector(
-                      onTap: (){
-                          CommonWidget.navigateToScreen(
-                              context,
-                              SpecialistsActivity(
-                                  servicesData[index].sId ?? ''));
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              child: itemsData.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.build_circle_outlined,
+                            size: 80,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "No Services Available",
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                              fontFamily: "Pop500",
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Check back later for new services",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                              fontFamily: "Pop300",
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: itemsData.length,
+                      itemBuilder: (context, index) {
+                        return _buildItemCard(context, index);
                       },
-                      child: Container(
-                          margin: EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              ClipOval(
-                                  child: Image.network(
-                                    servicesData[index].coverImage ?? "",
-                                    height: 70,
-                                    width: 70,
-                                    fit: BoxFit.fill,
-                                    errorBuilder: (
-                                        BuildContext context,
-                                        Object error,
-                                        StackTrace? stackTrace,
-                                        ) {
-                                      return Image.asset(
-                                        CommonWidget.getImagePath("loading.png"),
-                                        width: 70,
-                                        // Adjust the width as needed
-                                        height: 70,
-                                      );
-                                    },
-                                  )),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CommonWidget.getTextWidget500(
-                                        servicesData[index].serviceTitle ?? "",
-                                        textAlign: TextAlign.start,
-                                        color: ColorClass.base_color),
-                                    CommonWidget.getTextWidget300(
-                                        "${servicesData[index].categoryName ?? ""} Service",
-                                        14,
-                                        textAlign: TextAlign.start),
-                                    if (servicesData[index].totalReviews != 0 &&
-                                        servicesData[index].totalReviews != null)
-                                      Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.start,
-                                        children: [
-                                          Image.asset(
-                                            CommonWidget.getImagePath(
-                                                "stars1.png"),
-                                            height: 15,
-                                            width: 15,
-                                          ),
-                                          CommonWidget.getTextWidget300(
-                                              " ${servicesData[index].averageRating.toString() ?? ""} (${servicesData[index].totalReviews.toString() ?? ""} views)",
-                                              10),
-                                        ],
-                                      ),
-                                    SizedBox(height: 5,),
-                                    // if (servicesData[index].offers.length>0)
-                                    //   Container(
-                                    //     child: CommonWidget.getButtonWidget(
-                                    //       "Offered Applied",
-                                    //       Colors.orange[300]!,
-                                    //       Colors.orange[300]!,
-                                    //       height: 30,
-                                    //       size: 12,
-                                    //     ),
-                                    //     width: 125,
-                                    //   )
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                width: 5,
-                              ),
-                            ],
-                          )),
-                    );
-                  }),
-            ))
+                    ),
+            ),
+          )
         ],
       ),
     );
+  }
+
+  Widget _buildItemCard(BuildContext context, int index) {
+    final item = itemsData[index];
+    
+    // Check if it's a Service or ServicesData (vendor)
+    if (item is Services) {
+      return _buildServiceCard(context, item);
+    } else if (item is ServicesData) {
+      return _buildVendorCard(context, item);
+    }
+    
+    return Container(); // Fallback
+  }
+
+  Widget _buildServiceCard(BuildContext context, Services service) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+                          CommonWidget.navigateToScreen(
+                              context,
+              SpecialistsActivity(service.sId ?? ''),
+            );
+                      },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                // Service Image
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[100],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: service.coverImage != null && service.coverImage!.isNotEmpty
+                        ? Image.network(
+                            service.coverImage!,
+                            fit: BoxFit.cover,
+                            headers: {
+                              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildServiceIcon(service.serviceTitle ?? "");
+                            },
+                          )
+                        : _buildServiceIcon(service.serviceTitle ?? ""),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Service Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                      // Service Title
+                      Text(
+                        service.serviceTitle ?? "",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Pop600",
+                          color: Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Category
+                      Text(
+                        "${service.categoryName ?? "Car Service"} Service",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: "Pop400",
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Rating and Price Row
+                      Row(
+                                        children: [
+                          // Rating
+                          if (service.totalReviews != null && service.totalReviews! > 0) ...[
+                            Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Colors.amber[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${service.averageRating ?? 0} (${service.totalReviews} reviews)",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: "Pop400",
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                          ],
+                          // Price
+                          if (service.price != null && service.price! > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: ColorClass.base_color.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "\$${service.price}",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: "Pop600",
+                                  color: ColorClass.base_color,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Arrow Icon
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey[400],
+                ),
+                                  ],
+                                ),
+                              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVendorCard(BuildContext context, ServicesData vendor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            CommonWidget.navigateToScreen(
+              context,
+              SpecialistsActivity(vendor.sId ?? ''),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Vendor Image
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[100],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: vendor.displayPicture != null && vendor.displayPicture!.isNotEmpty
+                        ? Image.network(
+                            vendor.displayPicture!,
+                            fit: BoxFit.cover,
+                            headers: {
+                              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildVendorIcon();
+                            },
+                          )
+                        : _buildVendorIcon(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Vendor Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Vendor Name
+                      Text(
+                        vendor.displayName ?? "",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Pop600",
+                          color: Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Location
+                      Text(
+                        vendor.location?.name ?? "Location not available",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: "Pop400",
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Distance
+                      if (vendor.distance != null)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: "Pop400",
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                // Info Icon
+                Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: ColorClass.base_color,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceIcon(String serviceTitle) {
+    IconData iconData;
+    Color iconColor;
+    
+    if (serviceTitle.toLowerCase().contains('wash')) {
+      iconData = Icons.local_car_wash;
+      iconColor = Colors.blue;
+    } else if (serviceTitle.toLowerCase().contains('repair')) {
+      iconData = Icons.build;
+      iconColor = Colors.orange;
+    } else if (serviceTitle.toLowerCase().contains('oil')) {
+      iconData = Icons.oil_barrel;
+      iconColor = Colors.brown;
+    } else if (serviceTitle.toLowerCase().contains('brake')) {
+      iconData = Icons.disc_full;
+      iconColor = Colors.red;
+    } else {
+      iconData = Icons.directions_car;
+      iconColor = ColorClass.base_color;
+    }
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: iconColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        iconData,
+        size: 40,
+        color: iconColor,
+      ),
+    );
+  }
+
+  Widget _buildVendorIcon() {
+    return Container(
+      decoration: BoxDecoration(
+        color: ColorClass.base_color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.local_car_wash,
+        size: 40,
+        color: ColorClass.base_color,
+      ),
+    );
+  }
+
+  void _showGoogleVendorBottomSheet(BuildContext context, ServicesData vendor) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Vendor Image and Name
+              Row(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[100],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: vendor.displayPicture != null && vendor.displayPicture!.isNotEmpty
+                          ? Image.network(
+                              vendor.displayPicture!,
+                              fit: BoxFit.cover,
+                              headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildVendorIcon();
+                              },
+                            )
+                          : _buildVendorIcon(),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          vendor.displayName ?? "Unknown Vendor",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: "Pop600",
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          vendor.location?.name ?? "Location not available",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: "Pop400",
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        if (vendor.distance != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: "Pop400",
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to Google Maps
+                        _openGoogleMaps(vendor);
+                      },
+                      icon: Icon(Icons.directions, color: Colors.white),
+                      label: Text(
+                        "Navigate",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: "Pop500",
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorClass.base_color,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Call vendor (if phone number available)
+                        _callVendor(vendor);
+                      },
+                      icon: Icon(Icons.phone, color: Colors.white),
+                      label: Text(
+                        "Call",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: "Pop500",
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Additional Info
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "About this location",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: "Pop600",
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "This is a Google Places location. You can navigate to this location or call them directly for more information about their services.",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: "Pop400",
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openGoogleMaps(ServicesData vendor) {
+    if (vendor.location?.coordinates != null) {
+      final lat = vendor.location!.coordinates!.lat;
+      final lng = vendor.location!.coordinates!.long;
+      final url = "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng";
+      // You can use url_launcher here to open the URL
+      print("Opening Google Maps: $url");
+    }
+  }
+
+  void _callVendor(ServicesData vendor) {
+    // You can implement phone calling functionality here
+    // For now, just show a message
+    print("Calling vendor: ${vendor.displayName}");
   }
 }

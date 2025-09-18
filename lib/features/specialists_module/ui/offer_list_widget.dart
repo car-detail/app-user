@@ -24,19 +24,29 @@ class _OfferListWidgetState extends State<OfferListWidget> {
                   itemCount: widget.offers.length,
                   itemBuilder: (context, index) {
                     var data = widget.offers[index];
+                    // Add null safety check
+                    if (data == null) {
+                      return const SizedBox.shrink();
+                    }
                     return Container(
                       height: 200,
-                      margin: EdgeInsets.all(10),
+                      margin: const EdgeInsets.all(10),
                       width: double.infinity,
                       child: Stack(
                         children: [
                           ClipRRect(
                               borderRadius:
-                                  BorderRadius.all(Radius.circular(20)),
+                                  const BorderRadius.all(Radius.circular(20)),
                               child: Image.network(
                                 data.image ?? "",
                                 fit: BoxFit.fill,
                                 width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.image_not_supported, size: 50),
+                                  );
+                                },
                               )),
                           Container(
                             alignment: Alignment.bottomLeft,
@@ -47,12 +57,12 @@ class _OfferListWidgetState extends State<OfferListWidget> {
                                 Container(
                                   width: double.infinity,
                                   color: Colors.black.withOpacity(0.5),
-                                  padding: EdgeInsets.only(
+                                  padding: const EdgeInsets.only(
                                     left: 5,
                                     right: 5,
                                   ),
                                   child: CommonWidget.getTextWidget500(
-                                      "Get ${data.discount}% off",
+                                      "Get ${data.discount ?? 0}% off",
                                       size: 14,
                                       color: Colors.white,
                                       textAlign: TextAlign.start),
@@ -70,7 +80,7 @@ class _OfferListWidgetState extends State<OfferListWidget> {
                                   child: Text(
                                     data.description ?? "",
                                     maxLines: 2,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontFamily: "Pop500",
                                       color: Colors.white,
                                       fontSize: 14,
@@ -90,7 +100,7 @@ class _OfferListWidgetState extends State<OfferListWidget> {
                                   topLeft: Radius.circular(15),
                                 )),
                             alignment: Alignment.topRight,
-                            padding: EdgeInsets.only(top: 5, right: 5),
+                            padding: const EdgeInsets.only(top: 5, right: 5),
                             width: double.infinity,
                             height: 30,
                             child: CommonWidget.getTextWidgetPopReg(

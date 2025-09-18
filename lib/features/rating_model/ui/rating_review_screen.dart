@@ -53,12 +53,12 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
       body: Column(
         children: [
           CommonWidget.gettopbar("Rating & Review", context),
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
           Expanded(
               child: Container(
-            margin: EdgeInsets.all(15),
+            margin: const EdgeInsets.all(15),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +94,7 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
                       starSpacing: 2,
                       maxValueVisibility: false,
                       valueLabelVisibility: false,
-                      animationDuration: Duration(milliseconds: 1000),
+                      animationDuration: const Duration(milliseconds: 1000),
                       valueLabelPadding: const EdgeInsets.symmetric(
                           vertical: 1, horizontal: 8),
                       valueLabelMargin: const EdgeInsets.only(right: 8),
@@ -115,20 +115,23 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
                     if (BaseActivity.checkEmptyField(
                         editingController: reviewController,
                         message: "Please Add Review.",
-                        context: context)) return;
+                        context: context)) {
+                      return;
+                    }
                     if(isEdit){
                       editRating(context);
-                    }else
-                    addRating(context);
+                    }else {
+                      addRating(context);
+                    }
                   },
                   child: CommonWidget.getButtonWidget(
                       buttonText, ColorClass.base_color, ColorClass.base_color),
                 ),
                 if(showAddReviewLayout)
-                SizedBox(
+                const SizedBox(
                   height: 15,
                 ),
-                if(reviewsList.length>0)
+                if(reviewsList.isNotEmpty)
                 Expanded(
                     child: ListView.builder(
                         itemCount: reviewsList.length,
@@ -137,8 +140,8 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
                         itemBuilder: (context, index) {
                           var data = reviewsList[index];
                           return Container(
-                            padding: EdgeInsets.all(15),
-                            margin: EdgeInsets.only(top: 8, bottom: 8),
+                            padding: const EdgeInsets.all(15),
+                            margin: const EdgeInsets.only(top: 8, bottom: 8),
                             decoration: ContainerDecoration
                                 .getboderwithshadowfillcolorblueE7F0FF(),
                             child: Column(
@@ -147,14 +150,14 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
                               children: [
                                 CommonWidget.getTextWidgetPopSemi(
                                     "${data.userId?.firstName ?? ""}  ${data.userId?.lastName ?? ""}"),
-                                SizedBox(
+                                const SizedBox(
                                   height: 5,
                                 ),
                                 CommonWidget.getTextWidgetPopReg(
                                     DateFormat("dd MMM yyyy").format(
                                         DateTime.parse(data.createdAt ?? "")),
                                     color: Colors.grey[500]!),
-                                SizedBox(
+                                const SizedBox(
                                   height: 5,
                                 ),
                                 Row(
@@ -170,7 +173,7 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
                                         " ${data.rating.toString() ?? ""}", 14)
                                   ],
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   height: 10,
                                 ),
                                 CommonWidget.getTextWidgetPopReg(
@@ -179,7 +182,7 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
                             ),
                           );
                         })),
-                if(reviewsList.length==0)
+                if(reviewsList.isEmpty)
                 Expanded(child: Center(
                   child: CommonWidget.getTextWidgetPopSemi("No Rating & Review Added Yet.",size: 16),
                 ))
@@ -223,7 +226,7 @@ class _RatingReviewScreenState extends State<RatingReviewScreen> {
       setState(() {
         reviewsList.clear();
         reviewsList.addAll(data.data!.reviews);
-        if (data.data!.myReview.length > 0) {
+        if (data.data!.myReview.isNotEmpty) {
           value = data.data!.myReview[data.data!.myReview.length - 1].rating!
               .toDouble();
           reviewController.text =

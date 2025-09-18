@@ -30,23 +30,23 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
   List<ServicesData> servicesData = [];
-  CameraPosition _kGooglePlex = CameraPosition(
+  CameraPosition _kGooglePlex = const CameraPosition(
     target: LatLng(30.707600, 76.715126),
     zoom: 14.4746,
   );
   ExploreListDataManager? dataManager;
-  CameraPosition _kLake = CameraPosition(
+  final CameraPosition _kLake = const CameraPosition(
       bearing: 192.8334901395799,
       target: LatLng(37.43296265331129, -122.08832357078792),
       zoom: 19.151926040649414);
-  LatLng _current = LatLng(30.707600, 76.715126);
+  LatLng _current = const LatLng(30.707600, 76.715126);
   Set<Marker> markers = {};
   late SharedPreferences? sharedPreferences;
   BitmapDescriptor? carIcon;
 
   Future<void> loadCustomMarker() async {
     carIcon = await BitmapDescriptor.asset(
-      ImageConfiguration(size: Size(48, 48)),
+      const ImageConfiguration(size: Size(48, 48)),
       'assets/images/car_loction.png',
     );
   }
@@ -78,7 +78,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
             double.parse(sharedPreferences!.getString(Constant.long) ?? "0.0"));
         markers.add(
           Marker(
-            markerId: MarkerId("Current Location"),
+            markerId: const MarkerId("Current Location"),
             position: _current,
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueRed),
@@ -100,7 +100,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           );
           markers.add(
             Marker(
-              markerId: MarkerId("Current Location"),
+              markerId: const MarkerId("Current Location"),
               position: _current,
               icon: BitmapDescriptor.defaultMarkerWithHue(
                   BitmapDescriptor.hueRed),
@@ -115,7 +115,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
   }
 
   Future<void> _fetchNearbyPetrolPumps() async {
-    if (_current == null) return;
     ApiFuntions.showLoaderDialog(context);
     print(
         "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_current.latitude},${_current.longitude}&radius=10000&type=car_wash&key=AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw");
@@ -130,8 +129,8 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
         print("========================================${response.statusCode}");
         print("========================================${response.body}");
         for (var place in data.results) {
-          double lat = place!.geometry!.location!.lat!;
-          double lng = place!.geometry!.location!.lng!;
+          double lat = place.geometry!.location!.lat!;
+          double lng = place.geometry!.location!.lng!;
           String name = place.name ?? "";
           setState(() {
             markers.add(
@@ -215,12 +214,13 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                 markerId: MarkerId(name),
                 position: LatLng(lat, lng),
                 onTap: () {
-                  if(place.services.length>0){
+                  if(place.services.isNotEmpty){
                     CommonWidget.navigateToScreen(context,
                         SeviceListScreen(place.services));
-                  }else
-                  _showBottomSheet(name, lat, lng, place.location?.name ?? "",
+                  }else {
+                    _showBottomSheet(name, lat, lng, place.location?.name ?? "",
                       place.sId ?? "", place.distance??0.0);
+                  }
                 },
                 //infoWindow: InfoWindow(title: name),
                 // icon: place.services.length>0?(carIcon ?? BitmapDescriptor.defaultMarker): BitmapDescriptor.defaultMarkerWithHue(
@@ -248,11 +248,11 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
             isBack: false,
           ),
           Container(
-            margin: EdgeInsets.all(5),
-            padding: EdgeInsets.all(5),
+            margin: const EdgeInsets.all(5),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.all(Radius.circular(25))),
+                borderRadius: const BorderRadius.all(Radius.circular(25))),
             child: Row(
               children: [
                 Expanded(
@@ -268,7 +268,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                       isList ? ColorClass.base_color : Colors.grey[300]!,
                       textcolor: isList ? Colors.white : ColorClass.base_color),
                 )),
-                SizedBox(
+                const SizedBox(
                   width: 15,
                 ),
                 Expanded(
@@ -318,7 +318,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           if (isList)
             Expanded(
                 child: Container(
-              margin: EdgeInsets.all(15),
+              margin: const EdgeInsets.all(15),
               child: ListView.builder(
                   shrinkWrap: true,
                   padding: EdgeInsets.zero,
@@ -326,7 +326,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () {
-                        if (servicesData[index].services.length > 0) {
+                        if (servicesData[index].services.isNotEmpty) {
                           CommonWidget.navigateToScreen(context,
                               SeviceListScreen(servicesData[index].services));
                         } else {
@@ -339,7 +339,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                         }
                       },
                       child: Container(
-                          margin: EdgeInsets.only(bottom: 10),
+                          margin: const EdgeInsets.only(bottom: 10),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,7 +348,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                                   servicesData[index].displayName ?? "", 18,
                                   textAlign: TextAlign.start,
                                   color: ColorClass.base_color),
-                              SizedBox(
+                              const SizedBox(
                                 height: 0,
                               ),
                               Row(
@@ -365,7 +365,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                                   )
                                 ],
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 10,
                               ),
                               Image.network(
@@ -387,7 +387,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                                   );
                                 },
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 20,
                               ),
                               Divider(
@@ -415,20 +415,20 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
       String name, double lat, double lng, String address, String placeId ,num distance) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (BuildContext context) {
         return Container(
           width: double.infinity,
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(name,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(child: Text("Addesss : $address"),),
@@ -438,12 +438,12 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               ElevatedButton(
                 //onPressed: () => openGoogleMapsNavigation(lat, lng),
                 onPressed: () => getServices(context, placeId, lat, lng),
                 // Open Google Maps
-                child: Text("Open in Google Maps"),
+                child: const Text("Open in Google Maps"),
               ),
             ],
           ),

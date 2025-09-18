@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -141,49 +142,74 @@ class _ProfileActivityState extends State<ProfileActivity> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                decoration:
-                    ContainerDecoration.getboderwithshadowfillcolorblueE7F0FF(
-                        borderRadius: 30),
-                padding: EdgeInsets.all(8),
-                height: 40,
-                width: 40,
-                margin: EdgeInsets.only(top: 45, right: 15),
-                child: InkWell(
-                  onTap: () {
-                    CommonPopUp.showalertDialog(
-                        context,
-                        "",
-                        "Are you sure - You want to logout?",
-                        "No",
-                        "Yes",
-                        "info",
-                        () => Navigator.pop(context), () async {
-                      Navigator.pop(context);
-                      sharedPreferences!.clear();
-                      CommonWidget.navigateToKillAllScreen(
-                          context, LoginActivity("Login"));
-                      //logout();
-                    }, 190,
-                        positivetitlecolorButton: ColorClass.red,
-                        navtextColorButton: ColorClass.green,
-                        isboldtitle: false);
-                  },
-                  child: Image.asset(
-                    CommonWidget.getImagePath("log_out.png"),
-                    height: 20,
-                    width: 20,
-                    color: ColorClass.base_color,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    decoration:
+                        ContainerDecoration.getboderwithshadowfillcolorblueE7F0FF(
+                            borderRadius: 30),
+                    padding: const EdgeInsets.all(8),
+                    height: 40,
+                    width: 40,
+                    margin: const EdgeInsets.only(top: 45, left: 15),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Image.asset(
+                        CommonWidget.getImagePath("backspace.png"),
+                        height: 20,
+                        width: 20,
+                        color: ColorClass.base_color,
+                      ),
+                    ),
                   ),
-                ),
+                  Container(
+                    decoration:
+                        ContainerDecoration.getboderwithshadowfillcolorblueE7F0FF(
+                            borderRadius: 30),
+                    padding: const EdgeInsets.all(8),
+                    height: 40,
+                    width: 40,
+                    margin: const EdgeInsets.only(top: 45, right: 15),
+                    child: InkWell(
+                      onTap: () {
+                        CommonPopUp.showalertDialog(
+                            context,
+                            "",
+                            "Are you sure - You want to logout?",
+                            "No",
+                            "Yes",
+                            "info",
+                            () => Navigator.pop(context), () async {
+                          Navigator.pop(context);
+                          sharedPreferences!.clear();
+                          CommonWidget.navigateToKillAllScreen(
+                              context, LoginActivity("Login"));
+                          //logout();
+                        }, 190,
+                            positivetitlecolorButton: ColorClass.red,
+                            navtextColorButton: ColorClass.green,
+                            isboldtitle: false);
+                      },
+                      child: Image.asset(
+                        CommonWidget.getImagePath("log_out.png"),
+                        height: 20,
+                        width: 20,
+                        color: ColorClass.base_color,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               Expanded(
                 child: Container(
-                  margin: Platform.isIOS
-                      ? EdgeInsets.only(
+                  margin: !kIsWeb
+                      ? const EdgeInsets.only(
                           top: 245,
                         )
-                      : EdgeInsets.only(
+                      : const EdgeInsets.only(
                           top: 165,
                         ),
                   child: Column(
@@ -191,7 +217,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                       //Image(image: AssetImage('assets/images/login_image.png')),
                       Expanded(
                           child: Container(
-                        margin: EdgeInsets.only(left: 20, right: 20),
+                        margin: const EdgeInsets.only(left: 20, right: 20),
                         child: SingleChildScrollView(
                           child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -204,7 +230,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                   child: Stack(
                                     children: [
                                       if (profileurl != "" &&
-                                          selectedFiles.length == 0)
+                                          selectedFiles.isEmpty)
                                         ClipOval(
                                           child: /*Image.asset(
                                         CommonWidget.getImagePath("chat_profile.png"),
@@ -229,7 +255,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                             fit: BoxFit.fill,
                                           ),
                                         ),
-                                      if (selectedFiles.length > 0)
+                                      if (selectedFiles.isNotEmpty)
                                         ClipOval(
                                           child:
                                               CommonWidget.determineImageAsset(
@@ -238,7 +264,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                       Positioned(
                                         bottom: 5,
                                         right: 0,
-                                        child: Container(
+                                        child: SizedBox(
                                           width: 30,
                                           height: 30,
                                           child: Container(
@@ -253,18 +279,16 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                                     .pickmedia(false);
                                                 if (data != null) {
                                                   setState(() {
-                                                    if (data != null) {
-                                                      selectedFiles.clear();
-                                                      for (int i = 0;
-                                                          i < data.length;
-                                                          i++) {
-                                                        setState(() {
-                                                          selectedFiles
-                                                              .add(data[i]);
-                                                        });
-                                                      }
+                                                    selectedFiles.clear();
+                                                    for (int i = 0;
+                                                        i < data.length;
+                                                        i++) {
+                                                      setState(() {
+                                                        selectedFiles
+                                                            .add(data[i]);
+                                                      });
                                                     }
-                                                  });
+                                                                                                    });
                                                 }
                                                 print(selectedFiles.length);
                                                 postImage(context);
@@ -282,7 +306,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                     "Enter Last Name", lastNameController),
                                 CommonWidget.getTextFieldWithgrayboder(
                                     "Enter Email Address", emailController),
-                                SizedBox(
+                                const SizedBox(
                                   height: 20,
                                 ),
                                 GestureDetector(

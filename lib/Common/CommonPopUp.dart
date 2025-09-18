@@ -25,7 +25,7 @@ class CommonPopUp {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
-      content: Container(
+      content: SizedBox(
           height: height,
           child: Stack(
             children: [
@@ -35,7 +35,7 @@ class CommonPopUp {
                   onTap: () {
                     Navigator.pop(context);
                   },
-                  child: Image(
+                  child: const Image(
                     image: AssetImage("assets/images/delete.png"),
                     height: 30,
                     width: 30,
@@ -43,7 +43,7 @@ class CommonPopUp {
                 ),
               ),
               Container(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   children: [
                     if (isboldtitle)
@@ -61,23 +61,23 @@ class CommonPopUp {
                         width: 60,
                       ),
                     Container(
-                      margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
+                      margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                       child: Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                             color: Color(0xff535353),
                             fontSize: 15,
                             fontWeight: FontWeight.normal),
                       ),
                     ),
                     Container(
-                        margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                        child: Divider(
+                        margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                        child: const Divider(
                           height: 3,
                           color: Color(0xffdedede),
                         )),
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       child: Row(
                         mainAxisAlignment: mainAxisAlignment,
@@ -87,19 +87,19 @@ class CommonPopUp {
                               child: GestureDetector(
                                 onTap: negativefuntion,
                                 child: Container(
-                                  margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                                  padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
+                                  margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                                  padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                                   decoration: BoxDecoration(
                                     border:
-                                        Border.all(color: Color(0xff3C3E41)),
+                                        Border.all(color: const Color(0xff3C3E41)),
                                     borderRadius:
-                                        BorderRadius.all(Radius.circular(20)),
+                                        const BorderRadius.all(Radius.circular(20)),
                                     color: Color(navtextColorButton),
                                   ),
                                   child: Text(
                                     negativetitle,
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold),
@@ -111,7 +111,7 @@ class CommonPopUp {
                             Container(
                               height: 40,
                               width: 1,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: Color(0xffE8E3E3),
                               ),
                             ),
@@ -119,17 +119,17 @@ class CommonPopUp {
                             child: GestureDetector(
                               onTap: positivefuntion,
                               child: Container(
-                                margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                                padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
+                                margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                                padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                                 decoration: BoxDecoration(
                                   color: Color(positivetitlecolorButton),
                                   borderRadius:
-                                      BorderRadius.all(Radius.circular(20)),
+                                      const BorderRadius.all(Radius.circular(20)),
                                 ),
                                 child: Text(
                                   positivetitle,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold),
@@ -291,7 +291,7 @@ class CommonPopUp {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
-      content: Container(
+      content: SizedBox(
           height: height,
           child: Stack(
             children: [
@@ -301,7 +301,7 @@ class CommonPopUp {
                   onTap: () {
                     Navigator.pop(context);
                   },
-                  child: Image(
+                  child: const Image(
                     image: AssetImage("assets/images/delete.png"),
                     height: 25,
                     width: 25,
@@ -309,7 +309,7 @@ class CommonPopUp {
                 ),
               ),
               Container(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   children: [
                     if (isboldtitle)
@@ -327,23 +327,23 @@ class CommonPopUp {
                         width: 60,
                       ),
                     Container(
-                      margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
+                      margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                       child: Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                             color: Color(0xff535353),
                             fontSize: 15,
                             fontWeight: FontWeight.normal),
                       ),
                     ),
                     Container(
-                        margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                        child: Divider(
+                        margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                        child: const Divider(
                           height: 3,
                           color: Color(0xffdedede),
                         )),
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       child: Row(
                         mainAxisAlignment: mainAxisAlignment,
@@ -353,19 +353,19 @@ class CommonPopUp {
                               child: GestureDetector(
                                 onTap: negativefuntion,
                                 child: Container(
-                                  margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                                  padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
+                                  margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                                  padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                                   decoration: BoxDecoration(
                                     border:
-                                        Border.all(color: Color(0xff3C3E41)),
+                                        Border.all(color: const Color(0xff3C3E41)),
                                     borderRadius:
-                                        BorderRadius.all(Radius.circular(20)),
-                                    color: Color(0xff3C3E41),
+                                        const BorderRadius.all(Radius.circular(20)),
+                                    color: const Color(0xff3C3E41),
                                   ),
                                   child: Text(
                                     negativetitle,
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold),
@@ -377,24 +377,24 @@ class CommonPopUp {
                             Container(
                               height: 40,
                               width: 1,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: Color(0xffE8E3E3),
                               ),
                             ),
                           GestureDetector(
                             onTap: positivefuntion,
                             child: Container(
-                              margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                              padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
+                              margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                              padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                               decoration: BoxDecoration(
                                 color: ColorClass.base_color,
                                 borderRadius:
-                                    BorderRadius.all(Radius.circular(20)),
+                                    const BorderRadius.all(Radius.circular(20)),
                               ),
                               child: Text(
                                 positivetitle,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
+                                style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold),

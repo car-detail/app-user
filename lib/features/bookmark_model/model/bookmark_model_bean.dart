@@ -15,16 +15,16 @@ class BookmarkModelBean {
     if (json['data'] != null) {
       data = <BookmarkModelData>[];
       json['data'].forEach((v) {
-        data!.add(new BookmarkModelData.fromJson(v));
+        data!.add(BookmarkModelData.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['status'] = this.status;
-    data['message'] = this.message;
-    data['statusCode'] = this.statusCode;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['message'] = message;
+    data['statusCode'] = statusCode;
     if (this.data != null) {
       data['data'] = this.data!.map((v) => v.toJson()).toList();
     }
@@ -56,7 +56,7 @@ class BookmarkModelData {
     sId = json['_id'];
     userId = json['userId'];
     serviceId = json['serviceId'] != null
-        ? new ServicesData.fromJson(json['serviceId'])
+        ? ServicesData.fromJson(json['serviceId'])
         : null;
     isActive = json['isActive'];
     isDeleted = json['isDeleted'];
@@ -66,17 +66,17 @@ class BookmarkModelData {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['userId'] = this.userId;
-    if (this.serviceId != null) {
-      data['serviceId'] = this.serviceId!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['_id'] = sId;
+    data['userId'] = userId;
+    if (serviceId != null) {
+      data['serviceId'] = serviceId!.toJson();
     }
-    data['isActive'] = this.isActive;
-    data['isDeleted'] = this.isDeleted;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
-    data['__v'] = this.iV;
+    data['isActive'] = isActive;
+    data['isDeleted'] = isDeleted;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
+    data['__v'] = iV;
     return data;
   }
 }
@@ -121,33 +121,33 @@ class ServiceId {
     coverImage = json['coverImage'];
     mobile = json['mobile'];
     location = json['location'] != null
-        ? new Location.fromJson(json['location'])
+        ? Location.fromJson(json['location'])
         : null;
     if (json['timeSlots'] != null) {
       timeSlots = <TimeSlots>[];
       json['timeSlots'].forEach((v) {
-        timeSlots!.add(new TimeSlots.fromJson(v));
+        timeSlots!.add(TimeSlots.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['serviceTitle'] = this.serviceTitle;
-    data['about'] = this.about;
-    data['price'] = this.price;
-    data['serviceDuration'] = this.serviceDuration;
-    data['categoryName'] = this.categoryName;
-    data['categoryId'] = this.categoryId;
-    data['detailImages'] = this.detailImages;
-    data['coverImage'] = this.coverImage;
-    data['mobile'] = this.mobile;
-    if (this.location != null) {
-      data['location'] = this.location!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['_id'] = sId;
+    data['serviceTitle'] = serviceTitle;
+    data['about'] = about;
+    data['price'] = price;
+    data['serviceDuration'] = serviceDuration;
+    data['categoryName'] = categoryName;
+    data['categoryId'] = categoryId;
+    data['detailImages'] = detailImages;
+    data['coverImage'] = coverImage;
+    data['mobile'] = mobile;
+    if (location != null) {
+      data['location'] = location!.toJson();
     }
-    if (this.timeSlots != null) {
-      data['timeSlots'] = this.timeSlots!.map((v) => v.toJson()).toList();
+    if (timeSlots != null) {
+      data['timeSlots'] = timeSlots!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -162,15 +162,15 @@ class Location {
   Location.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     coordinates = json['coordinates'] != null
-        ? new Coordinates.fromJson(json['coordinates'])
+        ? Coordinates.fromJson(json['coordinates'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['name'] = this.name;
-    if (this.coordinates != null) {
-      data['coordinates'] = this.coordinates!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['name'] = name;
+    if (coordinates != null) {
+      data['coordinates'] = coordinates!.toJson();
     }
     return data;
   }
@@ -188,9 +188,9 @@ class Coordinates {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['lat'] = this.lat;
-    data['long'] = this.long;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['lat'] = lat;
+    data['long'] = long;
     return data;
   }
 }
@@ -211,11 +211,11 @@ class TimeSlots {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['slot'] = this.slot;
-    data['capacity'] = this.capacity;
-    data['booked'] = this.booked;
-    data['_id'] = this.sId;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['slot'] = slot;
+    data['capacity'] = capacity;
+    data['booked'] = booked;
+    data['_id'] = sId;
     return data;
   }
 }

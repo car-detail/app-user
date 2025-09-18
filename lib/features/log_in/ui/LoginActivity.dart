@@ -45,8 +45,8 @@ class _LoginActivityState extends State<LoginActivity> {
       print(
           "============================================================= ${possition.toString()}");
       List<Placemark> placemarks = await placemarkFromCoordinates(possition.latitude, possition.longitude);
-      print("========================= ${placemarks?[0].locality}");
-      sharedPreferences!.setString(Constant.location, placemarks?[0].locality??"");
+      print("========================= ${placemarks[0].locality}");
+      sharedPreferences!.setString(Constant.location, placemarks[0].locality??"");
       sharedPreferences!.setString(Constant.lat, possition.latitude.toString());
       sharedPreferences!.setString(Constant.long, possition.longitude.toString());
     }catch(e){
@@ -66,13 +66,13 @@ class _LoginActivityState extends State<LoginActivity> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Container(
-          margin: EdgeInsets.only(top: 320),
+          margin: const EdgeInsets.only(top: 320),
           child: Column(
             children: [
               //Image(image: AssetImage('assets/images/login_image.png')),
               Expanded(
                   child: Container(
-                margin: EdgeInsets.only(left: 20, right: 20),
+                margin: const EdgeInsets.only(left: 20, right: 20),
                 child: SingleChildScrollView(
                   child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -84,7 +84,7 @@ class _LoginActivityState extends State<LoginActivity> {
                             "Enter mobile number",
                             "mobile_phone_rect",
                             mobileController,keytype: TextInputType.phone),
-                        SizedBox(
+                        const SizedBox(
                           height: 20,
                         ),
                         GestureDetector(

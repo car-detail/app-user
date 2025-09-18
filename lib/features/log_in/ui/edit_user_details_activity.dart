@@ -32,7 +32,7 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
 
   ApiFuntions apiFuntions = ApiFuntions();
   LoginDataManager? loginDataManager;
-  late SharedPreferences? sharedPreferences;
+  SharedPreferences? sharedPreferences;
 
   @override
   void initState() {
@@ -80,16 +80,39 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
     }
   }
   postImage(BuildContext context) async {
-    List<File> image = [selectedFiles[0]];
-    var response = await loginDataManager!.postImage(
-        image,
-        context);
-    var data = ImageModuleData.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      imageURl = data.data?.url??"";
-      //CommonWidget.successShowSnackBarFor(context, data.message??"");
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    if (selectedFiles.isNotEmpty) {
+      List<File> image = [selectedFiles[0]];
+      var response = await loginDataManager!.postImage(
+          image,
+          context);
+      var data = ImageModuleData.fromJson(jsonDecode(response.body));
+      if (data.status == "success") {
+        imageURl = data.data?.url??"";
+        //CommonWidget.successShowSnackBarFor(context, data.message??"");
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
+    }
+  }
+
+  _validateAndSave(BuildContext context) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? isNewUser = prefs.getString(Constant.isNewUser);
+      bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
+      
+      print("Debug - isNewUser: $isNewUser, isNewUserFlag: $isNewUserFlag, imageURl: $imageURl");
+      
+      if (!isNewUserFlag && imageURl == "") {
+        CommonWidget.successShowSnackBarFor(context, "Please Select Profile Image");
+        return;
+      } else {
+        postUserDetails(context);
+      }
+    } catch (e) {
+      print("Error validating: $e");
+      // If there's an error, treat as new user (make image optional)
+      postUserDetails(context);
     }
   }
 
@@ -102,14 +125,52 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
               fit: BoxFit.cover)),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Container(
-          margin: EdgeInsets.only(top: 320),
-          child: Column(
-            children: [
-              //Image(image: AssetImage('assets/images/login_image.png')),
-              Expanded(
+        body: Column(
+          children: [
+            // Back Button
+            Container(
+              margin: const EdgeInsets.only(top: 45, left: 15),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    height: 40,
+                    width: 40,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Image.asset(
+                        CommonWidget.getImagePath("backspace.png"),
+                        height: 20,
+                        width: 20,
+                        color: ColorClass.base_color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(top: 20),
+                child: Column(
+                  children: [
+                    //Image(image: AssetImage('assets/images/login_image.png')),
+                    Expanded(
                   child: Container(
-                margin: EdgeInsets.only(left: 20, right: 20),
+                margin: const EdgeInsets.only(left: 20, right: 20),
                 child: SingleChildScrollView(
                   child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -122,7 +183,7 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                           alignment: Alignment.center,
                           child: Stack(
                             children: [
-                              if (selectedFiles.length == 0)
+                              if (selectedFiles.isEmpty)
                                 ClipOval(
                                   child: Image.asset(
                                         CommonWidget.getImagePath("chat_profile.png"),
@@ -131,7 +192,7 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                                     fit: BoxFit.fill,
                                   ),
                                 ),
-                              if (selectedFiles.length > 0)
+                              if (selectedFiles.isNotEmpty)
                                 ClipOval(
                                   child: CommonWidget.determineImageAsset(
                                       selectedFiles[0].path ?? ""),
@@ -139,7 +200,7 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                               Positioned(
                                 bottom: 5,
                                 right: 0,
-                                child: Container(
+                                child: SizedBox(
                                   width: 30,
                                   height: 30,
                                   child: Container(
@@ -152,17 +213,15 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                                         var data = await BaseActivity.pickmedia(false);
                                         if (data != null) {
                                           setState(() {
-                                            if (data != null) {
-                                              selectedFiles.clear();
-                                              for (int i = 0;
-                                              i < data.length;
-                                              i++) {
-                                                setState(() {
-                                                  selectedFiles.add(data[i]);
-                                                });
-                                              }
+                                            selectedFiles.clear();
+                                            for (int i = 0;
+                                            i < data.length;
+                                            i++) {
+                                              setState(() {
+                                                selectedFiles.add(data[i]);
+                                              });
                                             }
-                                          });
+                                                                                    });
                                         }
                                         print(selectedFiles.length);
                                         postImage(context);
@@ -174,13 +233,53 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                             ],
                           ),
                         ),
+                        // Show optional text for new users
+                        FutureBuilder<SharedPreferences?>(
+                          future: SharedPreferences.getInstance(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              String? isNewUser = snapshot.data!.getString(Constant.isNewUser);
+                              bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
+                              
+                              if (isNewUserFlag) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                                  child: Text(
+                                    "Profile image is optional for new users",
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                );
+                              }
+                            } else {
+                              // If sharedPreferences is not loaded yet, show as new user
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                                child: Text(
+                                  "Profile image is optional for new users",
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
                         CommonWidget.getTextFieldWithgrayboder(
                             "Enter First Name", firstNameController),
                         CommonWidget.getTextFieldWithgrayboder(
                             "Enter Last Name", lastNameController),
                         CommonWidget.getTextFieldWithgrayboder(
                             "Enter Email Address", emailController),
-                        SizedBox(
+                        const SizedBox(
                           height: 20,
                         ),
                         GestureDetector(
@@ -201,11 +300,9 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                                   message: "Please Enter Email Address.",
                                   context: context)) {
                                 return;
-                              }else if (imageURl == "") {
-                                CommonWidget.successShowSnackBarFor(context, "Please Select Profile Image");
-                                return;
                               } else {
-                                postUserDetails(context);
+                                // Check if user is new - if so, make profile image optional
+                                _validateAndSave(context);
                               }
                             },
                             child: Container(
@@ -217,8 +314,11 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                       ]),
                 ),
               ))
-            ],
-          ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

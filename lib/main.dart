@@ -3,17 +3,22 @@ import 'package:car_app/features/SplashScreenActivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  var status = await Permission.locationWhenInUse.status;
+  
+  // Only request location permission on mobile platforms, not web
+  if (!kIsWeb) {
+    var status = await Permission.locationWhenInUse.status;
 
-  if (status.isDenied) {
-    status = await Permission.locationWhenInUse.request();
-  }
+    if (status.isDenied) {
+      status = await Permission.locationWhenInUse.request();
+    }
 
-  if (status.isPermanentlyDenied) {
-    openAppSettings(); // optionally guide user to settings
+    if (status.isPermanentlyDenied) {
+      openAppSettings(); // optionally guide user to settings
+    }
   }
 
   runApp(const MyApp());

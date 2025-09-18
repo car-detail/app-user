@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -31,7 +32,15 @@ class LoginDataManager {
     packageInfo = await PackageInfo.fromPlatform();
     appVersionCode = packageInfo!.buildNumber;
     appVersionName = packageInfo!.version;
-    if (Platform.isAndroid) {
+    
+    if (kIsWeb) {
+      // Web platform
+      deviceType = "Web Browser";
+      osVersion = "Web";
+      deviceMake = "Web";
+      deviceModel = "Browser";
+      imei = "";
+    } else if (Platform.isAndroid) {
       androidInfo = await deviceInfo!.androidInfo;
       deviceType = androidInfo!.device;
       osVersion = androidInfo!.version.release;
@@ -68,7 +77,7 @@ class LoginDataManager {
     });
   }
   Future<http.Response> postUserDetails(String firstName,String lastName,String email,String profileImage, String id, BuildContext context) {
-        return apiFuntions.putdatauser(context, "${Constant.updateUserDetails}${id}", <String, dynamic>{
+        return apiFuntions.putdatauser(context, "${Constant.updateUserDetails}$id", <String, dynamic>{
           "firstName": firstName,
           "lastName": lastName,
           "email": email,
@@ -76,7 +85,7 @@ class LoginDataManager {
         });
   }
   Future<http.Response> postImage(List<File> file, BuildContext context) {
-        return apiFuntions.sendMultipartRequest(context, "${Constant.uploadFile}",file, <String , dynamic>{}, );
+        return apiFuntions.sendMultipartRequest(context, Constant.uploadFile,file, <String , dynamic>{}, );
   }
   Future<http.Response> getUserDetails(BuildContext context) {
         return apiFuntions.getdatauser(context, Constant.getUserDetails);

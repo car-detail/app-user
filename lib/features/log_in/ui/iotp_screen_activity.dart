@@ -73,9 +73,9 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: Container(
-            margin: Platform.isAndroid
-                ? EdgeInsets.only(top: 260)
-                : EdgeInsets.only(top: 310),
+            margin: !kIsWeb
+                ? const EdgeInsets.only(top: 260)
+                : const EdgeInsets.only(top: 310),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -125,7 +125,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                             defaultPinTheme: PinTheme(
                               width: 56,
                               height: 56,
-                              textStyle: TextStyle(
+                              textStyle: const TextStyle(
                                 fontSize: 20,
                                 color: Colors.black,
                               ),
@@ -147,7 +147,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                               margin: const EdgeInsets.only(top: 30),
                               child: GestureDetector(
                                 onTap: () {
-                                  if ("${_fieldOne.text.toString()}".length ==
+                                  if (_fieldOne.text.toString().length ==
                                       6) {
                                     postOTP(context);
                                   } else {
@@ -206,8 +206,16 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
 
   getUser(BuildContext context) async {
     var response = await loginDataManager!.getUserDetails(context);
-    var data = UserDetailsModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
+    
+    // Check if response is HTML (error page) instead of JSON
+    if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
+      CommonWidget.errorShowSnackBarFor(context, "API Error: Received HTML instead of JSON. Please check your backend connection.");
+      return;
+    }
+    
+    try {
+      var data = UserDetailsModelBean.fromJson(jsonDecode(response.body));
+      if (data.status == "success") {
       sharedPreferences!
           .setString(Constant.firstName, data.data!.firstName ?? "");
       sharedPreferences!
@@ -223,13 +231,17 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
       sharedPreferences!
           .setString(Constant.id, data.data!.sId.toString() ?? "");
       if (data.data!.isNewUser == true) {
-        CommonWidget.navigateToScreen(context, EditUserDetailsActivity());
+        CommonWidget.navigateToScreen(context, const EditUserDetailsActivity());
       } else {
         CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
       }
       //CommonWidget.navigateToScreen(context, OTPScreenActivity());
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
+    } catch (e) {
+      print("Error parsing user details: $e");
+      CommonWidget.errorShowSnackBarFor(context, "Error parsing user details. Please try again.");
     }
   }
 }
@@ -271,7 +283,7 @@ class OtpInput extends StatelessWidget {
                     style: BorderStyle.solid)),
             counterText: '',
             hintStyle: const TextStyle(color: Colors.black, fontSize: 20.0),
-            border: OutlineInputBorder(
+            border: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(20)),
                 borderSide: BorderSide(color: Color(0xffdedede)))),
         onChanged: (value) {

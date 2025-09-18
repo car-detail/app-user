@@ -22,15 +22,15 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
 
   @override
   void initState() {
-    start();
     super.initState();
+    start();
   }
+  
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
     print("Under Splash start Screen ");
-    setState(() {
-      userid = sharedPreferences!.getString(Constant.id) ?? "";
-    });
+    userid = sharedPreferences!.getString(Constant.id) ?? "";
+    
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (userid != null && userid != "") {
         Navigator.pushAndRemoveUntil(
@@ -65,7 +65,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Container(
-          padding: EdgeInsets.fromLTRB(15, 30, 15, 15),
+          padding: const EdgeInsets.fromLTRB(15, 30, 15, 15),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -84,7 +84,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                     );
                   },
                   child: Container(
-                    margin: EdgeInsets.only(left: 30, right: 30),
+                    margin: const EdgeInsets.only(left: 30, right: 30),
                     child: CommonWidget.getGradinetButton(
                         "Sign in",
                         startcolor: 0xff006538,
@@ -93,7 +93,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                     ),
                   )),
               if(userid == "" || userid == null)
-              SizedBox(height: 20,),
+              const SizedBox(height: 20,),
               if(userid == "" || userid == null)
               GestureDetector(
                   onTap: () {
@@ -108,7 +108,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                     );
                   },
                   child: Container(
-                    margin: EdgeInsets.only(left: 30, right: 30),
+                    margin: const EdgeInsets.only(left: 30, right: 30),
                     child: CommonWidget.getGradinetButton(
                         "Sign Up",
                         startcolor: 0xffE8F7F1,
@@ -118,7 +118,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                     ),
                   )),
               if(userid == "" || userid == null)
-              SizedBox(height: 20,)
+              const SizedBox(height: 20,)
             ],
           ),
 

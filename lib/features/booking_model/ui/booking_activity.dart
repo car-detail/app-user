@@ -36,6 +36,11 @@ class _BookingActivityState extends State<BookingActivity> {
   var postTime = "";
   var messageController = TextEditingController();
   List<TimeSlots> timeSlot = [];
+  bool isBookmarked = false;
+  String? selectedPackageId;
+  String? selectedPackageName;
+  int? selectedPackagePrice;
+  List<Map<String, dynamic>> availablePackages = [];
 
   @override
   void initState() {
@@ -53,34 +58,156 @@ class _BookingActivityState extends State<BookingActivity> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Column(
         children: [
+          // Modern Header with Image
           Container(
-            height: 250,
+            height: 280,
             child: Stack(
               children: [
-                if (bookingdata.coverImage != "" &&
-                    bookingdata.coverImage != null)
-                  Image.network(
-                    bookingdata.coverImage ?? "",
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                // Service Image with fallback
                 Container(
-                  margin: EdgeInsets.only(top: 45, left: 10, right: 10),
+                  height: 280,
+                  width: double.infinity,
+                  child: bookingdata.coverImage != null && bookingdata.coverImage!.isNotEmpty
+                      ? Image.network(
+                          bookingdata.coverImage!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildDefaultCoverImage();
+                          },
+                        )
+                      : _buildDefaultCoverImage(),
+                ),
+                
+                // Gradient overlay
+                Container(
+                  height: 280,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.3),
+                        Colors.black.withOpacity(0.7),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Header buttons
+                Positioned(
+                  top: 45,
+                  left: 16,
+                  right: 16,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: Image.asset(
-                          CommonWidget.getImagePath("backspace.png"),
-                          height: 40,
-                          width: 40,
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(Icons.arrow_back, color: Colors.black87, size: 20),
                         ),
+                      ),
+                      GestureDetector(
+                        onTap: _toggleBookmark,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(
+                            isBookmarked ? Icons.bookmark : Icons.bookmark_border, 
+                            color: isBookmarked ? ColorClass.base_color : Colors.black87, 
+                            size: 20
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Service Title Overlay
+                Positioned(
+                  bottom: 20,
+                  left: 16,
+                  right: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: ColorClass.base_color,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          bookingdata.categoryName ?? "Car Service",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: "Pop500",
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        bookingdata.serviceTitle ?? "Service",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontFamily: "Pop600",
+                          shadows: [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 3,
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (bookingdata.location?.name != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on, color: Colors.white, size: 16),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                bookingdata.location?.name ?? "",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: "Pop400",
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber[600], size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            "4.8 (568 views)",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: "Pop500",
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -88,179 +215,415 @@ class _BookingActivityState extends State<BookingActivity> {
               ],
             ),
           ),
+          // Modern Content Section
           Expanded(
-              child: Container(
-            margin: EdgeInsets.all(15),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                          child: CommonWidget.getTextWidget300(
-                              bookingdata.categoryName ?? "", 14,
-                              color: ColorClass.base_color),
-                          padding: EdgeInsets.fromLTRB(8, 2, 8, 2),
-                          decoration: BoxDecoration(
-                              color: Color(0xff1CB2731A),
-                              borderRadius: BorderRadius.circular(20))),
-                      Row(
-                        children: [
-                          Image.asset(
-                            CommonWidget.getImagePath("stars1.png"),
-                            height: 20,
-                            width: 20,
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Service Details Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
-                          CommonWidget.getTextWidget300(" 4.8 (568 views)", 14)
                         ],
                       ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  CommonWidget.getTextWidget500(bookingdata.serviceTitle ?? "",
-                      size: 18),
-                  CommonWidget.getTextWidget300(
-                      bookingdata.location?.name ?? "", 14,
-                      color: ColorClass.dark_gray_base),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  CommonWidget.getTextWidget500("Book A Slot",
-                      color: ColorClass.base_color),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  CommonWidget.getTextWidget300("Service Type", 14),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    children: [
-                      /*InkWell(
-                        onTap: () {
-                          setState(() {
-                            isPickUp = true;
-                          });
-                        },
-                        child: CommonWidget.getButtonWidget("Pick Up",
-                            getColorPickColor(), ColorClass.base_color,
-                            textcolor: isPickUp == true
-                                ? Colors.white
-                                : ColorClass.base_color),
-                      ),*/
-                      /*SizedBox(
-                        width: 5,
-                      ),*/
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            isPickUp = false;
-                          });
-                        },
-                        child: CommonWidget.getButtonWidget("Self Service",
-                            getColorSelfColor(), ColorClass.base_color,
-                            textcolor: isPickUp == true
-                                ? ColorClass.base_color
-                                : Colors.white),
-                      )
-                    ],
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  //CommonWidget.getTextWidget300("Service Type : ", 14),
-                  CommonWidget.getTextRich(
-                      "Category Name : ", bookingdata.categoryName ?? ""),
-                  CommonWidget.getTextRich("About : ", bookingdata.about ?? ""),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              isPickUp = true;
-                            });
-                          },
-                          child: CommonWidget
-                              .getTextFieldWithgrayboderandclickable(
-                                  "Date", dateController, () {
-                            CommonPopUp.showdateNewDialog(context, (date) {
-                              String formattedDate =
-                                  DateFormat('dd-MM-yyyy').format(date);
-                              print(formattedDate);
-                              setState(() {
-                                dateController.text = formattedDate;
-                                dateString =
-                                    DateFormat('yyyy-MM-dd').format(date);
-                              });
-                            }, DateTime.now(), DateTime.now(), DateTime(2050));
-                          }, "clander"),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Service Details",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontFamily: "Pop600",
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (bookingdata.about != null && bookingdata.about!.isNotEmpty) ...[
+                            Text(
+                              "About",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop500",
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              bookingdata.about!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop400",
+                                color: Colors.grey[600],
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          Row(
+                            children: [
+                              Icon(Icons.access_time, color: ColorClass.base_color, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Duration: ${bookingdata.serviceDuration ?? "30"} minutes",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: "Pop500",
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.attach_money, color: ColorClass.base_color, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Price: ₹${selectedPackagePrice ?? bookingdata.price ?? "0"}",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: "Pop600",
+                                  color: ColorClass.base_color,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (selectedPackageName != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.inventory_2, color: ColorClass.base_color, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "Package: $selectedPackageName",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: "Pop500",
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
-                      SizedBox(
-                        width: 5,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Booking Section
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              isPickUp = false;
-                            });
-                          },
-                          child: CommonWidget
-                              .getTextFieldWithgrayboderandclickable(
-                                  "Time", timeController, () {
-                            /*CommonPopUp.showTimeDialog(context, (time) {
-                              timeController.text =
-                                  time.format(context).toString();
-                            });*/
-                            showDetailPopUp(context);
-                          }, "clock"),
-                        ),
-                      )
-                    ],
-                  ),
-                  CommonWidget.getTextWidget300(
-                      "Estimate service time will be ${bookingdata.serviceDuration ?? ""} min.",
-                      12),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  CommonWidget.getTextWidget500("Note for Service Provider"),
-                  CommonWidget.getTextFieldWithgrayboder(
-                      "Enter the instructions", messageController)
-                ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Book A Slot",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontFamily: "Pop600",
+                              color: ColorClass.base_color,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Package Selection (only if packages are available)
+                          if (availablePackages.isNotEmpty) ...[
+                            Text(
+                              "Select Package (Optional)",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop500",
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedPackageId,
+                                  hint: Text(
+                                    "Choose a package",
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontFamily: "Pop400",
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem<String>(
+                                      value: null,
+                                      child: Text(
+                                        "No Package (Individual Service)",
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontFamily: "Pop400",
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    ...availablePackages.map((package) {
+                                      return DropdownMenuItem<String>(
+                                        value: package['id'],
+                                        child: Text(
+                                          "${package['name']} - ₹${package['price']}",
+                                          style: TextStyle(
+                                            color: Colors.black87,
+                                            fontFamily: "Pop400",
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      selectedPackageId = value;
+                                      if (value != null) {
+                                        final package = availablePackages.firstWhere(
+                                          (p) => p['id'] == value,
+                                          orElse: () => {},
+                                        );
+                                        selectedPackageName = package['name'];
+                                        selectedPackagePrice = package['price'];
+                                      } else {
+                                        selectedPackageName = null;
+                                        selectedPackagePrice = null;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                          
+                          // Date and Time Selection
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Date",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontFamily: "Pop500",
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    GestureDetector(
+                                      onTap: () {
+                                        CommonPopUp.showdateNewDialog(context, (date) {
+                                          String formattedDate =
+                                              DateFormat('dd-MM-yyyy').format(date);
+                                          setState(() {
+                                            dateController.text = formattedDate;
+                                            dateString =
+                                                DateFormat('yyyy-MM-dd').format(date);
+                                          });
+                                        }, DateTime.now(), DateTime.now(), DateTime(2050));
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey[300]!),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                dateController.text.isEmpty ? "Select Date" : dateController.text,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontFamily: "Pop400",
+                                                  color: dateController.text.isEmpty ? Colors.grey[500] : Colors.black87,
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(Icons.calendar_today, color: ColorClass.base_color, size: 20),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Time",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontFamily: "Pop500",
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    GestureDetector(
+                                      onTap: () {
+                                        showDetailPopUp(context);
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey[300]!),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                timeController.text.isEmpty ? "Select Time" : timeController.text,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontFamily: "Pop400",
+                                                  color: timeController.text.isEmpty ? Colors.grey[500] : Colors.black87,
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(Icons.access_time, color: ColorClass.base_color, size: 20),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          Text(
+                            "Estimate service time will be ${bookingdata.serviceDuration ?? "30"} minutes",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: "Pop400",
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Note Section
+                          Text(
+                            "Note for Service Provider",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: "Pop500",
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey[50],
+                            ),
+                            child: TextField(
+                              controller: messageController,
+                              decoration: InputDecoration(
+                                hintText: "Enter the instructions",
+                                hintStyle: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontFamily: "Pop400",
+                                ),
+                                border: InputBorder.none,
+                              ),
+                              maxLines: 3,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop400",
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          )),
-          InkWell(
-            onTap: () {
-              if (BaseActivity.checkEmptyField(
-                  editingController: timeController,
-                  message: "Please Select Date.",
-                  context: context))
-                return;
-              else if(BaseActivity.checkEmptyField(
-                  editingController: timeController,
-                  message: "Please Select Time Slot.",
-                  context: context))
-                return;
-              else
-                postBookingDetails(context);
-            },
-            child: Container(
-                margin: EdgeInsets.fromLTRB(15, 0, 15, 25),
-                child: CommonWidget.getButtonWidget(
-                    "Continue", ColorClass.base_color, ColorClass.base_color,
-                    textcolor: Colors.white)),
+          ),
+          
+          // Modern Continue Button
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (BaseActivity.checkEmptyField(
+                      editingController: dateController,
+                      message: "Please Select Date.",
+                      context: context)) {
+                    return;
+                  } else if(BaseActivity.checkEmptyField(
+                      editingController: timeController,
+                      message: "Please Select Time Slot.",
+                      context: context))
+                    return;
+                  else
+                    postBookingDetails(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorClass.base_color,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  "Continue",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontFamily: "Pop600",
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           )
         ],
       ),
@@ -270,18 +633,137 @@ class _BookingActivityState extends State<BookingActivity> {
   getServicesDetails(BuildContext context) async {
     var response = await dataManager!
         .getServiceDetails(context, widget.servicesData);
-    var data = BookingModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
+    
+    // Parse the response as a list of services (vendor endpoint returns array)
+    var jsonData = jsonDecode(response.body);
+    
+    if (jsonData['status'] == "success" && jsonData['data'] != null) {
+      // Get the first service from the array
+      var servicesList = jsonData['data'] as List;
+      if (servicesList.isNotEmpty) {
+        var firstService = servicesList[0];
+        
       setState(() {
-        bookingdata = data.data!;
+          // Create BookingModelData from the first service
+          bookingdata = BookingModelData.fromJson(firstService);
         detailImages.clear();
         timeSlot.clear();
-        detailImages.addAll(data.data!.detailImages!);
-        timeSlot.addAll(data.data!.timeSlots!);
+          if (bookingdata.detailImages != null) {
+            detailImages.addAll(bookingdata.detailImages!);
+          }
+          if (bookingdata.timeSlots != null) {
+            timeSlot.addAll(bookingdata.timeSlots!);
+          }
+        // Check if this service is bookmarked
+          isBookmarked = bookingdata.isBookmarked ?? false;
       });
-      //CommonWidget.successShowSnackBarFor(context, data.message ?? "");
+      // Fetch packages for this vendor
+      await fetchVendorPackages();
     } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+        CommonWidget.errorShowSnackBarFor(context, "No services found for this vendor");
+      }
+    } else {
+      CommonWidget.errorShowSnackBarFor(context, jsonData['message'] ?? "Failed to load service details");
+    }
+  }
+
+  Widget _buildDefaultCoverImage() {
+    return Container(
+      height: 280,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ColorClass.base_color.withOpacity(0.8),
+            ColorClass.base_color.withOpacity(0.6),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.local_car_wash,
+              size: 80,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Car Service",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontFamily: "Pop600",
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleBookmark() async {
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        CommonWidget.successShowSnackBarFor(context, "Removed from bookmarks");
+        setState(() {
+          isBookmarked = false;
+        });
+      } else {
+        // Add bookmark
+        CommonWidget.successShowSnackBarFor(context, "Added to bookmarks");
+        setState(() {
+          isBookmarked = true;
+        });
+      }
+    } catch (e) {
+      print('Error toggling bookmark: $e');
+      CommonWidget.errorShowSnackBarFor(context, "Error updating bookmark");
+    }
+  }
+
+  // Method to fetch packages for the vendor
+  Future<void> fetchVendorPackages() async {
+    try {
+      // For now, we'll return an empty list by default
+      // In a real implementation, this would call an API to get packages for the vendor
+      // Example: if packages are available, uncomment the code below
+      setState(() {
+        availablePackages = [];
+        
+        // Uncomment this section if packages are available for this vendor
+        /*
+        availablePackages = [
+          {
+            'id': 'package_1',
+            'name': 'Basic Wash Package',
+            'price': 299,
+            'description': 'Exterior wash, tire cleaning, dashboard cleaning'
+          },
+          {
+            'id': 'package_2', 
+            'name': 'Premium Wash Package',
+            'price': 499,
+            'description': 'Basic wash + interior vacuum, seat cleaning, air freshener'
+          },
+          {
+            'id': 'package_3',
+            'name': 'Complete Care Package', 
+            'price': 799,
+            'description': 'Premium wash + waxing, engine cleaning, leather treatment'
+          },
+        ];
+        */
+      });
+    } catch (e) {
+      print('Error fetching packages: $e');
+      setState(() {
+        availablePackages = [];
+      });
     }
   }
 
@@ -292,7 +774,10 @@ class _BookingActivityState extends State<BookingActivity> {
         bookingdata.sId.toString() ?? "",
         bookingdata.price.toString() ?? "",
         dateString,
-        postTime);
+        postTime,
+        packageId: selectedPackageId,
+        packageName: selectedPackageName,
+        packagePrice: selectedPackagePrice);
     var data = BookingPostBean.fromJson(jsonDecode(response.body));
     if (data.status == "success") {
       CommonWidget.successShowSnackBarFor(context, data.message ?? "");
@@ -318,103 +803,354 @@ class _BookingActivityState extends State<BookingActivity> {
     }
   }
 
-  showDetailPopUp(
-    BuildContext context,
-  ) {
-    AlertDialog alert = AlertDialog(
-      contentPadding: EdgeInsets.zero,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      content: Container(
-          height: MediaQuery.of(context).size.height * 0.5,
-          width: MediaQuery.of(context).size.height * 0.9,
-          child: Stack(
+  showDetailPopUp(BuildContext context) {
+    String? selectedTimeSlot;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(25),
+              topRight: Radius.circular(25),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Column(
             children: [
-              Align(
-                alignment: AlignmentDirectional.topEnd,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    padding: EdgeInsets.only(top: 10, right: 10),
-                    child: Image(
-                      image: AssetImage("assets/images/cross.png"),
-                      height: 25,
-                      width: 25,
-                    ),
-                  ),
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+              
+              // Header
               Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                padding: const EdgeInsets.all(20),
+                child: Row(
                   children: [
-                    Container(
-                      margin: EdgeInsets.only(left: 25, right: 25),
-                      width: double.infinity,
+                    Icon(
+                      Icons.access_time,
+                      color: ColorClass.base_color,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        "Select Time Slot", // ?? "",
-                        textAlign: TextAlign.center,
+                        "Select Time Slot",
                         style: TextStyle(
-                            color: ColorClass.base_color,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold),
+                          fontSize: 20,
+                          fontFamily: "Pop600",
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
-                    Container(
-                        margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                        child: Divider(
-                          height: 3,
-                          color: Color(0xffdedede),
-                        )),
-                    Expanded(
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
                       child: Container(
-                        margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-                        child: GridView.builder(
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisSpacing: 5,
-                                    crossAxisSpacing: 5,
-                                    mainAxisExtent: 40),
-                            padding: EdgeInsets.zero,
-                            itemCount: timeSlot.length,
-                            itemBuilder: (context, index) {
-                              var data = timeSlot[index];
-                              return GestureDetector(
-                                  onTap: () {
-                                    timeController.text =
-                                        CommonWidget.convertToLocalTime(
-                                            data.slot.toString());
-                                    postTime =
-                                        CommonWidget.convertToLocalTime24(
-                                            data.slot.toString());
-                                    Navigator.pop(context);
-                                  },
-                                  child: CommonWidget.getTextWidget300(
-                                      CommonWidget.convertToLocalTime(
-                                          data.slot.toString()),
-                                      14));
-                            }),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              
+              // Service info
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: ColorClass.base_color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: ColorClass.base_color.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: ColorClass.base_color,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Service Duration: ${bookingdata.serviceDuration ?? "30"} minutes",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: "Pop500",
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Available time slots for your selected date",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: "Pop400",
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Time slots grid
+              Expanded(
+                child: timeSlot.isEmpty
+                    ? _buildNoTimeSlotsAvailable()
+                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            mainAxisExtent: 60,
+                          ),
+                          itemCount: timeSlot.length,
+                          itemBuilder: (context, index) {
+                            final data = timeSlot[index];
+                            final timeText = CommonWidget.convertToLocalTime(data.slot.toString());
+                            final isSelected = selectedTimeSlot == timeText;
+                            
+                            // Check if time slot is available
+                            final isAvailable = _isTimeSlotAvailable(data);
+                            final isWithinServiceHours = _isWithinServiceHours(data);
+                            final isCapacityAvailable = _isCapacityAvailable(data);
+                            final canBook = isAvailable && isWithinServiceHours && isCapacityAvailable;
+                            
+                            return GestureDetector(
+                              onTap: canBook ? () {
+                                setState(() {
+                                  selectedTimeSlot = timeText;
+                                  timeController.text = timeText;
+                                  postTime = CommonWidget.convertToLocalTime24(data.slot.toString());
+                                });
+                                Navigator.pop(context);
+                              } : null,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                decoration: BoxDecoration(
+                                  color: !canBook 
+                                      ? Colors.grey[100]
+                                      : isSelected 
+                                          ? ColorClass.base_color 
+                                          : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: !canBook
+                                        ? Colors.grey[300]!
+                                        : isSelected 
+                                            ? ColorClass.base_color 
+                                            : Colors.grey[300]!,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  boxShadow: !canBook
+                                      ? []
+                                      : isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: ColorClass.base_color.withOpacity(0.3),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.05),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 1),
+                                              ),
+                                            ],
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        !canBook ? Icons.block : Icons.schedule,
+                                        color: !canBook 
+                                            ? Colors.grey[400]
+                                            : isSelected ? Colors.white : ColorClass.base_color,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        timeText,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontFamily: "Pop600",
+                                          color: !canBook 
+                                              ? Colors.grey[400]
+                                              : isSelected ? Colors.white : Colors.black87,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      if (!canBook) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _getUnavailableReason(data, isWithinServiceHours, isCapacityAvailable),
+                                          style: TextStyle(
+                                            color: Colors.red[400],
+                                            fontFamily: "Pop400",
+                                            fontSize: 8,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+              
+              // Bottom padding
+              const SizedBox(height: 20),
             ],
-          )),
-    );
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
+          ),
+        );
       },
     );
+  }
+
+  Widget _buildNoTimeSlotsAvailable() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.schedule_outlined,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No Time Slots Available",
+            style: TextStyle(
+              fontSize: 18,
+              fontFamily: "Pop600",
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Please try selecting a different date",
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: "Pop400",
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text("Try Another Date"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorClass.base_color,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper methods for time slot validation
+  bool _isTimeSlotAvailable(TimeSlots timeSlot) {
+    return timeSlot.slot != null && timeSlot.slot!.isNotEmpty;
+  }
+
+  bool _isWithinServiceHours(TimeSlots timeSlot) {
+    if (bookingdata.vendorId?.openTime == null || bookingdata.vendorId?.closeTime == null) {
+      return true; // If no service hours defined, allow all slots
+    }
+
+    try {
+      // Parse the time slot (e.g., "09:00-10:00")
+      final slotTime = timeSlot.slot!.split('-')[0]; // Get start time
+      final slotHour = int.parse(slotTime.split(':')[0]);
+      final slotMinute = int.parse(slotTime.split(':')[1]);
+      
+      // Parse vendor open time
+      final openTime = DateTime.parse(bookingdata.vendorId!.openTime!);
+      final openHour = openTime.hour;
+      final openMinute = openTime.minute;
+      
+      // Parse vendor close time
+      final closeTime = DateTime.parse(bookingdata.vendorId!.closeTime!);
+      final closeHour = closeTime.hour;
+      final closeMinute = closeTime.minute;
+      
+      // Convert to minutes for easier comparison
+      final slotMinutes = slotHour * 60 + slotMinute;
+      final openMinutes = openHour * 60 + openMinute;
+      final closeMinutes = closeHour * 60 + closeMinute;
+      
+      return slotMinutes >= openMinutes && slotMinutes < closeMinutes;
+    } catch (e) {
+      return true; // If parsing fails, allow the slot
+    }
+  }
+
+  bool _isCapacityAvailable(TimeSlots timeSlot) {
+    if (timeSlot.capacity == null || timeSlot.booked == null) {
+      return true; // If no capacity info, allow booking
+    }
+    return timeSlot.booked! < timeSlot.capacity!;
+  }
+
+  String _getUnavailableReason(TimeSlots timeSlot, bool isWithinServiceHours, bool isCapacityAvailable) {
+    if (!isWithinServiceHours) {
+      return "Outside hours";
+    }
+    if (!isCapacityAvailable) {
+      return "Full";
+    }
+    return "Unavailable";
   }
 }

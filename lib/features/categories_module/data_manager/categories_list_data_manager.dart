@@ -18,16 +18,20 @@ class CategoriesListDataManager {
 
   getBooksMark(BuildContext context) {
     return apiFuntions.getdatauser(context,
-        "${Constant.getBookmarks}");
+        Constant.getBookmarks);
   }
 
   postBookmark(BuildContext context, String id) {
-    return apiFuntions.postdatauser(context, "${Constant.postBookmark}",
+    return apiFuntions.postdatauser(context, Constant.postBookmark,
         <String, dynamic>{"serviceId": id});
   }
 
   removeBookmark(BuildContext context, String id) {
     return apiFuntions.putdatauser(context, "${Constant.removeBookmark}$id",
         {});
+  }
+
+  getcategory(BuildContext context) {
+    return apiFuntions.getdatauser(context, Constant.category);
   }
 }

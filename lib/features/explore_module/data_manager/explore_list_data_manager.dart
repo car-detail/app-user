@@ -10,15 +10,25 @@ class ExploreListDataManager {
   ExploreListDataManager(this.sharedPreferences);
   ApiFuntions apiFuntions = ApiFuntions();
   getAllServices(BuildContext context) {
-    return apiFuntions.getdatauser(context, "${Constant.getAllService}pageNumber=1&count=12&lat=${sharedPreferences.getString(Constant.lat)}&long=${sharedPreferences.getString(Constant.long
-    )}&maxDistance=30000&sortBy=createdAt");
+    String? lat = sharedPreferences.getString(Constant.lat);
+    String? long = sharedPreferences.getString(Constant.long);
+    
+    String url = "${Constant.getAllService}pageNumber=1&count=12";
+    
+    if (lat != null && long != null && lat != "null" && long != "null") {
+      url += "&lat=$lat&long=$long&maxDistance=30000";
+    }
+    
+    url += "&sortBy=createdAt";
+    
+    return apiFuntions.getdatauser(context, url);
   }
   postBookmark(BuildContext context, String id) {
-    return apiFuntions.postdatauser(context, "${Constant.postBookmark}",
+    return apiFuntions.postdatauser(context, Constant.postBookmark,
         <String, dynamic>{"serviceId": id});
   }
   postPlaceId(BuildContext context, String id) {
-    return apiFuntions.postdatauser(context, "${Constant.postPlaceId}",
+    return apiFuntions.postdatauser(context, Constant.postPlaceId,
         <String, dynamic>{"placeId": id});
   }
 

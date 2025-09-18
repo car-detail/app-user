@@ -10,14 +10,14 @@ class ServicesPostBean {
     status = json['status'];
     message = json['message'];
     statusCode = json['statusCode'];
-    data = json['data'] != null ? new ServicesPostData.fromJson(json['data']) : null;
+    data = json['data'] != null ? ServicesPostData.fromJson(json['data']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['status'] = this.status;
-    data['message'] = this.message;
-    data['statusCode'] = this.statusCode;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['message'] = message;
+    data['statusCode'] = statusCode;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
@@ -57,15 +57,15 @@ class ServicesPostData {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['userId'] = this.userId;
-    data['serviceId'] = this.serviceId;
-    data['isActive'] = this.isActive;
-    data['isDeleted'] = this.isDeleted;
-    data['_id'] = this.sId;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
-    data['__v'] = this.iV;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['userId'] = userId;
+    data['serviceId'] = serviceId;
+    data['isActive'] = isActive;
+    data['isDeleted'] = isDeleted;
+    data['_id'] = sId;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
+    data['__v'] = iV;
     return data;
   }
 }
