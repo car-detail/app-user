@@ -82,9 +82,9 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   // Services Section
                   _buildServicesSection(context),
                   const SizedBox(height: 16),
-                  // Packages Section
+                  // Packages Section - only show if vendor has packages
                   _buildPackagesSection(context),
-                  const SizedBox(height: 16),
+                  if (_hasVendorPackages()) const SizedBox(height: 16),
                   // Gallery Section
                   if (detailImages.isNotEmpty) _buildGallerySection(context),
                   const SizedBox(height: 16),
@@ -225,6 +225,8 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       ),
                     ],
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (servicesDetailsData.location?.name != null) ...[
                   const SizedBox(height: 4),
@@ -495,23 +497,31 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               children: [
                 Icon(Icons.star, color: Colors.amber[600], size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  "${servicesDetailsData.averageRating.toString()} Rating",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: "Pop500",
-                    color: Colors.black87,
+                Expanded(
+                  child: Text(
+                    "${servicesDetailsData.averageRating.toString()} Rating",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: "Pop500",
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Icon(Icons.people, color: Colors.grey[600], size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  "${servicesDetailsData.totalReviews.toString()} Reviews",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: "Pop500",
-                    color: Colors.grey[600],
+                Expanded(
+                  child: Text(
+                    "${servicesDetailsData.totalReviews.toString()} Reviews",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: "Pop500",
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -523,12 +533,16 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               children: [
                 Icon(Icons.attach_money, color: Colors.green[600], size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  "Starting from \$${servicesDetailsData.price}",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: "Pop500",
-                    color: Colors.green[600],
+                Expanded(
+                  child: Text(
+                    "Starting from \$${servicesDetailsData.price}",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: "Pop500",
+                      color: Colors.green[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -883,19 +897,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.message,
-                      color: Colors.blue[600],
-                      size: 20,
-                    ),
-                  ),
+                  // Removed message/chat icon per requirement
                 ],
               ),
             ],
@@ -1022,12 +1024,16 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                     children: [
                       Icon(Icons.people, color: Colors.orange[600], size: 16),
                       const SizedBox(width: 8),
-                      Text(
-                        "Capacity: ${servicesDetailsData.timeSlotCapacity} customers per slot",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontFamily: "Pop400",
-                          color: Colors.orange[600],
+                      Expanded(
+                        child: Text(
+                          "Capacity: ${servicesDetailsData.timeSlotCapacity} customers per slot",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: "Pop400",
+                            color: Colors.orange[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -1051,6 +1057,8 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                         color: Colors.grey[700],
                         height: 1.4,
                       ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -1155,7 +1163,20 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
+  // Helper method to check if vendor has packages
+  bool _hasVendorPackages() {
+    // Check if the vendor has created any packages
+    return servicesDetailsData.packages.isNotEmpty;
+  }
+
   Widget _buildPackagesSection(BuildContext context) {
+    // Check if vendor has packages
+    bool hasPackages = _hasVendorPackages();
+    
+    if (!hasPackages) {
+      return const SizedBox.shrink(); // Hide packages section if no packages
+    }
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1203,75 +1224,175 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             ],
           ),
           const SizedBox(height: 16),
-          // Package Cards
-          _buildPackageCard(
-            title: "Basic Car Wash",
-            description: "Exterior wash with soap and water",
-            price: "₹299",
-            duration: "30 mins",
-            features: ["Exterior wash", "Tire cleaning", "Window cleaning"],
-            color: Colors.blue[600]!,
-          ),
-          const SizedBox(height: 12),
-          _buildPackageCard(
-            title: "Premium Detailing",
-            description: "Complete interior and exterior detailing",
-            price: "₹899",
-            duration: "2 hours",
-            features: ["Interior cleaning", "Waxing", "Dashboard polish", "Vacuum"],
-            color: Colors.orange[600]!,
-          ),
-          const SizedBox(height: 12),
-          _buildPackageCard(
-            title: "Full Service Package",
-            description: "Comprehensive car care service",
-            price: "₹1,499",
-            duration: "3 hours",
-            features: ["Engine cleaning", "Interior detailing", "Exterior waxing", "Tire shine", "Air freshener"],
-            color: Colors.green[600]!,
-          ),
-          const SizedBox(height: 16),
-          // View All Packages Button
-          GestureDetector(
-            onTap: () {
-              // Navigate to packages list
-              CommonWidget.navigateToScreen(
-                context,
-                AllPackagesScreen(
-                  vendorId: servicesDetailsData.vendorId?.sId ?? '',
-                  vendorName: servicesDetailsData.vendorId?.displayName ?? 'Vendor',
+          // Show actual vendor packages
+          if (servicesDetailsData.packages.isNotEmpty) ...[
+            // Display actual packages from the vendor
+            ...servicesDetailsData.packages.map((package) => _buildVendorPackageCard(package)),
+            const SizedBox(height: 16),
+            // View All Packages Button
+            GestureDetector(
+              onTap: () {
+                CommonWidget.navigateToScreen(
+                  context,
+                  AllPackagesScreen(
+                    vendorId: servicesDetailsData.vendorId?.sId ?? '',
+                    vendorName: servicesDetailsData.vendorId?.displayName ?? 'Vendor',
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.purple.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      "View All Packages",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: "Pop500",
+                        color: Colors.purple[600],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.arrow_forward_ios, color: Colors.purple[600], size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            // Show message when no packages are available
+            Container(
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.grey[300]!,
                   width: 1,
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
-                  const SizedBox(width: 8),
+                  Icon(Icons.inventory_2_outlined, color: Colors.grey[400], size: 48),
+                  const SizedBox(height: 12),
                   Text(
-                    "View All Packages",
+                    "No Service Packages Available",
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: "Pop500",
-                      color: Colors.purple[600],
+                      color: Colors.grey[600],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_ios, color: Colors.purple[600], size: 16),
+                  const SizedBox(height: 4),
+                  Text(
+                    "This vendor hasn't created any service packages yet.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: "Pop400",
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVendorPackageCard(Map<String, dynamic> package) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.purple.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.purple.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      package['title'] ?? 'Service Package',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: "Pop600",
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      package['description'] ?? 'Package description',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: "Pop400",
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    package['price'] != null ? "₹${package['price']}" : "Price TBD",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontFamily: "Pop600",
+                      color: Colors.purple[600],
+                    ),
+                  ),
+                  Text(
+                    package['duration'] ?? "Duration TBD",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: "Pop400",
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+          if (package['features'] != null && package['features'] is List) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: (package['features'] as List).map((feature) => _buildFeatureChip(feature.toString(), Colors.purple[600]!)).toList(),
+            ),
+          ],
         ],
       ),
     );
@@ -1832,37 +1953,77 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   }
 
   getServicesDetails(BuildContext context) async {
-    var response = await dataManager!
-        .getServiceDetails(context, widget.servicesData);
-    
-    // Parse the response as a list of services (vendor endpoint returns array)
-    var jsonData = jsonDecode(response.body);
-    
-    if (jsonData['status'] == "success" && jsonData['data'] != null) {
-      // Get all services from the array
-      var servicesList = jsonData['data'] as List;
-      if (servicesList.isNotEmpty) {
-        // Use the first service for vendor details, but store all services
-        var firstService = servicesList[0];
-        
-        setState(() {
-          // Create ServicesDetailsData from the first service
-          servicesDetailsData = ServicesDetailsData.fromJson(firstService);
-          // Store all services for this vendor
-          servicesDetailsData.services.clear();
-          servicesDetailsData.services.addAll(servicesList.map((service) => Services.fromJson(service)).toList());
-          detailImages.clear();
-          if (servicesDetailsData.detailImages != null) {
-            detailImages.addAll(servicesDetailsData.detailImages!);
-          }
-          // Check if this service is bookmarked
-          isBookmarked = servicesDetailsData.isBookmarked ?? false;
-        });
-      } else {
-        CommonWidget.errorShowSnackBarFor(context, "No services found for this vendor");
+    try {
+      print("🔍 Getting service details for ID: ${widget.servicesData}");
+      
+      var response = await dataManager!
+          .getServiceDetails(context, widget.servicesData);
+      
+      print("🔍 Service Details API Response: ${response.statusCode} - ${response.body}");
+      
+      // Check if response is valid
+      if (response.statusCode != 200) {
+        print("❌ API returned error status: ${response.statusCode}");
+        CommonWidget.errorShowSnackBarFor(context, "API returned error status: ${response.statusCode}");
+        return;
       }
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, jsonData['message'] ?? "Failed to load service details");
+      
+      var jsonData = jsonDecode(response.body);
+      
+      if (jsonData['status'] == "success" && jsonData['data'] != null) {
+        var data = jsonData['data'];
+        
+        // Check if data is a list (vendor services) or single object (service details)
+        if (data is List) {
+          // This is a vendor services response (array of services)
+          if (data.isNotEmpty) {
+            // Use the first service for display, but store all services
+            var firstService = data[0];
+            
+            setState(() {
+              servicesDetailsData = ServicesDetailsData.fromJson(firstService);
+              servicesDetailsData.services.clear();
+              servicesDetailsData.services.addAll(data.map((service) => Services.fromJson(service)).toList());
+              detailImages.clear();
+              if (servicesDetailsData.detailImages != null) {
+                detailImages.addAll(servicesDetailsData.detailImages!);
+              }
+              isBookmarked = servicesDetailsData.isBookmarked ?? false;
+            });
+            
+            print("✅ Vendor services loaded successfully (${data.length} services)");
+          } else {
+            CommonWidget.errorShowSnackBarFor(context, "No services found for this vendor");
+            return;
+          }
+        } else {
+          // This is a single service details response
+          setState(() {
+            servicesDetailsData = ServicesDetailsData.fromJson(data);
+            servicesDetailsData.services.clear();
+            servicesDetailsData.services.add(Services.fromJson(data));
+            detailImages.clear();
+            if (servicesDetailsData.detailImages != null) {
+              detailImages.addAll(servicesDetailsData.detailImages!);
+            }
+            isBookmarked = servicesDetailsData.isBookmarked ?? false;
+          });
+          
+          print("✅ Service details loaded successfully");
+        }
+        
+        print("🔍 Service Title: ${servicesDetailsData.serviceTitle}");
+        print("🔍 Category Name: ${servicesDetailsData.categoryName}");
+        print("🔍 Price: ${servicesDetailsData.price}");
+        print("🔍 Rating: ${servicesDetailsData.averageRating}");
+        print("🔍 Reviews: ${servicesDetailsData.totalReviews}");
+      } else {
+        print("❌ API returned error: ${jsonData['message']}");
+        CommonWidget.errorShowSnackBarFor(context, jsonData['message'] ?? "Failed to load service details");
+      }
+    } catch (e) {
+      print("❌ Error in getServicesDetails: $e");
+      CommonWidget.errorShowSnackBarFor(context, "Error loading service details: ${e.toString()}");
     }
   }
 

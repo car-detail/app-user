@@ -15,7 +15,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../Common/Color.dart';
 import '../../categories_module/ui/sevice_list_screen.dart';
 import '../../home_module/model/services_model_data.dart';
-import '../../specialists_module/ui/specialists_activity.dart';
 import '../data_manager/explore_list_data_manager.dart';
 import '../model/location_list_model_bean.dart';
 
@@ -30,6 +29,12 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
   List<ServicesData> servicesData = [];
+  String selectedCategory = 'All';
+  List<String> categories = ['All']; // Will be loaded dynamically from API
+  String searchTerm = '';
+  final TextEditingController _searchController = TextEditingController();
+  int googleVendorCount = 0;
+  int appVendorCount = 0;
   CameraPosition _kGooglePlex = const CameraPosition(
     target: LatLng(30.707600, 76.715126),
     zoom: 14.4746,
@@ -61,7 +66,9 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
     loadCustomMarker();
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = ExploreListDataManager(sharedPreferences!);
-    getServicesNew(context);
+    
+    // Load both app vendors and Google Places vendors
+    await loadAllVendors();
     if (sharedPreferences!.getString(Constant.lat) != "" &&
         sharedPreferences!.getString(Constant.lat) != null &&
         sharedPreferences!.getString(Constant.lat) != "0.0") {
@@ -111,6 +118,161 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
         await controller
             .animateCamera(CameraUpdate.newCameraPosition(_kGooglePlex));
       }
+    }
+  }
+
+  Future<void> loadAllVendors() async {
+    // Load categories first, then vendors
+    await loadCategories();
+    await getVendorsWithCategory(selectedCategory);
+  }
+
+  Future<void> loadCategories() async {
+    try {
+      print('🔄 Loading categories from API...');
+      var response = await dataManager!.getCategories(context);
+      print('📋 Categories API response status: ${response.statusCode}');
+      print('📋 Categories API response body: ${response.body}');
+      
+      var data = jsonDecode(response.body);
+      
+      if (data['status'] == 'success' && data['data'] != null) {
+        setState(() {
+          categories = ['All']; // Always include 'All' option
+          for (var category in data['data']) {
+            if (category['categoryTitle'] != null && category['isActive'] == true) {
+              categories.add(category['categoryTitle']);
+              print('✅ Added category: ${category['categoryTitle']}');
+            }
+          }
+        });
+        print('📋 Final categories list: $categories');
+      } else {
+        print('⚠️ Categories API failed, using defaults');
+        setState(() {
+          categories = ['All', 'Car Wash', 'Car Repair', 'Car Service', 'Tire Service', 'Electrical Service'];
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading categories: $e');
+      // Keep default categories if API fails
+      setState(() {
+        categories = ['All', 'Car Wash', 'Car Repair', 'Car Service', 'Tire Service', 'Electrical Service'];
+      });
+    }
+  }
+
+  Future<void> getVendorsWithCategory(String category) async {
+    try {
+      print('🔄 Loading vendors for category: $category');
+      ApiFuntions.showLoaderDialog(context);
+      
+      var response = await dataManager!.getAllVendors(
+        context, 
+        category: category,
+        searchTerm: searchTerm.isNotEmpty ? searchTerm : null,
+      );
+      var data = ServicesModelData.fromJson(jsonDecode(response.body));
+      
+      print('📊 Vendors API response status: ${data.status}');
+      print('📊 Vendors count: ${data.data?.length ?? 0}');
+      
+      if (data.status == "success") {
+        Navigator.pop(context);
+        setState(() {
+          servicesData.clear();
+          servicesData.addAll(data.data!);
+          markers.clear();
+          
+          print('🗺️ Adding markers for ${servicesData.length} vendors');
+          
+          // Debug: Print vendor data
+          for (int i = 0; i < servicesData.length && i < 3; i++) {
+            var vendor = servicesData[i];
+            print('🔍 Vendor $i: ${vendor.displayName}, isAppVendor: ${vendor.isAppVendor}, isShopOpen: ${vendor.isShopOpen}');
+          }
+          
+          // Reset vendor counts
+          googleVendorCount = 0;
+          appVendorCount = 0;
+          
+          // Add current location marker
+          markers.add(
+            Marker(
+              markerId: const MarkerId("Current Location"),
+              position: _current,
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            ),
+          );
+          
+          // Add vendor markers with different colors for app vs Google vendors
+          for (var vendor in servicesData) {
+            double lat = vendor.location?.coordinates?.lat ?? 0.0;
+            double lng = vendor.location?.coordinates?.long ?? 0.0;
+            String name = vendor.displayName ?? "";
+            
+            // Determine vendor source: App vs Google Places
+            final vendorCategory = (vendor.category ?? '').toLowerCase();
+            final isAppVendor = (vendor.isAppVendor == true) || (!vendorCategory.contains('google'));
+            final isGoogleVendor = !isAppVendor;
+
+            // Check if vendor is offline (only for app vendors)
+            bool isOffline = isAppVendor && !(vendor.isShopOpen ?? true);
+            
+            // Count vendors by type
+            if (isGoogleVendor) {
+              googleVendorCount++;
+            } else {
+              appVendorCount++;
+            }
+            
+            print('📍 Vendor: $name, isGoogle: $isGoogleVendor, isAppVendor: ${vendor.isAppVendor}, isShopOpen: ${vendor.isShopOpen}, isOffline: $isOffline, category: ${vendor.category}');
+            print('🔍 Raw vendor data: ${vendor.toJson()}');
+            
+            markers.add(
+              Marker(
+                markerId: MarkerId(name),
+                position: LatLng(lat, lng),
+                onTap: () {
+                  // Prevent navigation for offline vendors
+                  if (isOffline) {
+                    CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline");
+                    return;
+                  }
+                  
+                  if (vendor.services.isNotEmpty) {
+                    CommonWidget.navigateToScreen(context,
+                        SeviceListScreen(vendor.services));
+                  } else {
+                    _showBottomSheet(name, lat, lng, vendor.location?.name ?? "",
+                        vendor.sId ?? "", vendor.distance ?? 0.0);
+                  }
+                },
+                icon: isGoogleVendor 
+                    ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed) // Red for Google vendors
+                    : (carIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure)), // Custom blue icon for app vendors
+                infoWindow: InfoWindow(
+                  title: name,
+                  snippet: isGoogleVendor 
+                      ? "Google Places" 
+                      : "Vendor App",
+                ),
+              ),
+            );
+          }
+          
+          print('🗺️ Total markers added: ${markers.length}');
+          print('📊 Google vendors: $googleVendorCount, App vendors: $appVendorCount');
+        });
+      } else {
+        Navigator.pop(context);
+        print('❌ Vendors API failed: ${data.message}');
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      print('❌ Error loading vendors: $e');
+      CommonWidget.errorShowSnackBarFor(context, "Error: $e");
     }
   }
 
@@ -289,6 +451,104 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
               ],
             ),
           ),
+          // Search Field
+          Container(
+            margin: const EdgeInsets.all(5),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search vendors...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchTerm.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            searchTerm = '';
+                          });
+                          getVendorsWithCategory(selectedCategory);
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide(color: ColorClass.base_color),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchTerm = value;
+                });
+              },
+              onSubmitted: (value) {
+                getVendorsWithCategory(selectedCategory);
+              },
+            ),
+          ),
+          // Category Filter
+          Container(
+            margin: const EdgeInsets.all(5),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        bool isSelected = selectedCategory == categories[index];
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedCategory = categories[index];
+                              });
+                              getVendorsWithCategory(selectedCategory);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? ColorClass.base_color : Colors.white,
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                  color: isSelected ? ColorClass.base_color : Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                categories[index],
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : Colors.grey[700],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                // Refresh categories button
+                IconButton(
+                  onPressed: () async {
+                    await loadCategories();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh Categories',
+                ),
+              ],
+            ),
+          ),
           if (!isList)
             Expanded(
               child: GoogleMap(
@@ -315,6 +575,59 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
         },*/
                   ),
             ),
+          // Vendor count and legend
+          if (!isList)
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    "${servicesData.length} vendors found",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Google Places: $googleVendorCount | Vendors: $appVendorCount",
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text("Google Places", style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                      const SizedBox(width: 12),
+                      Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text("Vendors", style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           if (isList)
             Expanded(
                 child: Container(
@@ -324,30 +637,67 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                   padding: EdgeInsets.zero,
                   itemCount: servicesData.length,
                   itemBuilder: (context, index) {
+                    var vendor = servicesData[index];
+                    bool isOffline = (vendor.isAppVendor ?? false) && !(vendor.isShopOpen ?? true);
+                    
                     return GestureDetector(
                       onTap: () {
-                        if (servicesData[index].services.isNotEmpty) {
+                        // Prevent navigation for offline vendors
+                        if (isOffline) {
+                          CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline");
+                          return;
+                        }
+                        
+                        if (vendor.services.isNotEmpty) {
                           CommonWidget.navigateToScreen(context,
-                              SeviceListScreen(servicesData[index].services));
+                              SeviceListScreen(vendor.services));
                         } else {
                           _showBottomSheet(
-                              servicesData[index].displayName ?? "",
-                              servicesData[index].location?.coordinates?.lat ?? 0.0,
-                              servicesData[index].location?.coordinates?.long ?? 0.0,
-                              servicesData[index].location?.name ?? "",
-                              servicesData[index].sId ?? "", servicesData[index].distance??0.0);
+                              vendor.displayName ?? "",
+                              vendor.location?.coordinates?.lat ?? 0.0,
+                              vendor.location?.coordinates?.long ?? 0.0,
+                              vendor.location?.name ?? "",
+                              vendor.sId ?? "", vendor.distance??0.0);
                         }
                       },
                       child: Container(
                           margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: isOffline ? Colors.grey[100] : Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
+                          ),
+                          padding: const EdgeInsets.all(12),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CommonWidget.getTextWidget600(
-                                  servicesData[index].displayName ?? "", 18,
-                                  textAlign: TextAlign.start,
-                                  color: ColorClass.base_color),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: CommonWidget.getTextWidget600(
+                                        vendor.displayName ?? "", 18,
+                                        textAlign: TextAlign.start,
+                                        color: isOffline ? (Colors.grey[600] ?? Colors.grey) : ColorClass.base_color),
+                                  ),
+                                  if (isOffline)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        "OFFLINE",
+                                        style: TextStyle(
+                                          color: Colors.red[700],
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                               const SizedBox(
                                 height: 0,
                               ),
@@ -355,37 +705,60 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                                 children: [
                                   Expanded(
                                     child: CommonWidget.getTextWidget500(
-                                        servicesData[index].location?.name ??
-                                            "",
+                                        vendor.location?.name ?? "",
                                         textAlign: TextAlign.start,
-                                        color: ColorClass.base_color),
+                                        color: isOffline ? Colors.grey[500]! : ColorClass.base_color),
                                   ),
                                   CommonWidget.getTextWidget500(
-                                    "${((servicesData[index].distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",color: Colors.grey[500]!
+                                    "${((vendor.distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",
+                                    color: isOffline ? Colors.grey[400]! : Colors.grey[500]!
                                   )
                                 ],
                               ),
                               const SizedBox(
                                 height: 10,
                               ),
-                              Image.network(
-                                servicesData[index].displayPicture ?? "",
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (
-                                  BuildContext context,
-                                  Object error,
-                                  StackTrace? stackTrace,
-                                ) {
-                                  return Image.asset(
-                                    CommonWidget.getImagePath("loading.png"),
-                                    width: double.infinity,
-                                    // Adjust the width as needed
+                              Stack(
+                                children: [
+                                  Image.network(
+                                    vendor.displayPicture ?? "",
                                     height: 200,
-                                    fit: BoxFit.fill,
-                                  );
-                                },
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    color: isOffline ? Colors.grey : null,
+                                    colorBlendMode: isOffline ? BlendMode.saturation : null,
+                                    errorBuilder: (
+                                      BuildContext context,
+                                      Object error,
+                                      StackTrace? stackTrace,
+                                    ) {
+                                      return Image.asset(
+                                        CommonWidget.getImagePath("loading.png"),
+                                        width: double.infinity,
+                                        height: 200,
+                                        fit: BoxFit.fill,
+                                        color: isOffline ? Colors.grey : null,
+                                        colorBlendMode: isOffline ? BlendMode.saturation : null,
+                                      );
+                                    },
+                                  ),
+                                  if (isOffline)
+                                    Positioned.fill(
+                                      child: Container(
+                                        color: Colors.black.withOpacity(0.3),
+                                        child: const Center(
+                                          child: Text(
+                                            "OFFLINE",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(
                                 height: 20,
@@ -431,7 +804,15 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: Text("Addesss : $address"),),
+                  Expanded(
+                    child: Text(
+                      "Address: $address",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   CommonWidget.getTextWidget500(
                       "${((distance ?? 0.0) / 1609.34).toStringAsFixed(2)} miles",color: Colors.grey[500]!
                   )

@@ -183,11 +183,15 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
     final service = bookmark.serviceId;
     if (service == null) return const SizedBox.shrink();
 
+    // Check if vendor is offline (only for app vendors)
+    final isOffline = (service.isAppVendor ?? false) && !(service.isShopOpen ?? true);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isOffline ? Colors.grey[100] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -200,6 +204,12 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            // Prevent navigation for offline vendors
+            if (isOffline) {
+              _showOfflineMessage(context);
+              return;
+            }
+            
             CommonWidget.navigateToScreen(
               context,
               SpecialistsActivity(service.sId ?? ""),
@@ -239,15 +249,39 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        service.displayName ?? "Service",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: "Pop600",
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              service.displayName ?? "Service",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Pop600",
+                                color: isOffline ? Colors.grey[600] : Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // OFFLINE badge
+                          if (isOffline)
+                            Container(
+                              margin: EdgeInsets.only(left: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'OFFLINE',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       if (service.services.isNotEmpty) ...[
@@ -424,5 +458,9 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
     } else {
       CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
     }
+  }
+
+  void _showOfflineMessage(BuildContext context) {
+    CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline and not accepting bookings");
   }
 }

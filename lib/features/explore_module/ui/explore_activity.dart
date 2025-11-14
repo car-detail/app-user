@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,13 +33,14 @@ class _ExploreActivityState extends State<ExploreActivity> {
   HomeDataManager? dataManager;
   SharedPreferences? sharedPreferences;
 
-  final List<String> filterOptions = ["All", "Car Wash", "Car Repair", "Car Service", "Auto Parts"];
+  List<String> filterOptions = ["All"]; // will be loaded dynamically
   
   // Map related variables
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   LatLng? _currentLocation;
   LatLng _defaultLocation = LatLng(30.7200094, 76.7080831); // Chandigarh
+  BitmapDescriptor? _vendorIcon;
   
   // Zoom and radius tracking
   double _currentZoom = 12.0;
@@ -60,7 +62,42 @@ class _ExploreActivityState extends State<ExploreActivity> {
   Future<void> _initializeData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = HomeDataManager(sharedPreferences!);
+    await _loadIcons();
+    await _loadCategories();
     await _loadVendors();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final response = await dataManager!.getcategory(context);
+      final body = await response.body;
+      final data = body is String ? body : body.toString();
+      final decoded = jsonDecode(data);
+      if (decoded['status'] == 'success' && decoded['data'] != null) {
+        final List<dynamic> cats = decoded['data'];
+        setState(() {
+          filterOptions = ["All"];
+          for (final c in cats) {
+            if (c is Map && c['categoryTitle'] != null && (c['isActive'] == true || c['isActive'] == null)) {
+              filterOptions.add(c['categoryTitle']);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Keep default 'All' if categories fail
+    }
+  }
+
+  Future<void> _loadIcons() async {
+    try {
+      _vendorIcon = await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(48, 48)),
+        'assets/images/car_loction.png',
+      );
+    } catch (_) {
+      _vendorIcon = null;
+    }
   }
 
   Future<void> _loadVendors() async {
@@ -91,30 +128,43 @@ class _ExploreActivityState extends State<ExploreActivity> {
     }
   }
 
-  void _filterVendors() {
+  Future<void> _filterVendors() async {
     print('Filtering vendors with query: "$searchQuery" and filter: "$selectedFilter"');
-    print('Total vendors before filtering: ${allVendors.length}');
-    
-    setState(() {
-      filteredVendors = allVendors.where((vendor) {
-        final matchesSearch = searchQuery.isEmpty || 
-            vendor.name.toLowerCase().contains(searchQuery.toLowerCase());
-        
-        final matchesFilter = selectedFilter == "All" || 
-            _isVendorMatchingFilter(vendor, selectedFilter);
-        
-        if (selectedFilter != "All") {
-          print('Vendor: ${vendor.name}, Services: ${vendor.services}, Category: ${vendor.category}, Matches: $matchesFilter');
-        }
-        
-        return matchesSearch && matchesFilter;
-      }).toList();
-    });
-    
-    print('Filtered vendors count: ${filteredVendors.length}');
-    
-    // Update markers when filtering
-    _createMarkers();
+    try {
+      List<MixedVendorData> vendors = [];
+
+      final lat = _currentLocation?.latitude ?? _defaultLocation.latitude;
+      final lng = _currentLocation?.longitude ?? _defaultLocation.longitude;
+
+      if (selectedFilter != "All") {
+        vendors = await dataManager!.getMixedVendorsByCategoryWithRadius(
+          context,
+          selectedFilter,
+          lat,
+          lng,
+          _lastFetchedRadius,
+        );
+      } else if (searchQuery.isNotEmpty) {
+        vendors = await dataManager!.searchVendors(context, searchQuery);
+      } else {
+        vendors = await dataManager!.getMixedVendorsWithRadius(
+          context,
+          lat,
+          lng,
+          _lastFetchedRadius,
+        );
+      }
+
+      setState(() {
+        allVendors = vendors;
+        filteredVendors = List.from(allVendors);
+      });
+
+      _createMarkers();
+      print('Filtered vendors count (from API): ${filteredVendors.length}');
+    } catch (e) {
+      print('Error filtering vendors: $e');
+    }
   }
 
   bool _isVendorMatchingFilter(MixedVendorData vendor, String filter) {
@@ -189,24 +239,34 @@ class _ExploreActivityState extends State<ExploreActivity> {
     for (int i = 0; i < filteredVendors.length; i++) {
       final vendor = filteredVendors[i];
       
+      // Check if vendor is offline (only for app vendors)
+      bool isOffline = vendor.isAppVendor && !vendor.isOpen;
+      
       _markers.add(
         Marker(
           markerId: MarkerId(vendor.id),
           position: LatLng(vendor.latitude, vendor.longitude),
           infoWindow: InfoWindow(
             title: vendor.name,
-            snippet: vendor.address ?? "Location not available",
+            snippet: vendor.isAppVendor ? "Vendor App" : "Google Places",
           ),
           onTap: () {
+            // Prevent navigation for offline vendors
+            if (isOffline) {
+              _showOfflineMessage();
+              return;
+            }
+            
             if (vendor.isAppVendor) {
               _navigateToBooking(vendor);
             } else {
               _showGoogleVendorBottomSheet(vendor);
             }
           },
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            vendor.isAppVendor ? BitmapDescriptor.hueBlue : BitmapDescriptor.hueRed,
-          ),
+          // Pins: Custom blue for Vendor App, Red for Google Places
+          icon: vendor.isAppVendor
+              ? (_vendorIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure))
+              : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         ),
       );
     }
@@ -652,7 +712,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      "App Vendors",
+                      "Vendors",
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: "Pop400",
@@ -715,12 +775,14 @@ class _ExploreActivityState extends State<ExploreActivity> {
 
   Widget _buildVendorCard(MixedVendorData vendor) {
     final isAppVendor = vendor.isAppVendor;
+    final isOffline = isAppVendor && !vendor.isOpen;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isOffline ? Colors.grey[100] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -734,6 +796,12 @@ class _ExploreActivityState extends State<ExploreActivity> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            // Prevent navigation for offline vendors
+            if (isOffline) {
+              _showOfflineMessage();
+              return;
+            }
+            
             if (isAppVendor) {
               _navigateToBooking(vendor);
             } else {
@@ -783,16 +851,38 @@ class _ExploreActivityState extends State<ExploreActivity> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Vendor Name
-                      Text(
-                        vendor.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: "Pop600",
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      // Vendor Name and Offline Badge
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              vendor.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Pop600",
+                                color: isOffline ? Colors.grey[600] : Colors.black87,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isOffline)
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "OFFLINE",
+                                style: TextStyle(
+                                  color: Colors.red[700],
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       // Location
@@ -801,7 +891,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: "Pop400",
-                          color: Colors.grey[600],
+                          color: isOffline ? Colors.grey[500] : Colors.grey[600],
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -820,7 +910,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontFamily: "Pop400",
-                                color: Colors.grey[600],
+                                color: isOffline ? Colors.grey[500] : Colors.grey[600],
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -829,17 +919,27 @@ class _ExploreActivityState extends State<ExploreActivity> {
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: isAppVendor 
-                                  ? ColorClass.base_color.withOpacity(0.1)
-                                  : Colors.blue.withOpacity(0.1),
+                              color: isOffline
+                                  ? Colors.red.withOpacity(0.1)
+                                  : isAppVendor 
+                                      ? ColorClass.base_color.withOpacity(0.1)
+                                      : Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              isAppVendor ? "App Vendor" : "Google Places",
+                              isOffline 
+                                  ? "Offline" 
+                                  : isAppVendor 
+                                      ? "App Vendor" 
+                                      : "Google Places",
                               style: TextStyle(
                                 fontSize: 10,
                                 fontFamily: "Pop500",
-                                color: isAppVendor ? ColorClass.base_color : Colors.blue,
+                                color: isOffline
+                                    ? Colors.red
+                                    : isAppVendor 
+                                        ? ColorClass.base_color 
+                                        : Colors.blue,
                               ),
                             ),
                           ),
@@ -850,9 +950,17 @@ class _ExploreActivityState extends State<ExploreActivity> {
                 ),
                 // Action Icon
                 Icon(
-                  isAppVendor ? Icons.book_online : Icons.info_outline,
+                  isOffline 
+                      ? Icons.block 
+                      : isAppVendor 
+                          ? Icons.book_online 
+                          : Icons.info_outline,
                   size: 20,
-                  color: isAppVendor ? ColorClass.base_color : Colors.blue,
+                  color: isOffline 
+                      ? Colors.red 
+                      : isAppVendor 
+                          ? ColorClass.base_color 
+                          : Colors.blue,
                 ),
               ],
             ),
@@ -1100,5 +1208,15 @@ class _ExploreActivityState extends State<ExploreActivity> {
     // You can implement phone calling functionality here
     // For now, just show a message
     print("Calling vendor: ${vendor.name}");
+  }
+
+  void _showOfflineMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("This vendor is currently offline"),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }

@@ -643,9 +643,13 @@ class _HomeActivityState extends State<HomeActivity> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                SizedBox(
-                          height: 120,
+                Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: SizedBox(
+                            height: 120,
                   child: ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      clipBehavior: Clip.none,
                       scrollDirection: Axis.horizontal,
                       itemCount: categoryData.length,
                       itemBuilder: (context, index) {
@@ -705,6 +709,7 @@ class _HomeActivityState extends State<HomeActivity> {
                             },
                           ),
                         ),
+                      ),
                         const SizedBox(height: 24),
                         // Quick Actions
                         const Text(
@@ -1100,7 +1105,7 @@ class _HomeActivityState extends State<HomeActivity> {
               topRight: Radius.circular(16),
             ),
                                       child: Container(
-              height: 120,
+              height: 110,
               width: double.infinity,
               color: Colors.grey[200],
               child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty

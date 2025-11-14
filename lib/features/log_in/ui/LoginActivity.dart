@@ -159,7 +159,7 @@ class _LoginActivityState extends State<LoginActivity> {
     if (data.status == "success") {
       //loginDataManager!.setDataInShared(data.data!);
       //CommonWidget.successShowSnackBarFor(context, data.message.toString());
-      CommonWidget.navigateToScreen(context, OTPScreenActivity(data, mobileController.text));
+      CommonWidget.navigateToScreen(context, OTPScreenActivity(mobileController.text));
     } else {
       CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
     }

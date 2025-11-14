@@ -123,11 +123,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Widget _buildVendorCard(MixedVendorData vendor) {
+    // Check if vendor is offline (only for app vendors)
+    final isOffline = vendor.isAppVendor && !vendor.isOpen;
+    
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isOffline ? Colors.grey[100] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -172,15 +176,39 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  vendor.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontFamily: "Pop600",
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        vendor.name,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: "Pop600",
+                          color: isOffline ? Colors.grey[600] : Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // OFFLINE badge
+                    if (isOffline)
+                      Container(
+                        margin: EdgeInsets.only(left: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'OFFLINE',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.red[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -227,6 +255,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
+                          // Prevent navigation for offline vendors
+                          if (isOffline) {
+                            _showOfflineMessage(context);
+                            return;
+                          }
+                          
                           if (vendor.isAppVendor) {
                             CommonWidget.navigateToScreen(
                               context,
@@ -325,5 +359,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       context, 
       vendor.isBookmarked ? "Added to bookmarks" : "Removed from bookmarks"
     );
+  }
+
+  void _showOfflineMessage(BuildContext context) {
+    CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline and not accepting bookings");
   }
 }

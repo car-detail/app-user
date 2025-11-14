@@ -56,6 +56,7 @@ class ServicesDetailsData {
   num? totalReviews;
   List<Offers> offers = [];
   List<Services> services = [];
+  List<Map<String, dynamic>> packages = []; // Vendor packages
   String? id;
 
   ServicesDetailsData(
@@ -86,60 +87,103 @@ class ServicesDetailsData {
         this.totalReviews,
         offers,
         services,
+        packages,
         this.id});
 
   ServicesDetailsData.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    serviceTitle = json['serviceTitle'];
-    about = json['about'];
-    timeSlotCapacity = json['timeSlotCapacity'];
-    price = json['price'];
-    serviceDuration = json['serviceDuration'];
-    categoryName = json['categoryName'];
-    categoryId = json['categoryId'];
-    detailImages = json['detailImages']?.cast<String>();
-    coverImage = json['coverImage'] ?? json['serviceImage'];
-    mobile = json['mobile'];
-    location = json['location'] != null
-        ? Location.fromJson(json['location'])
-        : null;
-    createdBy = json['createdBy'];
-    vendorId = json['vendorId'] != null
-        ? VendorId.fromJson(json['vendorId'])
-        : null;
-    promotionPlanPrice = json['promotionPlanPrice'];
-    promotionSerialNumber = json['promotionSerialNumber'];
-    isActive = json['isActive'];
-    isDeleted = json['isDeleted'];
-    if (json['timeSlots'] != null) {
-      timeSlots = <TimeSlots>[];
-      json['timeSlots'].forEach((v) {
-        timeSlots!.add(TimeSlots.fromJson(v));
-      });
+    try {
+      sId = json['_id']?.toString();
+      serviceTitle = json['serviceTitle']?.toString();
+      about = json['about']?.toString();
+      timeSlotCapacity = json['timeSlotCapacity']?.toString();
+      price = json['price'] is int ? json['price'] : int.tryParse(json['price']?.toString() ?? '0');
+      serviceDuration = json['serviceDuration']?.toString();
+      categoryName = json['categoryName']?.toString();
+      categoryId = json['categoryId']?.toString();
+      detailImages = json['detailImages']?.cast<String>() ?? [];
+      coverImage = json['coverImage']?.toString() ?? json['serviceImage']?.toString();
+      mobile = json['mobile']?.toString();
+      location = json['location'] != null
+          ? Location.fromJson(json['location'])
+          : null;
+      createdBy = json['createdBy']?.toString();
+      vendorId = json['vendorId'] != null
+          ? VendorId.fromJson(json['vendorId'])
+          : null;
+      promotionPlanPrice = json['promotionPlanPrice'] is int ? json['promotionPlanPrice'] : int.tryParse(json['promotionPlanPrice']?.toString() ?? '0');
+      promotionSerialNumber = json['promotionSerialNumber'] is int ? json['promotionSerialNumber'] : int.tryParse(json['promotionSerialNumber']?.toString() ?? '0');
+      isActive = json['isActive'] is bool ? json['isActive'] : json['isActive']?.toString().toLowerCase() == 'true';
+      isDeleted = json['isDeleted'] is bool ? json['isDeleted'] : json['isDeleted']?.toString().toLowerCase() == 'true';
+      if (json['timeSlots'] != null) {
+        timeSlots = <TimeSlots>[];
+        json['timeSlots'].forEach((v) {
+          timeSlots!.add(TimeSlots.fromJson(v));
+        });
+      }
+      createdAt = json['createdAt']?.toString();
+      updatedAt = json['updatedAt']?.toString();
+      iV = json['__v'] is int ? json['__v'] : int.tryParse(json['__v']?.toString() ?? '0');
+      isBookmarked = json['isBookmarked'] is bool ? json['isBookmarked'] : json['isBookmarked']?.toString().toLowerCase() == 'true';
+      averageRating = json['average_rating'] is num ? json['average_rating'] : num.tryParse(json['average_rating']?.toString() ?? '0');
+      totalReviews = json['total_reviews'] is num ? json['total_reviews'] : num.tryParse(json['total_reviews']?.toString() ?? '0');
+      if (json['offers'] != null) {
+        offers = <Offers>[];
+        json['offers'].forEach((v) {
+          if (v != null) {
+            offers.add(Offers.fromJson(v));
+          }
+        });
+      }
+      if (json['services'] != null) {
+        services = <Services>[];
+        json['services'].forEach((v) {
+          if (v != null) {
+            services.add(Services.fromJson(v));
+          }
+        });
+      }
+      if (json['packages'] != null) {
+        packages = <Map<String, dynamic>>[];
+        json['packages'].forEach((v) {
+          if (v != null) {
+            packages.add(Map<String, dynamic>.from(v));
+          }
+        });
+      }
+      id = json['id']?.toString();
+    } catch (e) {
+      print("❌ Error parsing ServicesDetailsData: $e");
+      print("❌ JSON data: $json");
+      // Set default values to prevent crashes
+      sId = json['_id']?.toString();
+      serviceTitle = "Service";
+      about = "";
+      timeSlotCapacity = "1";
+      price = 0;
+      serviceDuration = "1 hour";
+      categoryName = "Car Service";
+      categoryId = "";
+      detailImages = [];
+      coverImage = "";
+      mobile = "";
+      location = null;
+      createdBy = "";
+      vendorId = null;
+      promotionPlanPrice = 0;
+      promotionSerialNumber = 0;
+      isActive = true;
+      isDeleted = false;
+      timeSlots = [];
+      createdAt = "";
+      updatedAt = "";
+      iV = 0;
+      isBookmarked = false;
+      averageRating = 0;
+      totalReviews = 0;
+      offers = [];
+      services = [];
+      id = "";
     }
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
-    iV = json['__v'];
-    isBookmarked = json['isBookmarked'];
-    averageRating = json['average_rating'];
-    totalReviews = json['total_reviews'];
-    if (json['offers'] != null) {
-      offers = <Offers>[];
-      json['offers'].forEach((v) {
-        if (v != null) {
-          offers.add(Offers.fromJson(v));
-        }
-      });
-    }
-    if (json['services'] != null) {
-      services = <Services>[];
-      json['services'].forEach((v) {
-        if (v != null) {
-          services.add(Services.fromJson(v));
-        }
-      });
-    }
-    id = json['id'];
   }
 
   Map<String, dynamic> toJson() {
@@ -180,6 +224,9 @@ class ServicesDetailsData {
     }
     if (services != null) {
       data['services'] = services.map((v) => v.toJson()).toList();
+    }
+    if (packages != null) {
+      data['packages'] = packages;
     }
     data['id'] = id;
     return data;
@@ -247,13 +294,26 @@ class VendorId {
         this.isShopOpen});
 
   VendorId.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    displayName = json['displayName'];
-    mobile = json['mobile'];
-    displayPicture = json['displayPicture'];
-    openTime = json['openTime'];
-    closeTime = json['closeTime'];
-    isShopOpen = json['isShopOpen'];
+    try {
+      sId = json['_id']?.toString();
+      displayName = json['displayName']?.toString();
+      mobile = json['mobile']?.toString();
+      displayPicture = json['displayPicture']?.toString();
+      openTime = json['openTime']?.toString();
+      closeTime = json['closeTime']?.toString();
+      isShopOpen = json['isShopOpen'] is bool ? json['isShopOpen'] : json['isShopOpen']?.toString().toLowerCase() == 'true';
+    } catch (e) {
+      print("❌ Error parsing VendorId: $e");
+      print("❌ VendorId JSON data: $json");
+      // Set default values to prevent crashes
+      sId = json['_id']?.toString();
+      displayName = "Vendor";
+      mobile = "";
+      displayPicture = "";
+      openTime = "";
+      closeTime = "";
+      isShopOpen = false;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -279,11 +339,22 @@ class TimeSlots {
   TimeSlots({this.slot, this.capacity, this.booked, this.sId, this.id});
 
   TimeSlots.fromJson(Map<String, dynamic> json) {
-    slot = json['slot'];
-    capacity = json['capacity'];
-    booked = json['booked'];
-    sId = json['_id'];
-    id = json['id'];
+    try {
+      slot = json['slot']?.toString();
+      capacity = json['capacity'] is int ? json['capacity'] : int.tryParse(json['capacity']?.toString() ?? '0');
+      booked = json['booked'] is int ? json['booked'] : int.tryParse(json['booked']?.toString() ?? '0');
+      sId = json['_id']?.toString();
+      id = json['id']?.toString();
+    } catch (e) {
+      print("❌ Error parsing TimeSlots: $e");
+      print("❌ TimeSlots JSON data: $json");
+      // Set default values to prevent crashes
+      slot = "00:00 - 01:00";
+      capacity = 1;
+      booked = 0;
+      sId = "";
+      id = "";
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -316,13 +387,26 @@ class Offers {
         this.validUntil});
 
   Offers.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    title = json['title'];
-    description = json['description'];
-    image = json['image'];
-    discount = json['discount'];
-    service = json['service'];
-    validUntil = json['validUntil'];
+    try {
+      sId = json['_id']?.toString();
+      title = json['title']?.toString();
+      description = json['description']?.toString();
+      image = json['image']?.toString();
+      discount = json['discount'] is int ? json['discount'] : int.tryParse(json['discount']?.toString() ?? '0');
+      service = json['service']?.toString();
+      validUntil = json['validUntil']?.toString();
+    } catch (e) {
+      print("❌ Error parsing Offers: $e");
+      print("❌ Offers JSON data: $json");
+      // Set default values to prevent crashes
+      sId = "";
+      title = "Offer";
+      description = "";
+      image = "";
+      discount = 0;
+      service = "";
+      validUntil = "";
+    }
   }
 
   Map<String, dynamic> toJson() {

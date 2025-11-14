@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -74,7 +75,7 @@ class ApiFuntions {
           print(response.body);
           var mes = message['message'];
           print(mes);
-          return mes;
+          return response; // Return the response object instead of mes
           //Common.showToast(mes);
         }
       } else {
@@ -84,7 +85,7 @@ class ApiFuntions {
         var mes = message['status_message'];
         print(mes);
         showSnackBar(context, "Please Check Network Connection");
-        return mes;
+        return Response('{"status":"error","message":"Please Check Network Connection"}', 500);
       }
     } on SocketException catch (_) {
       Navigator.pop(context);
@@ -94,7 +95,7 @@ class ApiFuntions {
       var mes = message['status_message'];
       print(mes);
       showSnackBar(context, "Please Check Network Connection");
-      return mes;
+      return Response('{"status":"error","message":"Please Check Network Connection"}', 500);
     }
   }
 

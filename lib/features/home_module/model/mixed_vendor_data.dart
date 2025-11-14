@@ -82,7 +82,7 @@ class MixedVendorData {
       longitude: lng,
       imageUrl: vendor['displayPicture']?.toString() ?? vendor['coverImage']?.toString(),
       phone: vendor['mobile']?.toString(),
-      isOpen: (vendor['isActive'] ?? true) && (vendor['vendorId']?['isShopOpen'] ?? true),
+      isOpen: (vendor['isActive'] ?? true) && (vendor['isShopOpen'] ?? true),
       distance: 0, // Will be calculated later
       isAppVendor: true,
       services: _extractServices(vendor['services']),

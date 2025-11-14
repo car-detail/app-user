@@ -20,10 +20,10 @@ import '../model/GenerateOTPModelBean.dart';
 import '../model/VerifyOtpModelBean.dart';
 
 class OTPScreenActivity extends StatefulWidget {
-  GenerateOTPModelBean data;
+  //GenerateOTPModelBean data;
   String mobileNo;
 
-  OTPScreenActivity(this.data, this.mobileNo, {super.key});
+  OTPScreenActivity(this.mobileNo, {super.key});
 
   @override
   State<OTPScreenActivity> createState() => _OTPScreenActivityState();
@@ -183,8 +183,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
             _fieldThree.text +
             _fieldFour.text +
             _fieldFive.text +
-            _fieldSix.text,
-        widget.data.data!.details ?? "",
+            _fieldSix.text, "",
         widget.mobileNo,
         context);
     var data = VerifyOtpModelBean.fromJson(jsonDecode(response.body));

@@ -10,7 +10,7 @@ class GenerateOTPModelBean {
     status = json['status'];
     message = json['message'];
     statusCode = json['statusCode'];
-    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    //data = json['data'] != null ? Data.fromJson(json['data']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -18,9 +18,9 @@ class GenerateOTPModelBean {
     data['status'] = status;
     data['message'] = message;
     data['statusCode'] = statusCode;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
+    // if (this.data != null) {
+    //   data['data'] = this.data!.toJson();
+    // }
     return data;
   }
 }

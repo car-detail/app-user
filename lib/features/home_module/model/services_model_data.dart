@@ -39,6 +39,8 @@ class ServicesData {
   Location? location;
   bool? isShopOpen;
   double? distance;
+  String? category;
+  bool? isAppVendor;
   List<Services> services = [];
 
   ServicesData(
@@ -50,6 +52,8 @@ class ServicesData {
         this.location,
         this.isShopOpen,
         this.distance,
+        this.category,
+        this.isAppVendor,
         services});
 
   ServicesData.fromJson(Map<String, dynamic> json) {
@@ -63,6 +67,8 @@ class ServicesData {
         : null;
     isShopOpen = json['isShopOpen'];
     distance = json['distance']?.toDouble();
+    category = json['category'];
+    isAppVendor = json['isAppVendor'];
     if (json['services'] != null) {
       services = <Services>[];
       json['services'].forEach((v) {
@@ -88,6 +94,8 @@ class ServicesData {
     }
     data['isShopOpen'] = isShopOpen;
     data['distance'] = distance;
+    data['category'] = category;
+    data['isAppVendor'] = isAppVendor;
     if (services != null) {
       data['services'] = services.map((v) => v.toJson()).toList();
     }
@@ -195,40 +203,69 @@ class Services {
         this.category});
 
   Services.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    serviceTitle = json['serviceTitle'];
-    timeSlotCapacity = json['timeSlotCapacity'];
-    price = json['price'];
-    categoryName = json['categoryName'];
-    categoryId = json['categoryId'];
-    detailImages = json['detailImages'].cast<String>();
-    coverImage = json['coverImage'];
-    mobile = json['mobile'];
-    location = json['location'] != null
-        ? Location.fromJson(json['location'])
-        : null;
-    createdBy = json['createdBy'];
-    vendorId = json['vendorId'];
-    promotionPlanPrice = json['promotionPlanPrice'];
-    promotionSerialNumber = json['promotionSerialNumber'];
-    isActive = json['isActive'];
-    isDeleted = json['isDeleted'];
-    if (json['timeSlots'] != null) {
-      timeSlots = <TimeSlots>[];
-      json['timeSlots'].forEach((v) {
-        timeSlots!.add(TimeSlots.fromJson(v));
-      });
-    }
-    totalReviews = json['total_reviews'];
-    averageRating = json['average_rating'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
-    iV = json['__v'];
-    if (json['category'] != null) {
-      category = <Category>[];
-      json['category'].forEach((v) {
-        category!.add(Category.fromJson(v));
-      });
+    try {
+      sId = json['_id']?.toString();
+      serviceTitle = json['serviceTitle']?.toString();
+      timeSlotCapacity = json['timeSlotCapacity']?.toString();
+      price = json['price'] is int ? json['price'] : int.tryParse(json['price']?.toString() ?? '0');
+      categoryName = json['categoryName']?.toString();
+      categoryId = json['categoryId']?.toString();
+      detailImages = json['detailImages']?.cast<String>() ?? [];
+      coverImage = json['coverImage']?.toString();
+      mobile = json['mobile']?.toString();
+      location = json['location'] != null
+          ? Location.fromJson(json['location'])
+          : null;
+      createdBy = json['createdBy']?.toString();
+      vendorId = json['vendorId']?.toString();
+      promotionPlanPrice = json['promotionPlanPrice'] is int ? json['promotionPlanPrice'] : int.tryParse(json['promotionPlanPrice']?.toString() ?? '0');
+      promotionSerialNumber = json['promotionSerialNumber'] is int ? json['promotionSerialNumber'] : int.tryParse(json['promotionSerialNumber']?.toString() ?? '0');
+      isActive = json['isActive'] is bool ? json['isActive'] : json['isActive']?.toString().toLowerCase() == 'true';
+      isDeleted = json['isDeleted'] is bool ? json['isDeleted'] : json['isDeleted']?.toString().toLowerCase() == 'true';
+      if (json['timeSlots'] != null) {
+        timeSlots = <TimeSlots>[];
+        json['timeSlots'].forEach((v) {
+          timeSlots!.add(TimeSlots.fromJson(v));
+        });
+      }
+      totalReviews = json['total_reviews'] is int ? json['total_reviews'] : int.tryParse(json['total_reviews']?.toString() ?? '0');
+      averageRating = json['average_rating'] is int ? json['average_rating'] : int.tryParse(json['average_rating']?.toString() ?? '0');
+      createdAt = json['createdAt']?.toString();
+      updatedAt = json['updatedAt']?.toString();
+      iV = json['__v'] is int ? json['__v'] : int.tryParse(json['__v']?.toString() ?? '0');
+      if (json['category'] != null) {
+        category = <Category>[];
+        json['category'].forEach((v) {
+          category!.add(Category.fromJson(v));
+        });
+      }
+    } catch (e) {
+      print("❌ Error parsing Services: $e");
+      print("❌ Services JSON data: $json");
+      // Set default values to prevent crashes
+      sId = json['_id']?.toString();
+      serviceTitle = "Service";
+      timeSlotCapacity = "1";
+      price = 0;
+      categoryName = "Car Service";
+      categoryId = "";
+      detailImages = [];
+      coverImage = "";
+      mobile = "";
+      location = null;
+      createdBy = "";
+      vendorId = "";
+      promotionPlanPrice = 0;
+      promotionSerialNumber = 0;
+      isActive = true;
+      isDeleted = false;
+      timeSlots = [];
+      totalReviews = 0;
+      averageRating = 0;
+      createdAt = "";
+      updatedAt = "";
+      iV = 0;
+      category = [];
     }
   }
 
@@ -317,15 +354,30 @@ class Category {
         this.iV});
 
   Category.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    categoryTitle = json['categoryTitle'];
-    logoImage = json['logoImage'];
-    categoryDescription = json['categoryDescription'];
-    isActive = json['isActive'];
-    isDeleted = json['isDeleted'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
-    iV = json['__v'];
+    try {
+      sId = json['_id']?.toString();
+      categoryTitle = json['categoryTitle']?.toString();
+      logoImage = json['logoImage']?.toString();
+      categoryDescription = json['categoryDescription']?.toString();
+      isActive = json['isActive'] is bool ? json['isActive'] : json['isActive']?.toString().toLowerCase() == 'true';
+      isDeleted = json['isDeleted'] is bool ? json['isDeleted'] : json['isDeleted']?.toString().toLowerCase() == 'true';
+      createdAt = json['createdAt']?.toString();
+      updatedAt = json['updatedAt']?.toString();
+      iV = json['__v'] is int ? json['__v'] : int.tryParse(json['__v']?.toString() ?? '0');
+    } catch (e) {
+      print("❌ Error parsing Category: $e");
+      print("❌ Category JSON data: $json");
+      // Set default values to prevent crashes
+      sId = json['_id']?.toString();
+      categoryTitle = "Category";
+      logoImage = "";
+      categoryDescription = "";
+      isActive = true;
+      isDeleted = false;
+      createdAt = "";
+      updatedAt = "";
+      iV = 0;
+    }
   }
 
   Map<String, dynamic> toJson() {

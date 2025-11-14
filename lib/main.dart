@@ -17,7 +17,7 @@ Future<void> main() async {
     }
 
     if (status.isPermanentlyDenied) {
-      openAppSettings(); // optionally guide user to settings
+      //openAppSettings(); // optionally guide user to settings
     }
   }
 
@@ -46,7 +46,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: const SplashScreenActivity(),
+      home: const SafeArea(
+        child: SplashScreenActivity(),
+      ),
     );
   }
 }

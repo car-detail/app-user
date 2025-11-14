@@ -159,7 +159,7 @@ class HomeDataManager {
       
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&category=${Uri.encodeComponent(category)}",
+        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&filterBycategory=${Uri.encodeComponent(category)}",
       );
       
       final responseData = jsonDecode(response.body);
@@ -199,7 +199,7 @@ class HomeDataManager {
     try {
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&maxDistance=${radius.toInt()}&category=${Uri.encodeComponent(category)}",
+        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&maxDistance=${radius.toInt()}&filterBycategory=${Uri.encodeComponent(category)}",
       );
       
       final responseData = jsonDecode(response.body);

@@ -1,13 +1,15 @@
 class Constant {
-
-  // static var baseurl = "http://13.232.212.175:7007/"; //dev
+// static var baseurl = "http://localhost:7007/"; //dev
+   static var baseurl = "http://13.234.217.235:3001/"; //dev
   // static var baseurl service 07/"; //dev
-  static var baseurl = "https://cf5f40e34c76.ngrok-free.app/"; //ngrok tunnel
+  // static var baseurl = "https://cf5f40e34c76.ngro0-free.app/"; //ngrok tunnel
   static var versionNumber = "v1";
 
 
-  static var generateOTP = "auth/otp-generate-user/bypass";
-  static var verifyOtp = "auth/otp-verify-user/bypass";
+  //static var generateOTP = "auth/otp-generate-user/bypass";
+  //static var verifyOtp = "auth/otp-verify-user/bypass";
+  static var generateOTP = "auth/otp-generate-user";
+  static var verifyOtp = "auth/otp-verify-user";
   static var getUserDetails = "$versionNumber/user/get-user-details";
   static var updateUserDetails = "$versionNumber/user/update-details/";
   static var category = "$versionNumber/category";
@@ -19,7 +21,7 @@ class Constant {
   static var postPlaceId = "$versionNumber/vendor/capture-external-vendor";
   static var captureVendorService = "$versionNumber/vendor/capture-vendor-service";
   static var removeBookmark = "$versionNumber/bookmarks/remove-bookmark/";
-  static var serviceDetails = "$versionNumber/services/vendor/";
+  static var serviceDetails = "$versionNumber/services/service-details/";
   static var postBooking = "$versionNumber/bookings/creating-booking";
   static var uploadFile = "$versionNumber/upload/file";
   static var myBooking = "$versionNumber/bookings/my-bookings";

@@ -168,7 +168,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                           fontFamily: "Pop600",
                           color: Colors.black87,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
@@ -180,11 +180,13 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                           fontFamily: "Pop400",
                           color: Colors.grey[600],
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
                       // Rating and Price Row
                       Row(
-                                        children: [
+                        children: [
                           // Rating
                           if (service.totalReviews != null && service.totalReviews! > 0) ...[
                             Icon(
@@ -193,30 +195,38 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                               color: Colors.amber[600],
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              "${service.averageRating ?? 0} (${service.totalReviews} reviews)",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: "Pop400",
-                                color: Colors.grey[600],
+                            Expanded(
+                              child: Text(
+                                "${service.averageRating ?? 0} (${service.totalReviews} reviews)",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: "Pop400",
+                                  color: Colors.grey[600],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 8),
                           ],
                           // Price
                           if (service.price != null && service.price! > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: ColorClass.base_color.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                "\$${service.price}",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontFamily: "Pop600",
-                                  color: ColorClass.base_color,
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: ColorClass.base_color.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "\$${service.price}",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: "Pop600",
+                                    color: ColorClass.base_color,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ),
@@ -240,11 +250,15 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
   }
 
   Widget _buildVendorCard(BuildContext context, ServicesData vendor) {
+    // Check if vendor is offline (only for app vendors)
+    final isOffline = (vendor.isAppVendor ?? false) && !(vendor.isShopOpen ?? true);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isOffline ? Colors.grey[100] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -258,6 +272,12 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            // Prevent navigation for offline vendors
+            if (isOffline) {
+              _showOfflineMessage(context);
+              return;
+            }
+            
             CommonWidget.navigateToScreen(
               context,
               SpecialistsActivity(vendor.sId ?? ''),
@@ -306,16 +326,40 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Vendor Name
-                      Text(
-                        vendor.displayName ?? "",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: "Pop600",
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      // Vendor Name with OFFLINE badge
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              vendor.displayName ?? "",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Pop600",
+                                color: isOffline ? Colors.grey[600] : Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // OFFLINE badge
+                          if (isOffline)
+                            Container(
+                              margin: EdgeInsets.only(left: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'OFFLINE',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       // Location
@@ -324,8 +368,10 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: "Pop400",
-                          color: Colors.grey[600],
+                          color: isOffline ? Colors.grey[500] : Colors.grey[600],
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
                       // Distance
@@ -335,15 +381,19 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                             Icon(
                               Icons.location_on,
                               size: 16,
-                              color: Colors.grey[600],
+                              color: isOffline ? Colors.grey[500] : Colors.grey[600],
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: "Pop400",
-                                color: Colors.grey[600],
+                            Expanded(
+                              child: Text(
+                                "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: "Pop400",
+                                  color: isOffline ? Colors.grey[500] : Colors.grey[600],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -482,6 +532,8 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                             fontFamily: "Pop600",
                             color: Colors.black87,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -491,6 +543,8 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                             fontFamily: "Pop400",
                             color: Colors.grey[600],
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         if (vendor.distance != null) ...[
                           const SizedBox(height: 4),
@@ -502,12 +556,16 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                                 color: Colors.grey[600],
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontFamily: "Pop400",
-                                  color: Colors.grey[600],
+                              Expanded(
+                                child: Text(
+                                  "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: "Pop400",
+                                    color: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -623,5 +681,9 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
     // You can implement phone calling functionality here
     // For now, just show a message
     print("Calling vendor: ${vendor.displayName}");
+  }
+
+  void _showOfflineMessage(BuildContext context) {
+    CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline and not accepting bookings");
   }
 }

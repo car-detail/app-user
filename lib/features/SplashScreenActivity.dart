@@ -64,8 +64,9 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
               fit: BoxFit.cover)),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Container(
-          padding: const EdgeInsets.fromLTRB(15, 30, 15, 15),
+        body: SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(15, 30, 15, 15),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -121,7 +122,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
               const SizedBox(height: 20,)
             ],
           ),
-
+          ),
         ),
       ),
     );

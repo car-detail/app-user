@@ -101,12 +101,39 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                 padding: EdgeInsets.zero,
                 itemCount: servicesData.length,
                 itemBuilder: (context, index){
-            return GestureDetector(
-              onTap: (){
-                CommonWidget.navigateToScreen(context, SpecialistsActivity(servicesData[index].sId??''));
-              },
+                  // Check if vendor is offline (only for app vendors)
+                  final vendor = servicesData[index];
+                  final isOffline = (vendor.isAppVendor ?? false) && !(vendor.isShopOpen ?? true);
+                  
+                  print('🔍 Explore List - Vendor: ${vendor.displayName}, isAppVendor: ${vendor.isAppVendor}, isShopOpen: ${vendor.isShopOpen}, isOffline: $isOffline');
+                  print('🔍 Offline calculation: (${vendor.isAppVendor} ?? false) && !(${vendor.isShopOpen} ?? true) = ${(vendor.isAppVendor ?? false)} && !${(vendor.isShopOpen ?? true)} = ${(vendor.isAppVendor ?? false) && !(vendor.isShopOpen ?? true)}');
+                  
+                  return GestureDetector(
+                    onTap: (){
+                      // Prevent navigation for offline vendors
+                      if (isOffline) {
+                        _showOfflineMessage(context);
+                        return;
+                      }
+                      
+                      CommonWidget.navigateToScreen(context, SpecialistsActivity(servicesData[index].sId??''));
+                    },
               child: Container(
                   margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isOffline ? Colors.grey[100] : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
@@ -137,10 +164,34 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CommonWidget.getTextWidget500(
-                                servicesData[index].displayName ?? "",
-                                textAlign: TextAlign.start,
-                                color: ColorClass.base_color),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CommonWidget.getTextWidget500(
+                                      servicesData[index].displayName ?? "",
+                                      textAlign: TextAlign.start,
+                                      color: isOffline ? (Colors.grey[600] ?? Colors.grey) : ColorClass.base_color),
+                                ),
+                                // OFFLINE badge
+                                if (isOffline)
+                                  Container(
+                                    margin: EdgeInsets.only(left: 8),
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'OFFLINE',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.red[700],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             /*CommonWidget.getTextWidget300(
                                 "${servicesData[index].categoryName ?? ""} Service",
                                 14,
@@ -232,5 +283,9 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
     } else {
       CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
     }
+  }
+
+  void _showOfflineMessage(BuildContext context) {
+    CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline and not accepting bookings");
   }
 }

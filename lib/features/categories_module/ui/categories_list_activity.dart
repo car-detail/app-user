@@ -42,6 +42,9 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   double maxDistance = 31.0; // in miles (50km = 31 miles)
   double minRating = 0.0;
   
+  // Loading state
+  bool _isLoading = true;
+  
   // Parallax animation
   ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
@@ -78,6 +81,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
       final categoryTitle = widget.categoryData.categoryTitle ?? '';
       print('🔍 Fetching vendors for category: $categoryTitle'); // Debug log
       
+      // Show loading state
+      setState(() {
+        _isLoading = true;
+      });
+      
       // Use category-specific API call
       final vendors = await homeDataManager!.getMixedVendorsByCategory(context, categoryTitle);
       
@@ -105,12 +113,27 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
       setState(() {
         mixedVendorsData = vendors;
         filteredVendorsData = List.from(vendors);
+        _isLoading = false;
       });
       
       applyFilters();
+      
+      // Show success message if vendors found
+      if (vendors.isNotEmpty) {
+        CommonWidget.successShowSnackBarFor(context, "Found ${vendors.length} vendors for ${categoryTitle}");
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, "No vendors found for ${categoryTitle}. Try adjusting your location or filters.");
+      }
     } catch (e) {
       print('❌ Error loading vendors: $e');
       CommonWidget.errorShowSnackBarFor(context, "Error loading vendors: $e");
+      
+      // Set empty state on error
+      setState(() {
+        mixedVendorsData = [];
+        filteredVendorsData = [];
+        _isLoading = false;
+      });
     }
   }
 
@@ -189,6 +212,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   void applyFiltersAndRefetch() async {
     print('🔄 Refetching data with new distance filter: ${maxDistance} miles');
     
+    // Show loading state
+    setState(() {
+      _isLoading = true;
+    });
+    
     // Convert miles to meters for API call
     final maxDistanceMeters = (maxDistance * 1609.34).round();
     final categoryTitle = widget.categoryData.categoryTitle ?? '';
@@ -257,12 +285,24 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
       setState(() {
         mixedVendorsData = vendors;
         filteredVendorsData = finalFiltered;
+        _isLoading = false;
       });
+      
+      // Show success message
+      if (finalFiltered.isNotEmpty) {
+        CommonWidget.successShowSnackBarFor(context, "Found ${finalFiltered.length} vendors within ${maxDistance.toStringAsFixed(1)} miles");
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, "No vendors found within ${maxDistance.toStringAsFixed(1)} miles. Try increasing the distance or adjusting other filters.");
+      }
       
     } catch (e) {
       print('❌ Error refetching vendors: $e');
+      setState(() {
+        _isLoading = false;
+      });
       // Fallback to local filtering if API call fails
       applyFilters();
+      CommonWidget.errorShowSnackBarFor(context, "Error refetching vendors. Using local filters instead.");
     }
   }
 
@@ -432,6 +472,46 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
             ),
           ),
           ),
+          // Category header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.category,
+                  color: ColorClass.base_color,
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Category: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontFamily: "Pop400",
+                  ),
+                ),
+                Text(
+                  widget.categoryData.categoryTitle ?? 'All Categories',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: ColorClass.base_color,
+                    fontFamily: "Pop600",
+                  ),
+                ),
+                Spacer(),
+                if (filteredVendorsData.isNotEmpty)
+                  Text(
+                    '${filteredVendorsData.length} vendors',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                      fontFamily: "Pop400",
+                    ),
+                  ),
+              ],
+            ),
+          ),
           // Search bar
           Container(
             padding: const EdgeInsets.all(16),
@@ -461,47 +541,95 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
             ),
                             ),
                             Expanded(
-              child: filteredVendorsData.isEmpty
+              child: _isLoading
                   ? Center(
-                              child: Column(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey[400],
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
                           ),
                           SizedBox(height: 16),
                           Text(
-                            'No vendors found',
+                            'Loading vendors...',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               color: Colors.grey[600],
+                              fontFamily: "Pop500",
                             ),
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Try adjusting your search or filters',
+                            'Finding ${widget.categoryData.categoryTitle} services near you',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[500],
+                              fontFamily: "Pop400",
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     )
-                  : Container(
-                      margin: const EdgeInsets.all(15),
-                      child: ListView.builder(
-                          controller: _scrollController,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          itemCount: filteredVendorsData.length,
-                          itemBuilder: (context, index) {
-                            final vendor = filteredVendorsData[index];
-                            return _buildVendorCard(vendor);
-                }),
-          ))
+                  : filteredVendorsData.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'No vendors found',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                  fontFamily: "Pop600",
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'No ${widget.categoryData.categoryTitle} services found in your area.\nTry adjusting your location or filters.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                  fontFamily: "Pop400",
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  getMixedVendors(context);
+                                },
+                                icon: Icon(Icons.refresh, size: 18),
+                                label: Text('Refresh'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: ColorClass.base_color,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(
+                          margin: const EdgeInsets.all(15),
+                          child: ListView.builder(
+                              controller: _scrollController,
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              itemCount: filteredVendorsData.length,
+                              itemBuilder: (context, index) {
+                                final vendor = filteredVendorsData[index];
+                                return _buildVendorCard(vendor);
+                              }),
+                        ))
         ],
       ),
     );
@@ -530,9 +658,19 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   }
 
   Widget _buildVendorCard(MixedVendorData vendor) {
+    // Check if vendor is offline (only for app vendors)
+    final isOffline = vendor.isAppVendor && !vendor.isOpen;
+    
     return GestureDetector(
       onTap: () {
-        print('Tapped vendor: ${vendor.name}, isAppVendor: ${vendor.isAppVendor}'); // Debug log
+        print('Tapped vendor: ${vendor.name}, isAppVendor: ${vendor.isAppVendor}, isOffline: $isOffline'); // Debug log
+        
+        // Prevent navigation for offline vendors
+        if (isOffline) {
+          _showOfflineMessage();
+          return;
+        }
+        
         if (vendor.isAppVendor) {
           // For app vendors, navigate to booking page
           if (vendor.services.isNotEmpty) {
@@ -561,8 +699,9 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isOffline ? Colors.grey[100] : Colors.white,
           borderRadius: BorderRadius.circular(12),
+          border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
@@ -638,17 +777,60 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          vendor.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: ColorClass.base_color,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                vendor.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isOffline ? Colors.grey[600] : ColorClass.base_color,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            // OFFLINE badge
+                            if (isOffline)
+                              Container(
+                                margin: EdgeInsets.only(left: 8),
+                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'OFFLINE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.red[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
+                      // Category indicator
+                      if (vendor.category != null && vendor.category!.isNotEmpty)
+                        Container(
+                          margin: EdgeInsets.only(right: 8),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            vendor.category!,
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      // Vendor type indicator
                       if (vendor.isAppVendor)
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1372,6 +1554,10 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
     } else {
       CommonWidget.errorShowSnackBarFor(context, 'Phone number not available for this vendor');
     }
+  }
+
+  void _showOfflineMessage() {
+    CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline and not accepting bookings");
   }
 
 }

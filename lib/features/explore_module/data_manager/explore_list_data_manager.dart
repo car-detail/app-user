@@ -37,4 +37,31 @@ class ExploreListDataManager {
         {});
   }
 
+  getCategories(BuildContext context) {
+    return apiFuntions.getdatauser(context, Constant.category);
+  }
+
+  getAllVendors(BuildContext context, {String? category, String? searchTerm}) {
+    String? lat = sharedPreferences.getString(Constant.lat);
+    String? long = sharedPreferences.getString(Constant.long);
+    
+    String url = "${Constant.getAllVendors}pageNumber=1&count=50&includeGooglePlaces=true";
+    
+    if (lat != null && long != null && lat != "null" && long != "null") {
+      url += "&lat=$lat&long=$long&maxDistance=30000";
+    }
+    
+    if (category != null && category.isNotEmpty && category != 'All') {
+      url += "&filterBycategory=${Uri.encodeComponent(category)}";
+    }
+    
+    if (searchTerm != null && searchTerm.isNotEmpty) {
+      url += "&searchByName=${Uri.encodeComponent(searchTerm)}";
+    }
+    
+    url += "&sortBy=createdAt";
+    
+    return apiFuntions.getdatauser(context, url);
+  }
+
 }

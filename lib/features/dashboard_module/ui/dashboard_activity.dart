@@ -34,7 +34,9 @@ class _DashboardActivityState extends State<DashboardActivity> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pageNo[selectedpage],
+      body: SafeArea(
+        child: _pageNo[selectedpage],
+      ),
       bottomNavigationBar: _buildModernBottomNav(),
     );
   }
