@@ -42,4 +42,16 @@ class SpecialistsDataManager{
       return Response('{"status":"error","message":"API call failed: $e"}', 500);
     }
   }
+
+  Future<Response> getVendorPackages(BuildContext context, String vendorId) async {
+    try {
+      return await apiFuntions.getdatauser(
+        context,
+        "${Constant.getVendorPackages}$vendorId",
+      );
+    } catch (e) {
+      print("❌ Error in getVendorPackages API call: $e");
+      return Response('{"status":"error","message":"API call failed: $e"}', 500);
+    }
+  }
 }

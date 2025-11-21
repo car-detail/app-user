@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../../../Common/Color.dart';
 import '../../../Common/CommonPopUp.dart';
@@ -35,6 +36,7 @@ class _BookingActivityState extends State<BookingActivity> {
   var timeString = "";
   var postTime = "";
   var messageController = TextEditingController();
+  String _userTimeZone = 'UTC';
   List<TimeSlots> timeSlot = [];
   bool isBookmarked = false;
   String? selectedPackageId;
@@ -52,7 +54,23 @@ class _BookingActivityState extends State<BookingActivity> {
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = BookingDataManager(sharedPreferences!);
+    await _loadUserTimeZone();
     getServicesDetails(context);
+  }
+
+  Future<void> _loadUserTimeZone() async {
+    try {
+      final timezone = await FlutterTimezone.getLocalTimezone();
+      if (!mounted) return;
+      setState(() {
+        _userTimeZone = timezone;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _userTimeZone = 'UTC';
+      });
+    }
   }
 
   @override
@@ -775,6 +793,7 @@ class _BookingActivityState extends State<BookingActivity> {
         bookingdata.price.toString() ?? "",
         dateString,
         postTime,
+        _userTimeZone,
         packageId: selectedPackageId,
         packageName: selectedPackageName,
         packagePrice: selectedPackagePrice);
@@ -960,7 +979,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                 setState(() {
                                   selectedTimeSlot = timeText;
                                   timeController.text = timeText;
-                                  postTime = CommonWidget.convertToLocalTime24(data.slot.toString());
+                                  postTime = data.slot?.toString() ?? '';
                                 });
                                 Navigator.pop(context);
                               } : null,

@@ -16,6 +16,7 @@ import '../model/services_details_model_data.dart';
 import 'offer_list_widget.dart';
 import 'all_packages_screen.dart';
 import 'all_offers_screen.dart';
+import '../utils/package_mapper.dart';
 
 class SpecialistsActivity extends StatefulWidget {
   String servicesData;
@@ -34,6 +35,9 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       ServicesDetailsData(detailImages: []);
   List<String> detailImages = [];
   bool isBookmarked = false;
+  bool _isLoadingPackages = false;
+  String? _packagesError;
+  String? _lastFetchedVendorId;
 
   @override
   void initState() {
@@ -1170,13 +1174,86 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   }
 
   Widget _buildPackagesSection(BuildContext context) {
-    // Check if vendor has packages
-    bool hasPackages = _hasVendorPackages();
-    
-    if (!hasPackages) {
-      return const SizedBox.shrink(); // Hide packages section if no packages
+    if (_isLoadingPackages && servicesDetailsData.packages.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
-    
+
+    if (_packagesError != null && servicesDetailsData.packages.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "Service Packages",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontFamily: "Pop600",
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _packagesError ?? "Unable to load packages",
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: "Pop400",
+                color: Colors.red[400],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Pull to refresh or try again later.",
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: "Pop400",
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    bool hasPackages = _hasVendorPackages();
+
+    if (!hasPackages) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1224,89 +1301,48 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             ],
           ),
           const SizedBox(height: 16),
-          // Show actual vendor packages
-          if (servicesDetailsData.packages.isNotEmpty) ...[
-            // Display actual packages from the vendor
-            ...servicesDetailsData.packages.map((package) => _buildVendorPackageCard(package)),
-            const SizedBox(height: 16),
-            // View All Packages Button
-            GestureDetector(
-              onTap: () {
-                CommonWidget.navigateToScreen(
-                  context,
-                  AllPackagesScreen(
-                    vendorId: servicesDetailsData.vendorId?.sId ?? '',
-                    vendorName: servicesDetailsData.vendorId?.displayName ?? 'Vendor',
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.purple.withOpacity(0.3),
-                    width: 1,
-                  ),
+          ...servicesDetailsData.packages.map((package) => _buildVendorPackageCard(package)),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () {
+              CommonWidget.navigateToScreen(
+                context,
+                AllPackagesScreen(
+                  vendorId: servicesDetailsData.vendorId?.sId ?? '',
+                  vendorName: servicesDetailsData.vendorId?.displayName ?? 'Vendor',
+                  initialPackages: List<Map<String, dynamic>>.from(servicesDetailsData.packages),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      "View All Packages",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: "Pop500",
-                        color: Colors.purple[600],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_ios, color: Colors.purple[600], size: 16),
-                  ],
-                ),
-              ),
-            ),
-          ] else ...[
-            // Show message when no packages are available
-            Container(
-              padding: const EdgeInsets.all(20),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Colors.purple.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey[300]!,
+                  color: Colors.purple.withOpacity(0.3),
                   width: 1,
                 ),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2_outlined, color: Colors.grey[400], size: 48),
-                  const SizedBox(height: 12),
+                  Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    "No Service Packages Available",
+                    "View All Packages",
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: "Pop500",
-                      color: Colors.grey[600],
+                      color: Colors.purple[600],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "This vendor hasn't created any service packages yet.",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontFamily: "Pop400",
-                      color: Colors.grey[500],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_ios, color: Colors.purple[600], size: 16),
                 ],
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -1972,6 +2008,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       
       if (jsonData['status'] == "success" && jsonData['data'] != null) {
         var data = jsonData['data'];
+        String? vendorIdForPackages;
         
         // Check if data is a list (vendor services) or single object (service details)
         if (data is List) {
@@ -1990,6 +2027,10 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               }
               isBookmarked = servicesDetailsData.isBookmarked ?? false;
             });
+
+            vendorIdForPackages = firstService['vendorId'] is Map
+                ? firstService['vendorId']['_id']?.toString()
+                : firstService['vendorId']?.toString();
             
             print("✅ Vendor services loaded successfully (${data.length} services)");
           } else {
@@ -2008,6 +2049,10 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             }
             isBookmarked = servicesDetailsData.isBookmarked ?? false;
           });
+
+          vendorIdForPackages = data['vendorId'] is Map
+              ? data['vendorId']['_id']?.toString()
+              : data['vendorId']?.toString();
           
           print("✅ Service details loaded successfully");
         }
@@ -2017,13 +2062,79 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         print("🔍 Price: ${servicesDetailsData.price}");
         print("🔍 Rating: ${servicesDetailsData.averageRating}");
         print("🔍 Reviews: ${servicesDetailsData.totalReviews}");
+
+        _fetchVendorPackages(vendorIdForPackages);
       } else {
         print("❌ API returned error: ${jsonData['message']}");
         CommonWidget.errorShowSnackBarFor(context, jsonData['message'] ?? "Failed to load service details");
+        _fetchVendorPackages(null);
       }
     } catch (e) {
       print("❌ Error in getServicesDetails: $e");
       CommonWidget.errorShowSnackBarFor(context, "Error loading service details: ${e.toString()}");
+    }
+  }
+
+  Future<void> _fetchVendorPackages(String? vendorId) async {
+    if (vendorId == null || vendorId.isEmpty) {
+      setState(() {
+        servicesDetailsData.packages.clear();
+        _packagesError = null;
+        _lastFetchedVendorId = null;
+        _isLoadingPackages = false;
+      });
+      return;
+    }
+
+    if (dataManager == null) return;
+    if (_isLoadingPackages && vendorId == _lastFetchedVendorId) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingPackages = true;
+      _packagesError = null;
+      _lastFetchedVendorId = vendorId;
+    });
+
+    try {
+      final response = await dataManager!.getVendorPackages(context, vendorId);
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['status'] == "success") {
+          final packages = mapPackagesForDisplay(jsonData['data']);
+          if (!mounted) return;
+          setState(() {
+            servicesDetailsData.packages
+              ..clear()
+              ..addAll(packages);
+            _isLoadingPackages = false;
+            _packagesError = null;
+          });
+        } else {
+          if (!mounted) return;
+          setState(() {
+            servicesDetailsData.packages.clear();
+            _isLoadingPackages = false;
+            _packagesError = jsonData['message']?.toString() ?? "Failed to load packages";
+          });
+        }
+      } else {
+        if (!mounted) return;
+        setState(() {
+          servicesDetailsData.packages.clear();
+          _isLoadingPackages = false;
+          _packagesError = "Server responded with ${response.statusCode}";
+        });
+      }
+    } catch (e) {
+      print("❌ Error loading packages: $e");
+      if (!mounted) return;
+      setState(() {
+        servicesDetailsData.packages.clear();
+        _isLoadingPackages = false;
+        _packagesError = e.toString();
+      });
     }
   }
 

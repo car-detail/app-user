@@ -1,16 +1,24 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:car_app/Common/Color.dart';
 import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../data_manager/specialists_data_manager.dart';
+import '../utils/package_mapper.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   final String vendorId;
   final String vendorName;
+  final List<Map<String, dynamic>> initialPackages;
 
   const AllPackagesScreen({
     Key? key,
     required this.vendorId,
     required this.vendorName,
+    this.initialPackages = const [],
   }) : super(key: key);
 
   @override
@@ -20,59 +28,77 @@ class AllPackagesScreen extends StatefulWidget {
 class _AllPackagesScreenState extends State<AllPackagesScreen> {
   List<Map<String, dynamic>> packages = [];
   bool isLoading = true;
+  String? errorMessage;
+  SpecialistsDataManager? _dataManager;
+  SharedPreferences? _sharedPreferences;
 
   @override
   void initState() {
     super.initState();
-    _loadPackages();
+    packages = List<Map<String, dynamic>>.from(widget.initialPackages);
+    if (packages.isNotEmpty) {
+      isLoading = false;
+    }
+    _initialize();
   }
 
-  Future<void> _loadPackages() async {
-    try {
-      setState(() {
-        isLoading = true;
-      });
+  Future<void> _initialize() async {
+    _sharedPreferences = await SharedPreferences.getInstance();
+    _dataManager = SpecialistsDataManager(_sharedPreferences!);
+    await _loadPackages(showLoader: packages.isEmpty);
+  }
 
-      // Simulate loading packages
-      await Future.delayed(const Duration(seconds: 1));
+  Future<void> _loadPackages({bool showLoader = true}) async {
+    if (_dataManager == null) {
+      return;
+    }
 
-      // Mock packages data - replace with actual API call
+    if (widget.vendorId.isEmpty) {
       setState(() {
-        packages = [
-          {
-            'id': '1',
-            'name': 'Basic Car Wash Package',
-            'description': 'Exterior wash, tire cleaning, and basic interior cleaning',
-            'price': 299,
-            'duration': '45 minutes',
-            'services': ['Exterior Wash', 'Tire Cleaning', 'Interior Vacuum'],
-            'image': 'https://via.placeholder.com/300x200',
-          },
-          {
-            'id': '2',
-            'name': 'Premium Detailing Package',
-            'description': 'Complete exterior and interior detailing with waxing',
-            'price': 799,
-            'duration': '2 hours',
-            'services': ['Exterior Wash', 'Waxing', 'Interior Deep Clean', 'Leather Treatment'],
-            'image': 'https://via.placeholder.com/300x200',
-          },
-          {
-            'id': '3',
-            'name': 'Luxury Spa Package',
-            'description': 'Ultimate car care with ceramic coating and paint protection',
-            'price': 1499,
-            'duration': '4 hours',
-            'services': ['Ceramic Coating', 'Paint Protection', 'Interior Deep Clean', 'Engine Bay Cleaning'],
-            'image': 'https://via.placeholder.com/300x200',
-          },
-        ];
         isLoading = false;
+        errorMessage = "Vendor information is missing.";
       });
+      return;
+    }
+
+    try {
+      if (showLoader) {
+        setState(() {
+          isLoading = true;
+          errorMessage = null;
+        });
+      }
+
+      final response = await _dataManager!.getVendorPackages(context, widget.vendorId);
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['status'] == "success") {
+          final mappedPackages = mapPackagesForDisplay(jsonData['data']);
+          setState(() {
+            packages = mappedPackages;
+            isLoading = false;
+            errorMessage = null;
+          });
+        } else {
+          setState(() {
+            packages = [];
+            isLoading = false;
+            errorMessage = jsonData['message']?.toString() ?? "Failed to load packages";
+          });
+        }
+      } else {
+        setState(() {
+          packages = [];
+          isLoading = false;
+          errorMessage = "Server responded with ${response.statusCode}";
+        });
+      }
     } catch (e) {
       print('Error loading packages: $e');
       setState(() {
         isLoading = false;
+        packages = [];
+        errorMessage = e.toString();
       });
     }
   }
@@ -102,7 +128,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       body: isLoading
           ? _buildLoadingState()
           : packages.isEmpty
-              ? _buildEmptyState()
+              ? (errorMessage != null ? _buildErrorState() : _buildEmptyState())
               : _buildPackagesList(),
     );
   }
@@ -159,9 +185,42 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     );
   }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+            const SizedBox(height: 16),
+            Text(
+              errorMessage ?? "Failed to load packages",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontFamily: "Pop500",
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => _loadPackages(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorClass.base_color,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Retry"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPackagesList() {
     return RefreshIndicator(
-      onRefresh: _loadPackages,
+      onRefresh: () => _loadPackages(showLoader: false),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: packages.length,
@@ -174,6 +233,19 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   }
 
   Widget _buildPackageCard(Map<String, dynamic> package) {
+    final imageUrl = package['image'] ?? package['coverImage'];
+    final title = package['title'] ?? package['packageName'] ?? package['name'] ?? 'Service Package';
+    final description = package['description'] ?? '';
+    final duration = package['duration'] ?? package['packageDuration'] ?? 'Duration TBD';
+    final price = package['price'];
+    final features = (package['features'] as List<dynamic>?)
+            ?.map((feature) => feature.toString())
+            .toList() ??
+        (package['services'] as List<dynamic>?)
+            ?.map((service) => service.toString())
+            .toList() ??
+        [];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -199,17 +271,23 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
               height: 200,
               width: double.infinity,
               color: Colors.grey[200],
-              child: Image.network(
-                package['image'],
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.inventory_2,
-                    size: 64,
-                    color: ColorClass.base_color,
-                  );
-                },
-              ),
+              child: (imageUrl != null && imageUrl.toString().isNotEmpty)
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.inventory_2,
+                          size: 64,
+                          color: ColorClass.base_color,
+                        );
+                      },
+                    )
+                  : Icon(
+                      Icons.inventory_2,
+                      size: 64,
+                      color: ColorClass.base_color,
+                    ),
             ),
           ),
           Padding(
@@ -218,7 +296,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  package['name'],
+                  title,
                   style: const TextStyle(
                     fontSize: 18,
                     fontFamily: "Pop600",
@@ -229,7 +307,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  package['description'],
+                  description,
                   style: TextStyle(
                     fontSize: 14,
                     fontFamily: "Pop400",
@@ -248,7 +326,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      package['duration'],
+                      duration,
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: "Pop400",
@@ -257,7 +335,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ),
                     const Spacer(),
                     Text(
-                      "₹${package['price']}",
+                      price != null ? "₹$price" : "Price TBD",
                       style: TextStyle(
                         fontSize: 20,
                         fontFamily: "Pop600",
@@ -270,7 +348,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 4,
-                  children: (package['services'] as List<String>).map((service) {
+                  children: features.map((service) {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -324,8 +402,9 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Book ${package['name']}"),
-        content: Text("This package costs ₹${package['price']} and takes ${package['duration']} to complete."),
+        title: Text("Book ${package['title'] ?? package['packageName'] ?? 'Service Package'}"),
+        content: Text(
+            "This package costs ₹${package['price'] ?? 'TBD'} and takes ${package['duration'] ?? 'custom time'} to complete."),
         actions: [
           TextButton(
             onPressed: () {

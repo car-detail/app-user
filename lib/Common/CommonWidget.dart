@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'dart:typed_data';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -956,6 +957,42 @@ class CommonWidget {
     );
   }
 
+  /// Helper function to create an Image widget that works on both web and mobile
+  static Widget imageFromFile(File file, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
+    if (kIsWeb) {
+      // On web, convert file to bytes and use Image.memory
+      return FutureBuilder<Uint8List>(
+        future: file.readAsBytes(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.memory(
+              snapshot.data!,
+              width: width,
+              height: height,
+              fit: fit,
+            );
+          } else if (snapshot.hasError) {
+            return Icon(Icons.error, size: width ?? 100);
+          } else {
+            return SizedBox(
+              width: width,
+              height: height,
+              child: const CircularProgressIndicator(),
+            );
+          }
+        },
+      );
+    } else {
+      // On mobile, use Image.file
+      return Image.file(
+        file,
+        width: width,
+        height: height,
+        fit: fit,
+      );
+    }
+  }
+
   static Widget determineImageAsset(String filePath) {
     if (filePath.endsWith(".pdf") || filePath.endsWith(".PDF")) {
       return Image.asset(
@@ -991,12 +1028,29 @@ class CommonWidget {
         width: 100,
       );
     } else {
-      return Image.file(
-        File(filePath),
-        width: 100, // Adjust the width as needed
-        height: 100, // Adjust the height as needed
-        fit: BoxFit.cover, // Adjust the BoxFit property as needed
-      );
+      if (kIsWeb) {
+        // On web, show a placeholder or try to load as network image if it's a URL
+        if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+          return Image.network(
+            filePath,
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.image, size: 100);
+            },
+          );
+        } else {
+          return Icon(Icons.image, size: 100);
+        }
+      } else {
+        return Image.file(
+          File(filePath),
+          width: 100, // Adjust the width as needed
+          height: 100, // Adjust the height as needed
+          fit: BoxFit.cover, // Adjust the BoxFit property as needed
+        );
+      }
     }
   }
 

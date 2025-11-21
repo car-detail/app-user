@@ -45,15 +45,22 @@ class BookingDataManager {
     }
   }
 
-  postBooking(BuildContext context, String vendorId, String serviceId,
-      String price, String date, String time, {String? packageId, String? packageName, int? packagePrice}) {
+  postBooking(
+      BuildContext context,
+      String vendorId,
+      String serviceId,
+      String price,
+      String date,
+      String time,
+      String timeZone,
+      {String? packageId, String? packageName, int? packagePrice}) {
     Map<String, dynamic> bookingData = {
       "vendorId": vendorId,
       "serviceId": serviceId,
       "price": price,
       "date": date,
       "timeSlot": time,
-      "timeZone": "Asia/Kolkata"
+      "timeZone": timeZone.isEmpty ? "UTC" : timeZone
     };
     
     // Add package information if a package is selected
