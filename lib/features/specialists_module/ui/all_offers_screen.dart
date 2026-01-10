@@ -31,9 +31,7 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => CommonWidget.safePop(context),
         ),
         title: Text(
           "Offers - ${widget.vendorName}",
@@ -238,7 +236,7 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
                       Row(
                         children: [
                           Text(
-                            "₹${offer['originalPrice']}",
+                            "\$${offer['originalPrice']}",
                             style: TextStyle(
                               fontSize: 14,
                               fontFamily: "Pop400",
@@ -248,7 +246,7 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            "₹${offer['discountedPrice']}",
+                            "\$${offer['discountedPrice']}",
                             style: TextStyle(
                               fontSize: 18,
                               fontFamily: "Pop600",
@@ -309,14 +307,12 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
         content: Text("This offer provides ${offer['discount'] ?? 0}% discount. Would you like to claim it?"),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => CommonWidget.safePop(context),
             child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              CommonWidget.safePop(context);
               CommonWidget.successShowSnackBarFor(context, "Offer claimed successfully!");
             },
             child: const Text("Claim Now"),

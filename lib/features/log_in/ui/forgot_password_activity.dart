@@ -141,8 +141,8 @@ class _ForgotPasswordActivityState extends State<ForgotPasswordActivity> {
           "Ok",
           "",
           "", () {
-        Navigator.pop(context);
-      }, () => Navigator.pop(context), 200,
+        CommonWidget.safePop(context);
+      }, () => CommonWidget.safePop(context), 200,
           positivetitlecolorButton: ColorClass.green,
           navtextColorButton: ColorClass.red);
     }

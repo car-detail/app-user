@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../Common/CommonWidget.dart';
 import '../Common/Constant.dart';
 import 'dashboard_module/ui/dashboard_activity.dart';
-import 'log_in/ui/LoginActivity.dart';
+import 'log_in/ui/modern_login_activity.dart';
 
 class SplashScreenActivity extends StatefulWidget {
   const SplashScreenActivity({super.key});
@@ -79,7 +79,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                       context,
                       MaterialPageRoute(
                         //builder: (BuildContext context) => DashboardActivity(data:data),
-                        builder: (BuildContext context) => LoginActivity("Login"),
+                        builder: (BuildContext context) => const ModernLoginActivity(isSignUp: false),
                       ),
                           (route) => false,
                     );
@@ -103,7 +103,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                       context,
                       MaterialPageRoute(
                         //builder: (BuildContext context) => DashboardActivity(data:data),
-                        builder: (BuildContext context) => LoginActivity("Sign Up"),
+                        builder: (BuildContext context) => const ModernLoginActivity(isSignUp: true),
                       ),
                           (route) => false,
                     );

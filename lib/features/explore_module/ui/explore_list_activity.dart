@@ -68,7 +68,7 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                     children: [
                       GestureDetector(
                         onTap: (){
-                          Navigator.pop(context);
+                          CommonWidget.safePop(context);
                         },
                         child: Image.asset(
                           CommonWidget.getImagePath("backspace.png"),
@@ -137,27 +137,13 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                     /* ClipOval(
-                          child: Image.network(
-                            servicesData[index].coverImage ?? "",
-                            height: 70,
-                            width: 70,
-                            fit: BoxFit.fill,
-                            errorBuilder: (
-                                BuildContext context,
-                                Object error,
-                                StackTrace? stackTrace,
-                                ) {
-                              return Image.asset(
-                                CommonWidget.getImagePath("loading.png"),
-                                width: 70,
-                                // Adjust the width as needed
-                                height: 70,
-                              );
-                            },
-                          )),*/
+                      // Vendor/Service Image
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildVendorImage(servicesData[index], isOffline),
+                      ),
                       const SizedBox(
-                        width: 10,
+                        width: 12,
                       ),
                       Expanded(
                         child: Column(
@@ -287,5 +273,66 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
 
   void _showOfflineMessage(BuildContext context) {
     CommonWidget.errorShowSnackBarFor(context, "This vendor is currently offline and not accepting bookings");
+  }
+
+  /// Build vendor/service image with proper fallback
+  Widget _buildVendorImage(ServicesData vendor, bool isOffline) {
+    // Try vendor displayPicture first, then first service coverImage
+    String? imageUrl = vendor.displayPicture;
+    
+    if ((imageUrl == null || imageUrl.isEmpty) && vendor.services.isNotEmpty) {
+      imageUrl = vendor.services.first.coverImage;
+    }
+
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: imageUrl != null && imageUrl.isNotEmpty
+          ? Image.network(
+              imageUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              color: isOffline ? Colors.grey : null,
+              colorBlendMode: isOffline ? BlendMode.saturation : null,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildPlaceholderImage(isOffline);
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                    strokeWidth: 2,
+                  ),
+                );
+              },
+            )
+          : _buildPlaceholderImage(isOffline),
+    );
+  }
+
+  /// Build placeholder image when no image is available
+  Widget _buildPlaceholderImage(bool isOffline) {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: isOffline ? Colors.grey[300] : ColorClass.base_color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.store,
+        size: 40,
+        color: isOffline ? Colors.grey[500] : ColorClass.base_color,
+      ),
+    );
   }
 }

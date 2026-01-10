@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:car_app/Common/Color.dart';
@@ -36,6 +37,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   List<String> detailImages = [];
   bool isBookmarked = false;
   bool _isLoadingPackages = false;
+  bool _isLoadingDetails = true;
   String? _packagesError;
   String? _lastFetchedVendorId;
 
@@ -47,14 +49,53 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   }
 
   start() async {
+    // Initialize data managers asynchronously without blocking
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = SpecialistsDataManager(sharedPreferences!);
     bookmarkDataManager = CategoriesListDataManager(sharedPreferences!);
-    getServicesDetails(context);
+    
+    // Check if widget is still mounted before using context
+    if (!mounted) return;
+    
+    // Use a post-frame callback with a small delay to ensure UI is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Add a small delay to ensure navigation animation completes
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          getServicesDetails(context);
+        }
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator while fetching initial data
+    if (_isLoadingDetails && servicesDetailsData.serviceTitle == null) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Loading vendor details...",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: "Pop400",
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
@@ -162,7 +203,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => CommonWidget.safePop(context),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -415,7 +456,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         ),
       ),
       leading: GestureDetector(
-        onTap: () => Navigator.pop(context),
+        onTap: () => CommonWidget.safePop(context),
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -499,7 +540,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           if (servicesDetailsData.averageRating != 0) ...[
             Row(
               children: [
-                Icon(Icons.star, color: Colors.amber[600], size: 20),
+                Icon(Icons.star, color: ColorClass.base_color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -535,7 +576,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           if (servicesDetailsData.price != null && servicesDetailsData.price! > 0) ...[
             Row(
               children: [
-                Icon(Icons.attach_money, color: Colors.green[600], size: 20),
+                Icon(Icons.attach_money, color: ColorClass.base_color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -543,7 +584,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: "Pop500",
-                      color: Colors.green[600],
+                      color: ColorClass.base_color,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -556,14 +597,14 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           if (servicesDetailsData.serviceDuration != null) ...[
             Row(
               children: [
-                Icon(Icons.access_time, color: Colors.blue[600], size: 20),
+                      Icon(Icons.access_time, color: Colors.grey[700], size: 20),
                 const SizedBox(width: 8),
                 Text(
                   "Duration: ${servicesDetailsData.serviceDuration}",
                   style: TextStyle(
                     fontSize: 16,
                     fontFamily: "Pop500",
-                    color: Colors.blue[600],
+                    color: Colors.black87,
                   ),
                 ),
               ],
@@ -582,7 +623,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             icon: Icons.verified,
             title: "Verified",
             subtitle: "Trusted Service",
-            color: Colors.green,
           ),
         ),
         const SizedBox(width: 12),
@@ -591,7 +631,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             icon: Icons.schedule,
             title: "Available",
             subtitle: "Book Now",
-            color: Colors.blue,
           ),
         ),
         const SizedBox(width: 12),
@@ -600,7 +639,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             icon: Icons.location_on,
             title: "Nearby",
             subtitle: "Quick Access",
-            color: Colors.orange,
           ),
         ),
       ],
@@ -611,7 +649,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     required IconData icon,
     required String title,
     required String subtitle,
-    required Color color,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -628,12 +665,19 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: ColorClass.base_color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: ColorClass.base_color, size: 20),
+          ),
+          const SizedBox(height: 10),
           Text(
             title,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontFamily: "Pop600",
               color: Colors.black87,
             ),
@@ -643,11 +687,13 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontFamily: "Pop400",
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -891,12 +937,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: ColorClass.base_color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         Icons.phone,
-                        color: Colors.green[600],
+                        color: ColorClass.base_color,
                         size: 20,
                       ),
                     ),
@@ -989,7 +1035,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: ColorClass.base_color.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -997,7 +1043,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                           style: TextStyle(
                             fontSize: 14,
                             fontFamily: "Pop600",
-                            color: Colors.green[600],
+                            color: ColorClass.base_color,
                           ),
                         ),
                       ),
@@ -1008,14 +1054,14 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 if (servicesDetailsData.serviceDuration != null) ...[
                   Row(
                     children: [
-                      Icon(Icons.access_time, color: Colors.blue[600], size: 16),
+                      Icon(Icons.access_time, color: Colors.grey[700], size: 16),
                       const SizedBox(width: 8),
                       Text(
                         "Duration: ${servicesDetailsData.serviceDuration}",
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: "Pop400",
-                          color: Colors.blue[600],
+                          color: Colors.black87,
                         ),
                       ),
                     ],
@@ -1026,7 +1072,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 if (servicesDetailsData.timeSlotCapacity != null) ...[
                   Row(
                     children: [
-                      Icon(Icons.people, color: Colors.orange[600], size: 16),
+                      Icon(Icons.people, color: Colors.grey[700], size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -1034,7 +1080,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                           style: TextStyle(
                             fontSize: 14,
                             fontFamily: "Pop400",
-                            color: Colors.orange[600],
+                            color: Colors.black87,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1080,7 +1126,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   value: servicesDetailsData.averageRating != 0 
                       ? "${servicesDetailsData.averageRating.toString()} ⭐"
                       : "No ratings yet",
-                  color: Colors.amber[600]!,
+                  color: Colors.grey[700]!,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1089,7 +1135,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   icon: Icons.people,
                   title: "Reviews",
                   value: "${servicesDetailsData.totalReviews ?? 0} reviews",
-                  color: Colors.blue[600]!,
+                  color: Colors.grey[700]!,
                 ),
               ),
             ],
@@ -1102,7 +1148,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   icon: Icons.location_on,
                   title: "Location",
                   value: servicesDetailsData.location?.name ?? "Location not available",
-                  color: Colors.green[600]!,
+                  color: Colors.grey[700]!,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1111,7 +1157,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   icon: Icons.verified,
                   title: "Status",
                   value: servicesDetailsData.isActive == true ? "Active" : "Inactive",
-                  color: servicesDetailsData.isActive == true ? Colors.green[600]! : Colors.red[600]!,
+                  color: servicesDetailsData.isActive == true ? ColorClass.base_color : Colors.grey[700]!,
                 ),
               ),
             ],
@@ -1128,19 +1174,19 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: Colors.grey[200]!,
           width: 1,
         ),
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             title,
             style: TextStyle(
@@ -1150,13 +1196,13 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 12,
-              fontFamily: "Pop400",
-              color: color,
+              fontSize: 13,
+              fontFamily: "Pop600",
+              color: Colors.black87,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
@@ -1213,7 +1259,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           children: [
             Row(
               children: [
-                Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+                Icon(Icons.inventory_2, color: ColorClass.base_color, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   "Service Packages",
@@ -1231,7 +1277,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               style: TextStyle(
                 fontSize: 14,
                 fontFamily: "Pop400",
-                color: Colors.red[400],
+                      color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 4),
@@ -1272,7 +1318,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         children: [
           Row(
             children: [
-              Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+              Icon(Icons.inventory_2, color: ColorClass.base_color, size: 20),
               const SizedBox(width: 8),
               Text(
                 "Service Packages",
@@ -1284,9 +1330,9 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
+                  color: ColorClass.base_color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1294,7 +1340,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: "Pop500",
-                    color: Colors.purple[600],
+                    color: ColorClass.base_color,
                   ),
                 ),
               ),
@@ -1317,28 +1363,28 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.grey[300]!,
                   width: 1,
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+                  Icon(Icons.inventory_2, color: ColorClass.base_color, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     "View All Packages",
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: "Pop500",
-                      color: Colors.purple[600],
+                      color: Colors.black87,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_ios, color: Colors.purple[600], size: 16),
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey[600], size: 16),
                 ],
               ),
             ),
@@ -1353,12 +1399,19 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.purple.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.purple.withOpacity(0.2),
+          color: Colors.grey[200]!,
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1368,10 +1421,10 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
+                  color: ColorClass.base_color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.inventory_2, color: Colors.purple[600], size: 20),
+                child: Icon(Icons.inventory_2, color: ColorClass.base_color, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1394,6 +1447,8 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                         fontFamily: "Pop400",
                         color: Colors.grey[600],
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -1402,11 +1457,11 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    package['price'] != null ? "₹${package['price']}" : "Price TBD",
+                    package['price'] != null ? "\$${package['price']}" : "Price TBD",
                     style: TextStyle(
                       fontSize: 18,
                       fontFamily: "Pop600",
-                      color: Colors.purple[600],
+                      color: ColorClass.base_color,
                     ),
                   ),
                   Text(
@@ -1426,7 +1481,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             Wrap(
               spacing: 8,
               runSpacing: 4,
-              children: (package['features'] as List).map((feature) => _buildFeatureChip(feature.toString(), Colors.purple[600]!)).toList(),
+              children: (package['features'] as List).map((feature) => _buildFeatureChip(feature.toString())).toList(),
             ),
           ],
         ],
@@ -1518,30 +1573,26 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: features.map((feature) => _buildFeatureChip(feature, color)).toList(),
+            children: features.map((feature) => _buildFeatureChip(feature)).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFeatureChip(String feature, Color color) {
+  Widget _buildFeatureChip(String feature) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         feature,
         style: TextStyle(
           fontSize: 12,
           fontFamily: "Pop400",
-          color: color,
+          color: Colors.black87,
         ),
       ),
     );
@@ -1646,7 +1697,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         children: [
           Row(
             children: [
-              Icon(Icons.local_offer, color: Colors.orange[600], size: 20),
+              Icon(Icons.local_offer, color: ColorClass.base_color, size: 20),
               const SizedBox(width: 8),
               Text(
                 "Special Offers & Deals",
@@ -1658,9 +1709,9 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: ColorClass.base_color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1668,7 +1719,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: "Pop500",
-                    color: Colors.orange[600],
+                    color: ColorClass.base_color,
                   ),
                 ),
               ),
@@ -1694,28 +1745,28 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.orange.withOpacity(0.3),
+                      color: Colors.grey[300]!,
                       width: 1,
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.local_offer, color: Colors.orange[600], size: 20),
+                      Icon(Icons.local_offer, color: ColorClass.base_color, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         "View All ${servicesDetailsData.offers.length} Offers",
                         style: TextStyle(
                           fontSize: 16,
                           fontFamily: "Pop500",
-                          color: Colors.orange[600],
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_ios, color: Colors.orange[600], size: 16),
+                      Icon(Icons.arrow_forward_ios, color: Colors.grey[600], size: 16),
                     ],
                   ),
                 ),
@@ -1773,22 +1824,29 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.orange.withOpacity(0.2),
+          color: Colors.grey[200]!,
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: ColorClass.base_color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.local_offer, color: Colors.orange[600], size: 20),
+            child: Icon(Icons.local_offer, color: ColorClass.base_color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1820,17 +1878,17 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           if (offer.discount != null) ...[
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: ColorClass.base_color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "${offer.discount ?? 0}% OFF",
                 style: TextStyle(
                   fontSize: 12,
                   fontFamily: "Pop600",
-                  color: Colors.red[600],
+                  color: ColorClass.base_color,
                 ),
               ),
             ),
@@ -1859,7 +1917,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         children: [
           Row(
             children: [
-              Icon(Icons.star, color: Colors.amber[600], size: 20),
+              Icon(Icons.star, color: ColorClass.base_color, size: 20),
               const SizedBox(width: 8),
               Text(
                 "Customer Reviews",
@@ -1882,16 +1940,23 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.amber.withOpacity(0.3),
+                  color: Colors.grey[300]!,
                   width: 1,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.star, color: Colors.amber[600], size: 24),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: ColorClass.base_color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.star, color: ColorClass.base_color, size: 20),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1902,22 +1967,25 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                           style: TextStyle(
                             fontSize: 16,
                             fontFamily: "Pop500",
-                            color: Colors.amber[600],
+                            color: Colors.black87,
                           ),
                         ),
                         if (servicesDetailsData.totalReviews != null && servicesDetailsData.totalReviews! > 0)
-                          Text(
-                            "${servicesDetailsData.totalReviews} reviews available",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: "Pop400",
-                              color: Colors.grey[600],
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              "${servicesDetailsData.totalReviews} reviews available",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop400",
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios, color: Colors.amber[600], size: 16),
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey[600], size: 16),
                 ],
               ),
             ),
@@ -1990,17 +2058,40 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
 
   getServicesDetails(BuildContext context) async {
     try {
+      // Set loading state
+      if (mounted) {
+        setState(() {
+          _isLoadingDetails = true;
+        });
+      }
+      
       print("🔍 Getting service details for ID: ${widget.servicesData}");
       
+      // Add timeout to prevent hanging - reduced to 15 seconds
       var response = await dataManager!
-          .getServiceDetails(context, widget.servicesData);
+          .getServiceDetails(context, widget.servicesData)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              print("❌ API call timed out after 15 seconds");
+              throw TimeoutException("API call timed out", const Duration(seconds: 15));
+            },
+          );
+      
+      // Check if widget is still mounted before proceeding
+      if (!mounted) {
+        print("❌ Widget disposed, aborting getServicesDetails");
+        return;
+      }
       
       print("🔍 Service Details API Response: ${response.statusCode} - ${response.body}");
       
       // Check if response is valid
       if (response.statusCode != 200) {
         print("❌ API returned error status: ${response.statusCode}");
-        CommonWidget.errorShowSnackBarFor(context, "API returned error status: ${response.statusCode}");
+        if (mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "API returned error status: ${response.statusCode}");
+        }
         return;
       }
       
@@ -2017,16 +2108,18 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             // Use the first service for display, but store all services
             var firstService = data[0];
             
-            setState(() {
-              servicesDetailsData = ServicesDetailsData.fromJson(firstService);
-              servicesDetailsData.services.clear();
-              servicesDetailsData.services.addAll(data.map((service) => Services.fromJson(service)).toList());
-              detailImages.clear();
-              if (servicesDetailsData.detailImages != null) {
-                detailImages.addAll(servicesDetailsData.detailImages!);
-              }
-              isBookmarked = servicesDetailsData.isBookmarked ?? false;
-            });
+            if (mounted) {
+              setState(() {
+                servicesDetailsData = ServicesDetailsData.fromJson(firstService);
+                servicesDetailsData.services.clear();
+                servicesDetailsData.services.addAll(data.map((service) => Services.fromJson(service)).toList());
+                detailImages.clear();
+                if (servicesDetailsData.detailImages != null) {
+                  detailImages.addAll(servicesDetailsData.detailImages!);
+                }
+                isBookmarked = servicesDetailsData.isBookmarked ?? false;
+              });
+            }
 
             vendorIdForPackages = firstService['vendorId'] is Map
                 ? firstService['vendorId']['_id']?.toString()
@@ -2034,21 +2127,25 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             
             print("✅ Vendor services loaded successfully (${data.length} services)");
           } else {
-            CommonWidget.errorShowSnackBarFor(context, "No services found for this vendor");
+            if (mounted) {
+              CommonWidget.errorShowSnackBarFor(context, "No services found for this vendor");
+            }
             return;
           }
         } else {
           // This is a single service details response
-          setState(() {
-            servicesDetailsData = ServicesDetailsData.fromJson(data);
-            servicesDetailsData.services.clear();
-            servicesDetailsData.services.add(Services.fromJson(data));
-            detailImages.clear();
-            if (servicesDetailsData.detailImages != null) {
-              detailImages.addAll(servicesDetailsData.detailImages!);
-            }
-            isBookmarked = servicesDetailsData.isBookmarked ?? false;
-          });
+          if (mounted) {
+            setState(() {
+              servicesDetailsData = ServicesDetailsData.fromJson(data);
+              servicesDetailsData.services.clear();
+              servicesDetailsData.services.add(Services.fromJson(data));
+              detailImages.clear();
+              if (servicesDetailsData.detailImages != null) {
+                detailImages.addAll(servicesDetailsData.detailImages!);
+              }
+              isBookmarked = servicesDetailsData.isBookmarked ?? false;
+            });
+          }
 
           vendorIdForPackages = data['vendorId'] is Map
               ? data['vendorId']['_id']?.toString()
@@ -2063,15 +2160,35 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         print("🔍 Rating: ${servicesDetailsData.averageRating}");
         print("🔍 Reviews: ${servicesDetailsData.totalReviews}");
 
-        _fetchVendorPackages(vendorIdForPackages);
+        if (mounted) {
+          _fetchVendorPackages(vendorIdForPackages);
+        }
       } else {
         print("❌ API returned error: ${jsonData['message']}");
-        CommonWidget.errorShowSnackBarFor(context, jsonData['message'] ?? "Failed to load service details");
-        _fetchVendorPackages(null);
+        if (mounted) {
+          CommonWidget.errorShowSnackBarFor(context, jsonData['message'] ?? "Failed to load service details");
+          _fetchVendorPackages(null);
+        }
+      }
+      
+      // Clear loading state
+      if (mounted) {
+        setState(() {
+          _isLoadingDetails = false;
+        });
       }
     } catch (e) {
       print("❌ Error in getServicesDetails: $e");
-      CommonWidget.errorShowSnackBarFor(context, "Error loading service details: ${e.toString()}");
+      if (mounted) {
+        setState(() {
+          _isLoadingDetails = false;
+        });
+        if (e is TimeoutException) {
+          CommonWidget.errorShowSnackBarFor(context, "Request timed out. Please check your connection and try again.");
+        } else {
+          CommonWidget.errorShowSnackBarFor(context, "Error loading service details: ${e.toString()}");
+        }
+      }
     }
   }
 

@@ -88,9 +88,47 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
       return _buildServiceCard(context, item);
     } else if (item is ServicesData) {
       return _buildVendorCard(context, item);
+    } else if (item is Map<String, dynamic>) {
+      // Handle raw Map data - convert to Services object
+      try {
+        final service = Services.fromJson(item);
+        return _buildServiceCard(context, service);
+      } catch (e) {
+        print("Error converting Map to Services: $e");
+        return _buildErrorCard("Invalid service data");
+      }
     }
     
-    return Container(); // Fallback
+    // Fallback - show error card
+    return _buildErrorCard("Unknown service type: ${item.runtimeType}");
+  }
+  
+  Widget _buildErrorCard(String message) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[600], size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.red[800],
+                fontFamily: "Pop400",
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildServiceCard(BuildContext context, Services service) {
@@ -162,7 +200,11 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                                   children: [
                       // Service Title
                       Text(
-                        service.serviceTitle ?? "",
+                        (service.serviceTitle != null && service.serviceTitle!.isNotEmpty && !service.serviceTitle!.startsWith('{'))
+                            ? service.serviceTitle!
+                            : (service.categoryName != null && service.categoryName!.isNotEmpty)
+                                ? service.categoryName!
+                                : "Service",
                         style: TextStyle(
                           fontSize: 16,
                           fontFamily: "Pop600",
@@ -174,7 +216,9 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                       const SizedBox(height: 4),
                       // Category
                       Text(
-                        "${service.categoryName ?? "Car Service"} Service",
+                        service.categoryName != null && service.categoryName!.isNotEmpty
+                            ? service.categoryName!
+                            : "Car Service",
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: "Pop400",

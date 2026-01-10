@@ -328,12 +328,20 @@ class _ExploreActivityState extends State<ExploreActivity> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
-        children: [
-          // Header
-          Container(
+    return WillPopScope(
+      onWillPop: () async {
+        if (Navigator.canPop(context)) {
+          CommonWidget.safePop(context);
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: Column(
+          children: [
+            // Header
+            Container(
             padding: EdgeInsets.only(
               top: MediaQuery.of(context).padding.top + 10,
               left: 20,
@@ -353,7 +361,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => CommonWidget.safePop(context),
                       child: Icon(
                         Icons.arrow_back_ios,
                         color: Colors.white,
@@ -462,6 +470,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     : _buildListView(),
           ),
         ],
+        ),
       ),
     );
   }

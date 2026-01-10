@@ -49,9 +49,17 @@ class _BookingListActivityState extends State<BookingListActivity> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
+    return WillPopScope(
+      onWillPop: () async {
+        if (Navigator.canPop(context)) {
+          CommonWidget.safePop(context);
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: Column(
         children: [
           // Modern Header
           Container(
@@ -66,7 +74,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => CommonWidget.safePop(context),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -131,6 +139,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                   ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -263,7 +272,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 const SizedBox(height: 8),
                 _buildDetailRow(Icons.calendar_today, "Date", DateFormat('dd-MM-yyyy').format(DateTime.parse(data.date ?? ""))),
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.attach_money, "Price", "₹${data.price ?? "0"}"),
+                _buildDetailRow(Icons.attach_money, "Price", "\$${data.price ?? "0"}"),
                 
                 // Action buttons
                 if (data.orderStatus == "Pending") ...[
@@ -484,7 +493,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 alignment: AlignmentDirectional.topEnd,
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.pop(context);
+                    CommonWidget.safePop(context);
                   },
                   child: Container(
                     padding: const EdgeInsets.only(top: 10, right: 10),
@@ -576,7 +585,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                                 Expanded(
                                     child: GestureDetector(
                                   onTap: () {
-                                    Navigator.pop(context);
+                                    CommonWidget.safePop(context);
                                   },
                                   child: Container(
                                       margin: const EdgeInsets.only(right: 5),
@@ -591,7 +600,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                                     FocusManager.instance.primaryFocus
                                         ?.unfocus();
                                     //FocusManager.instance.primaryFocus?.unfocus();
-                                    Navigator.pop(context);
+                                    CommonWidget.safePop(context);
                                     putStatusCancel(context, data);
                                   },
                                   child: Container(

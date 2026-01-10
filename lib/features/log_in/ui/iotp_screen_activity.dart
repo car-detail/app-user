@@ -62,113 +62,221 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.of(context).pop(true);
+        CommonWidget.safePop(context, result: true);
         return false; // Prevent the default back button action
       },
       child: Container(
         decoration: const BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage('assets/images/login_image.png'),
-                fit: BoxFit.cover)),
+          image: DecorationImage(
+            image: AssetImage('assets/images/login_image.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          body: Container(
-            margin: !kIsWeb
-                ? const EdgeInsets.only(top: 260)
-                : const EdgeInsets.only(top: 310),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                //Image(image: AssetImage('assets/images/login_image.png')),
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.all(10),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          CommonWidget.getTextWidget500(
-                              "Sms verification code has been sent to your Register Mobile No.",
-                              size: 16),
-                          Center(
-                            child: GestureDetector(
-                              onTap: () {
-                                // Navigator.pop(context);
-                              },
-                              child: RichText(
-                                text: const TextSpan(
-                                    text: "OTP not received? ",
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Spacer for background illustration
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.35,
+                  ),
+                  
+                  // Main content card - White card with rounded top corners
+                  Container(
+                    margin: EdgeInsets.zero,
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Back button (optional, can be removed if not needed)
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.arrow_back, color: Colors.grey[700]),
+                              onPressed: () => CommonWidget.safePop(context),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 8),
+                        
+                        // SMS verification message - Split into two lines as per design
+                        RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            text: "SMS verification code has been sent to your\n",
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w400,
+                              height: 1.5,
+                              fontFamily: "Pop400",
+                            ),
+                            children: [
+                              TextSpan(
+                                text: "Register Mobile No.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: "Pop500",
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Resend OTP - Proper spacing
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              // TODO: Implement resend OTP
+                              CommonWidget.errorShowSnackBarFor(context, "Resend OTP functionality coming soon");
+                            },
+                            child: RichText(
+                              text: TextSpan(
+                                text: "OTP not received? ",
+                                style: TextStyle(
+                                  fontFamily: "Pop400",
+                                  color: Colors.black87,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: "Resend",
                                     style: TextStyle(
-                                        fontFamily: "Pop400",
-                                        color: Colors.black,
-                                        fontSize: 15),
-                                    children: [
-                                      TextSpan(
-                                        text: "Resend",
-                                        style: TextStyle(
-                                            fontFamily: "Pop600",
-                                            color: Color(0xff0E3AA6),
-                                            fontSize: 15),
-                                      ),
-                                    ]),
+                                      fontFamily: "Pop600",
+                                      color: ColorClass.base_color,
+                                      fontSize: 14,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 10, top: 20),
-                              child:
-                                  CommonWidget.getTextWidget500("Enter OTP")),
-                          const SizedBox(height: 20),
-                          Pinput(
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Enter OTP label
+                        Text(
+                          "Enter OTP",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                            fontFamily: "Pop600",
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // OTP Input - Centered with proper spacing
+                        Center(
+                          child: Pinput(
                             controller: _fieldOne,
                             length: 6,
                             keyboardType: TextInputType.number,
                             defaultPinTheme: PinTheme(
-                              width: 56,
+                              width: 50,
                               height: 56,
                               textStyle: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 22,
                                 color: Colors.black,
+                                fontWeight: FontWeight.w600,
                               ),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.circular(18),
+                                color: Colors.white,
+                                border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            focusedPinTheme: PinTheme(
+                              width: 50,
+                              height: 56,
+                              textStyle: const TextStyle(
+                                fontSize: 22,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(color: ColorClass.base_color, width: 2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            submittedPinTheme: PinTheme(
+                              width: 50,
+                              height: 56,
+                              textStyle: const TextStyle(
+                                fontSize: 22,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(color: ColorClass.base_color, width: 2),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              /*Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => ResetPasswordActivity()),
-                                );*/
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Verify Button - Full width green button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (_fieldOne.text.toString().length == 6) {
+                                postOTP(context);
+                              } else {
+                                CommonWidget.errorShowSnackBarFor(
+                                    context, "Please Enter the valid OTP");
+                              }
                             },
-                            child: Container(
-                              margin: const EdgeInsets.only(top: 30),
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (_fieldOne.text.toString().length ==
-                                      6) {
-                                    postOTP(context);
-                                  } else {
-                                    //Navigator.pop(context); //for testing
-                                    CommonWidget.errorShowSnackBarFor(
-                                        context, "Please Enter the valid OTP");
-                                  }
-                                },
-                                child: CommonWidget.getGradinetButton("Verify",
-                                    startcolor: 0xff1CA669,
-                                    endcolor: 0xff1CA669,
-                                    height: 40),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorClass.base_color,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              "Verify",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -178,12 +286,8 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
 
   postOTP(BuildContext context) async {
     var response = await loginDataManager!.postOTP(
-        _fieldOne.text +
-            _fieldTwo.text +
-            _fieldThree.text +
-            _fieldFour.text +
-            _fieldFive.text +
-            _fieldSix.text, "",
+        _fieldOne.text,
+        "",
         widget.mobileNo,
         context);
     var data = VerifyOtpModelBean.fromJson(jsonDecode(response.body));

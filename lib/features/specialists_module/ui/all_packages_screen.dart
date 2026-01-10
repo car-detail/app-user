@@ -112,9 +112,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => CommonWidget.safePop(context),
         ),
         title: Text(
           "Packages - ${widget.vendorName}",
@@ -335,7 +333,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ),
                     const Spacer(),
                     Text(
-                      price != null ? "₹$price" : "Price TBD",
+                      price != null ? "\$$price" : "Price TBD",
                       style: TextStyle(
                         fontSize: 20,
                         fontFamily: "Pop600",
@@ -404,17 +402,15 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       builder: (context) => AlertDialog(
         title: Text("Book ${package['title'] ?? package['packageName'] ?? 'Service Package'}"),
         content: Text(
-            "This package costs ₹${package['price'] ?? 'TBD'} and takes ${package['duration'] ?? 'custom time'} to complete."),
+            "This package costs \$${package['price'] ?? 'TBD'} and takes ${package['duration'] ?? 'custom time'} to complete."),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => CommonWidget.safePop(context),
             child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              CommonWidget.safePop(context);
               CommonWidget.successShowSnackBarFor(context, "Package booking initiated!");
             },
             child: const Text("Book Now"),

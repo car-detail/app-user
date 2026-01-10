@@ -81,7 +81,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => CommonWidget.safePop(context),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -329,7 +329,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
                       ],
                       if (service.services.isNotEmpty && service.services.first.price != null) ...[
                         Text(
-                          "₹${service.services.first.price}",
+                          "\$${service.services.first.price}",
                           style: TextStyle(
                             fontSize: 16,
                             fontFamily: "Pop600",
@@ -407,7 +407,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => CommonWidget.safePop(context),
               child: Text(
                 "Cancel",
                 style: TextStyle(
@@ -418,7 +418,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                CommonWidget.safePop(context);
                 removeBookmark(
                   context,
                   bookmark.serviceId!.sId.toString(),

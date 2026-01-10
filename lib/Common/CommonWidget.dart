@@ -95,23 +95,50 @@ class CommonWidget {
   }
 
   static void navigateToScreen(BuildContext context, Widget screen) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => screen,
-      ),
-    );
+    if (!context.mounted) return;
+    try {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => screen,
+        ),
+      );
+    } catch (e) {
+      print("Navigation error: $e");
+    }
+  }
+
+  /// Safe navigation pop - checks if context is mounted and can pop
+  static void safePop(BuildContext context, {dynamic result}) {
+    if (!context.mounted) return;
+    try {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(result);
+      }
+    } catch (e) {
+      print("Navigation pop error: $e");
+    }
   }
 
   // Replace the current screen with a new one and destroy the previous screens in stack
   static void navigateToKillScreen(BuildContext context, Widget page) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => page),
-    );
+    if (!context.mounted) return;
+    try {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => page),
+      );
+    } catch (e) {
+      print("Navigation error: $e");
+    }
   }
 
   static void navigateToKillAllScreen(BuildContext context, Widget page) {
-    Navigator.pushAndRemoveUntil(context,
-        MaterialPageRoute(builder: (context) => page), (route) => false);
+    if (!context.mounted) return;
+    try {
+      Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (context) => page), (route) => false);
+    } catch (e) {
+      print("Navigation error: $e");
+    }
   }
 
   //paas some extra values when navigation from one screen to other screen
@@ -430,7 +457,7 @@ class CommonWidget {
               if(isBack)
                 GestureDetector(
                   onTap: () {
-                    Navigator.pop(context);
+                    CommonWidget.safePop(context);
                   },
                   child: const Image(
                     image: AssetImage("assets/images/left_icon.png"),
@@ -527,7 +554,7 @@ class CommonWidget {
                 GestureDetector(
                   onTap: () {
                     if (backFuntion == null) {
-                      Navigator.pop(context);
+                      CommonWidget.safePop(context);
                     } else {
                       backFuntion.call();
                     }
@@ -837,7 +864,7 @@ class CommonWidget {
                 alignment: AlignmentDirectional.topEnd,
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.pop(context);
+                    CommonWidget.safePop(context);
                   },
                   child: const Image(
                     image: AssetImage("assets/images/delete.png"),

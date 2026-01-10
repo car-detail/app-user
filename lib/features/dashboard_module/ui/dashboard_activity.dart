@@ -6,6 +6,7 @@ import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../../Common/Color.dart';
+import '../../../Common/ModernDesignSystem.dart';
 import '../../explore_module/ui/explore_activity.dart';
 
 class DashboardActivity extends StatefulWidget {
@@ -35,7 +36,10 @@ class _DashboardActivityState extends State<DashboardActivity> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: _pageNo[selectedpage],
+        child: IndexedStack(
+          index: selectedpage,
+          children: _pageNo,
+        ),
       ),
       bottomNavigationBar: _buildModernBottomNav(),
     );
@@ -43,49 +47,55 @@ class _DashboardActivityState extends State<DashboardActivity> {
 
   Widget _buildModernBottomNav() {
     return Container(
-      height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, -3),
-          ),
-        ],
+        boxShadow: ModernDesignSystem.shadowLarge,
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(ModernDesignSystem.radiusXL),
+          topRight: Radius.circular(ModernDesignSystem.radiusXL),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            index: 0,
-            isSelected: selectedpage == 0,
-          ),
-          _buildNavItem(
-            icon: Icons.explore_rounded,
-            label: 'Explore',
-            index: 1,
-            isSelected: selectedpage == 1,
-          ),
-          _buildNavItem(
-            icon: Icons.book_online_rounded,
-            label: 'Booking',
-            index: 2,
-            isSelected: selectedpage == 2,
-          ),
-          _buildNavItem(
-            icon: Icons.person_rounded,
-            label: 'Profile',
-            index: 3,
-            isSelected: selectedpage == 3,
-          ),
-        ],
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.home_rounded,
+                label: 'Home',
+                index: 0,
+                isSelected: selectedpage == 0,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.explore_rounded,
+                label: 'Explore',
+                index: 1,
+                isSelected: selectedpage == 1,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.book_online_rounded,
+                label: 'Booking',
+                index: 2,
+                isSelected: selectedpage == 2,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.person_rounded,
+                label: 'Profile',
+                index: 3,
+                isSelected: selectedpage == 3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -97,48 +107,51 @@ class _DashboardActivityState extends State<DashboardActivity> {
     required bool isSelected,
   }) {
     return GestureDetector(
-      onTap: () => setState(() => selectedpage = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? ColorClass.base_color.withOpacity(0.12) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        if (mounted) {
+          setState(() => selectedpage = index);
+        }
+      },
+      child: Container(
+        constraints: const BoxConstraints(
+          minWidth: 0,
+          maxWidth: double.infinity,
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: isSelected ? ColorClass.base_color : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: isSelected ? [
-                  BoxShadow(
-                    color: ColorClass.base_color.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ] : null,
+                borderRadius: BorderRadius.circular(ModernDesignSystem.radiusM),
               ),
               child: Icon(
                 icon,
                 color: isSelected ? Colors.white : ColorClass.dark_gray_base,
-                size: 18,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
+            const SizedBox(height: 4),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
               style: TextStyle(
                 color: isSelected ? ColorClass.base_color : ColorClass.dark_gray_base,
-                fontSize: 9,
+                fontSize: isSelected ? 10 : 9,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 letterSpacing: 0.2,
+                height: 1.1,
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],

@@ -5,6 +5,7 @@ import 'package:car_app/Common/Color.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
 import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/Common/Constant.dart';
+import 'package:car_app/Common/ModernDesignSystem.dart';
 import 'package:car_app/features/categories_module/ui/categories_list_activity.dart';
 import 'package:car_app/features/categories_module/ui/sevice_list_screen.dart';
 import 'package:car_app/features/home_module/data_manager/home_data_manager.dart';
@@ -19,9 +20,13 @@ import 'package:car_app/features/notification_model/ui/notification_activity.dar
 import 'package:car_app/features/home_module/ui/search_results_screen.dart';
 import 'package:car_app/features/home_module/ui/all_vendors_screen.dart';
 import 'package:car_app/features/categories_module/ui/all_categories_screen.dart';
+import 'package:car_app/features/home_module/ui/location_picker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomplete_textfield.dart';
 
 import '../../../Common/CommonBean.dart';
 import '../../categories_module/ui/sevice_list_screen.dart';
@@ -56,6 +61,9 @@ class _HomeActivityState extends State<HomeActivity> {
   // Scroll animation variables
   ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
+  double _lastScrollOffset = 0.0;
+  Timer? _scrollThrottleTimer;
+  bool _headerFullyCollapsed = false; // Track if header is fully collapsed to prevent unnecessary updates
   
   // User login status
   bool _isUserLoggedIn = false;
@@ -63,13 +71,33 @@ class _HomeActivityState extends State<HomeActivity> {
   // Search functionality
   Timer? _searchTimer;
   bool _isSearching = false;
+  
+  // Location search
+  final TextEditingController _locationController = TextEditingController();
+  bool _isGettingLocation = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    // Use post-frame callback to ensure scroll controller is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scrollController.hasClients) {
+        _scrollController.addListener(_onScroll);
+      }
+    });
     _checkUserLoginStatus();
+    _initLocationController();
     start();
+  }
+  
+  Future<void> _initLocationController() async {
+    if (sharedPreferences == null) {
+      sharedPreferences = await SharedPreferences.getInstance();
+    }
+    final currentLocation = sharedPreferences?.getString(Constant.location) ?? "Select Location";
+    if (mounted) {
+      _locationController.text = currentLocation;
+    }
   }
 
   @override
@@ -77,12 +105,193 @@ class _HomeActivityState extends State<HomeActivity> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchTimer?.cancel();
+    _scrollThrottleTimer?.cancel();
+    _locationController.dispose();
     super.dispose();
+  }
+  
+  Future<void> _saveLocation(String address, double lat, double lng) async {
+    if (sharedPreferences == null) {
+      sharedPreferences = await SharedPreferences.getInstance();
+    }
+    
+    await sharedPreferences?.setString(Constant.location, address);
+    await sharedPreferences?.setString(Constant.lat, lat.toString());
+    await sharedPreferences?.setString(Constant.long, lng.toString());
+    
+    if (mounted) {
+      setState(() {
+        _locationController.text = address;
+      });
+      // Refresh vendors with new location
+      setState(() {
+        _isLoading = true;
+      });
+      await getMixedVendors(context);
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isGettingLocation = true;
+    });
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _isGettingLocation = false;
+        });
+        if (mounted) {
+          CommonWidget.errorShowSnackBarFor(
+              context, 'Location services are disabled. Please enable them.');
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _isGettingLocation = false;
+          });
+          if (mounted) {
+            CommonWidget.errorShowSnackBarFor(
+                context, 'Location permissions are denied');
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _isGettingLocation = false;
+        });
+        if (mounted) {
+          CommonWidget.errorShowSnackBarFor(
+              context, 'Location permissions are permanently denied');
+        }
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude, position.longitude);
+
+      String address = placemarks[0].locality ??
+          placemarks[0].subAdministrativeArea ??
+          placemarks[0].administrativeArea ??
+          "Current Location";
+
+      await _saveLocation(address, position.latitude, position.longitude);
+      
+      setState(() {
+        _isGettingLocation = false;
+      });
+
+      if (mounted) {
+        CommonWidget.successShowSnackBarFor(
+            context, 'Location updated successfully!');
+      }
+    } catch (e) {
+      setState(() {
+        _isGettingLocation = false;
+      });
+      if (mounted) {
+        CommonWidget.errorShowSnackBarFor(
+            context, 'Error getting location: ${e.toString()}');
+      }
+    }
   }
 
   void _onScroll() {
-    setState(() {
-      _scrollOffset = _scrollController.offset;
+    // Check if scroll controller is still attached and valid
+    if (!_scrollController.hasClients || !mounted) {
+      return;
+    }
+    
+    final currentOffset = _scrollController.offset;
+    
+    // Calculate if header would be fully collapsed (height < 10)
+    // baseHeaderHeight is typically around 200-250, so when scrollOffset > ~320, header is fully collapsed
+    const double baseHeaderHeight = 250.0;
+    const double minHeaderHeight = 0.0;
+    final double calculatedHeaderHeight = (baseHeaderHeight - (currentOffset * 0.6)).clamp(minHeaderHeight, baseHeaderHeight);
+    final bool isFullyCollapsed = calculatedHeaderHeight < 10;
+    
+    // If header is fully collapsed and was already collapsed, COMPLETELY STOP all processing
+    // This is the key fix - no calculations, no timers, nothing
+    if (isFullyCollapsed && _headerFullyCollapsed) {
+      return; // Exit immediately, do nothing
+    }
+    
+    // Update collapsed state only when transitioning
+    if (isFullyCollapsed != _headerFullyCollapsed) {
+      _headerFullyCollapsed = isFullyCollapsed;
+      // Remove scroll listener when collapsed to prevent any further calls
+      if (isFullyCollapsed) {
+        _scrollController.removeListener(_onScroll);
+      } else {
+        // Re-add listener when expanding
+        if (!_scrollController.hasListeners) {
+          _scrollController.addListener(_onScroll);
+        }
+      }
+      // Only update state when transitioning between collapsed/expanded states
+      if (mounted) {
+        setState(() {
+          _scrollOffset = currentOffset;
+        });
+      }
+      return;
+    }
+    
+    // Only process scroll updates when header is NOT fully collapsed
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    
+    // Prevent issues when at the bottom
+    if (currentOffset >= maxScroll - 1) {
+      if (_scrollOffset != maxScroll && mounted) {
+        _scrollThrottleTimer?.cancel();
+        _scrollThrottleTimer = Timer(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _scrollOffset = maxScroll;
+            });
+          }
+        });
+      }
+      return;
+    }
+    
+    // Only update if scroll offset changed significantly (more than 80 pixels)
+    // Much larger threshold to drastically reduce rebuilds
+    if ((currentOffset - _lastScrollOffset).abs() < 80) {
+      return;
+    }
+    
+    _lastScrollOffset = currentOffset;
+    
+    // Throttle setState calls very aggressively to prevent UI freezing
+    _scrollThrottleTimer?.cancel();
+    _scrollThrottleTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted && _scrollController.hasClients && !_headerFullyCollapsed) {
+        final newOffset = _scrollController.offset;
+        // Only update if the change is significant enough (50px) to warrant a rebuild
+        if ((newOffset - _scrollOffset).abs() >= 50) {
+          setState(() {
+            _scrollOffset = newOffset;
+          });
+        }
+      }
     });
   }
 
@@ -192,7 +401,7 @@ class _HomeActivityState extends State<HomeActivity> {
     try {
       print('Loading all services...');
       // Get user location for Google Places integration
-      var location = await _getCurrentLocation();
+      var location = await _getUserLocationData();
       var response = await dataManager!.getAllServicesWithLocation(context, location);
       if (response != null) {
         var responseData = jsonDecode(response.body);
@@ -241,7 +450,7 @@ class _HomeActivityState extends State<HomeActivity> {
     return allItems;
   }
 
-  Future<Map<String, double>?> _getCurrentLocation() async {
+  Future<Map<String, double>?> _getUserLocationData() async {
     try {
       // Try to get location from shared preferences first
       String? latStr = sharedPreferences?.getString(Constant.lat);
@@ -279,267 +488,315 @@ class _HomeActivityState extends State<HomeActivity> {
     // Make header height responsive to screen size
     double baseHeaderHeight = screenHeight * 0.28; // 28% of screen height for better visibility
     double minHeaderHeight = 0.0; // Allow complete collapse
-    double headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(minHeaderHeight, baseHeaderHeight);
     
-    // Ensure minimum height for very small screens
-    if (screenHeight < 600) {
-      baseHeaderHeight = 200.0;
-      headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(0.0, baseHeaderHeight);
+    // If header is fully collapsed, use cached values to prevent unnecessary calculations
+    double headerHeight;
+    double welcomeOpacity;
+    double welcomeScale;
+    
+    if (_headerFullyCollapsed) {
+      // Header is fully collapsed, use fixed values to prevent rebuilds
+      headerHeight = 0.0;
+      welcomeOpacity = 0.0;
+      welcomeScale = 0.8;
+    } else {
+      // Calculate header height and animations only when header is visible
+      headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(minHeaderHeight, baseHeaderHeight);
+      
+      // Ensure minimum height for very small screens
+      if (screenHeight < 600) {
+        baseHeaderHeight = 200.0;
+        headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(0.0, baseHeaderHeight);
+      }
+      
+      welcomeOpacity = 1.0 - (_scrollOffset / 80.0).clamp(0.0, 1.0);
+      welcomeScale = 1.0 - (_scrollOffset / 150.0).clamp(0.0, 0.3);
     }
-    
-    // Debug information
-    print('Screen Height: $screenHeight, Status Bar: $statusBarHeight, Header Height: $headerHeight');
-    
-    double welcomeOpacity = 1.0 - (_scrollOffset / 80.0).clamp(0.0, 1.0);
-    double welcomeScale = 1.0 - (_scrollOffset / 150.0).clamp(0.0, 0.3);
     
     return Scaffold(
       body: Stack(
         children: [
           Column(
             children: [
-              // Animated Header - Only show if height > 0
-              if (headerHeight > 0)
-                AnimatedContainer(
-                  duration: Duration(milliseconds: 100),
-                  height: headerHeight,
-                  child: SingleChildScrollView(
+              // Header - Completely remove from tree when collapsed to prevent any rebuilds
+              if (!_headerFullyCollapsed)
+                IgnorePointer(
+                  ignoring: headerHeight < 10, // Ignore pointer events when header is collapsed
                   child: Container(
-                    padding: EdgeInsets.only(
-                      top: statusBarHeight + 10, 
-                      bottom: 20, 
-                      left: 20, 
-                      right: 20
-                    ),
-                  decoration: BoxDecoration(
-            color: ColorClass.base_color,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(25),
-                      bottomRight: Radius.circular(25),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-              children: [
-                Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.white,
-                              size: 24,
+                    height: headerHeight,
+                    decoration: const BoxDecoration(), // Required when using clipBehavior
+                    clipBehavior: Clip.hardEdge, // Clip content when height is 0
+                    child: headerHeight > 10
+                      ? Container(
+                          padding: EdgeInsets.only(
+                            top: statusBarHeight + 10, 
+                            bottom: 16, 
+                            left: 20, 
+                            right: 20
+                          ),
+                          decoration: BoxDecoration(
+                            color: ColorClass.base_color,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(25),
+                              bottomRight: Radius.circular(25),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Current Location",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                    fontFamily: "Pop300",
-                                  ),
-                                ),
-                                Text(
-                                  sharedPreferences?.getString(Constant.location) ?? "Select Location",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontFamily: "Pop500",
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      GestureDetector(
-                        onTap: () {
-                          CommonWidget.navigateToScreen(
-                              context, NotificationActivity([]));
-                        },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_active_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      // Animated Welcome Section
-                      AnimatedOpacity(
-                        opacity: welcomeOpacity,
-                        duration: Duration(milliseconds: 200),
-                        child: Transform.scale(
-                          scale: welcomeScale,
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            "Welcome to Cahrz!",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontFamily: "Pop600",
-                                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: AddressAutocompleteTextField(
+                                        decoration: InputDecoration(
+                                          prefixIcon: Icon(
+                                            Icons.location_on_outlined,
+                                            color: ColorClass.base_color,
+                                            size: 20,
                                           ),
-                                          // const SizedBox(height: 4),
-                                          // const Text(
-                                          //   "Find the best car services near you",
-                                          //   style: TextStyle(
-                                          //     color: Colors.white70,
-                                          //     fontSize: 12,
-                                          //     fontFamily: "Pop400",
-                                          //   ),
-                                          // ),
+                                          hintText: "Search location...",
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey[400],
+                                            fontSize: 14,
+                                            fontFamily: "Pop400",
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          isDense: true,
+                                        ),
+                                        mapsApiKey: 'AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw',
+                                        controller: _locationController,
+                                        onSuggestionClick: (place) {
+                                          final address = place.formattedAddress ?? place.name ?? '';
+                                          final lat = place.lat ?? 0.0;
+                                          final lng = place.lng ?? 0.0;
+                                          _saveLocation(address, lat, lng);
+                                        },
+                                        language: 'en-US',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: _isGettingLocation ? null : _getCurrentLocation,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: ColorClass.base_color,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: _isGettingLocation
+                                          ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.my_location,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      CommonWidget.navigateToScreen(
+                                          context, NotificationActivity([]));
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.notifications_active_rounded,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (welcomeOpacity > 0.1)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: RepaintBoundary(
+                                    child: Opacity(
+                                      opacity: welcomeOpacity,
+                                      child: Transform.scale(
+                                        scale: welcomeScale,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Text(
+                                                      "Welcome to Cahrz!",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontFamily: "Pop600",
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.all(10),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.car_repair,
+                                                  color: Colors.white,
+                                                  size: 28,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  CommonWidget.navigateToScreen(context, const ProfileActivity());
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white.withOpacity(0.2),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.person,
+                                                    color: Colors.white,
+                                                    size: 22,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (welcomeOpacity > 0.3)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
                                         ],
                                       ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.2),
+                                      child: TextField(
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _searchQuery = value;
+                                          });
+                                        },
+                                        onSubmitted: (value) {
+                                          if (value.isNotEmpty) {
+                                            _performSearch();
+                                          }
+                                        },
+                                        decoration: InputDecoration(
+                                          hintText: "Search for services, locations...",
+                                          hintStyle: TextStyle(
+                                            fontFamily: "Pop400",
+                                            color: Colors.grey[600],
+                                          ),
+                                          prefixIcon: Icon(
+                                            Icons.search,
+                                            color: ColorClass.base_color,
+                                          ),
+                                          suffixIcon: _searchQuery.isNotEmpty
+                                              ? Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        _performSearch();
+                                                      },
+                                                      icon: Icon(
+                                                        Icons.search,
+                                                        color: ColorClass.base_color,
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          _searchQuery = "";
+                                                          filteredMixedVendorsData = List.from(mixedVendorsData);
+                                                          _isSearching = false;
+                                                        });
+                                                      },
+                                                      icon: Icon(
+                                                        Icons.clear,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                              : null,
+                                          border: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide.none,
                                           ),
-                                          child: const Icon(
-                                            Icons.car_repair,
-                                            color: Colors.white,
-                                            size: 32,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        GestureDetector(
-                                          onTap: () {
-                                            CommonWidget.navigateToScreen(context, const ProfileActivity());
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(
-                                              Icons.person,
-                                              color: Colors.white,
-                                              size: 24,
-                                            ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 10,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                // Search Bar
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextField(
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _searchQuery = value;
-                                        });
-                                      },
-                                      onSubmitted: (value) {
-                                        if (value.isNotEmpty) {
-                                          _performSearch();
-                                        }
-                                      },
-                                    decoration: InputDecoration(
-                                      hintText: "Search for services, locations...",
-                                      hintStyle: TextStyle(
-                                        fontFamily: "Pop400",
-                                        color: Colors.grey[600],
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.search,
-                                  color: ColorClass.base_color,
-                                      ),
-                                      suffixIcon: _searchQuery.isNotEmpty
-                                          ? Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    _performSearch();
-                                                  },
-                                                  icon: Icon(
-                                                    Icons.search,
-                                                    color: ColorClass.base_color,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      _searchQuery = "";
-                                                      filteredMixedVendorsData = List.from(mixedVendorsData);
-                                                      _isSearching = false;
-                                                    });
-                                                  },
-                                                  icon: Icon(
-                                                    Icons.clear,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : null,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
                                       ),
                                     ),
                                   ),
-                                ),
                               ],
                             ),
-                          ),
-                        ),
-                      ),
-              ],
-            ),
-          ),
+                          )
+                      : const SizedBox.shrink(), // Empty widget when header is collapsed
+                  ),
                 ),
-              ),
               // Main Content
           Expanded(
                 child: RefreshIndicator(
@@ -609,107 +866,66 @@ class _HomeActivityState extends State<HomeActivity> {
                       )
                     : SingleChildScrollView(
                         controller: _scrollController,
-                        padding: const EdgeInsets.all(15),
+                        physics: const ClampingScrollPhysics(), // Better performance than AlwaysScrollableScrollPhysics
+                        padding: const EdgeInsets.only(
+                          left: 15,
+                          right: 15,
+                          top: 15,
+                          bottom: 90, // Extra padding for bottom navigation
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                         // Categories Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                            const Text(
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
                               "Categories",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontFamily: "Pop600",
+                              style: ModernDesignSystem.heading3(
                                 color: Colors.black87,
+                              ).copyWith(
+                                fontFamily: "Pop600",
+                                fontSize: 22,
                               ),
                             ),
-                            // TextButton(
-                            //   onPressed: () {
-                            //     CommonWidget.navigateToScreen(
-                            //       context,
-                            //       const AllCategoriesScreen(),
-                            //     );
-                            //   },
-                            //   child: Text(
-                            //     "See All",
-                            //     style: TextStyle(
-                            //       color: ColorClass.base_color,
-                            //       fontFamily: "Pop500",
-                            //     ),
-                            //   ),
-                            // ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: SizedBox(
-                            height: 120,
-                  child: ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      clipBehavior: Clip.none,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: categoryData.length,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
+                            if (categoryData.length > 4)
+                              TextButton(
+                                onPressed: () {
                                   CommonWidget.navigateToScreen(
                                     context,
-                                    CategoriesListActivity(categoryData[index]),
+                                    const AllCategoriesScreen(),
                                   );
-                          },
-                          child: Container(
-                                  width: 100,
-                                  margin: const EdgeInsets.only(right: 16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                ),
+                                child: Text(
+                                  "See All",
+                                  style: TextStyle(
+                                    color: ColorClass.base_color,
+                                    fontFamily: "Pop500",
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                      Container(
-                                        width: 50,
-                                  height: 50,
-                                        decoration: BoxDecoration(
-                                          color: ColorClass.base_color.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(25),
-                                        ),
-                                        child: Icon(
-                                          Icons.car_repair,
-                                  color: ColorClass.base_color,
-                                          size: 24,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        categoryData[index].categoryTitle ?? "",
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontFamily: "Pop500",
-                                          color: Colors.black87,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                              ],
-                            ),
-                          ),
-                        );
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 120,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            clipBehavior: Clip.none,
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: categoryData.length,
+                            itemBuilder: (context, index) {
+                              return _buildCategoryCard(categoryData[index], index);
                             },
                           ),
                         ),
-                      ),
                         const SizedBox(height: 24),
                         // Quick Actions
                         const Text(
@@ -828,10 +1044,25 @@ class _HomeActivityState extends State<HomeActivity> {
                         const SizedBox(height: 12),
                   SizedBox(
                     height: 150,
-                    child: ListView.builder(
+                    child: offerListData.isEmpty
+                        ? Center(
+                            child: Text(
+                              "No offers available",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop400",
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
                             scrollDirection: Axis.horizontal,
-                        itemCount: offerListData.length,
-                        itemBuilder: (context, index) {
+                            physics: const ClampingScrollPhysics(), // Prevent scroll conflicts
+                            cacheExtent: 500, // Cache more items for smoother scrolling
+                            addAutomaticKeepAlives: false, // Don't keep widgets alive when off-screen
+                            addRepaintBoundaries: true, // Add repaint boundaries automatically
+                            itemCount: offerListData.length,
+                            itemBuilder: (context, index) {
                               final offer = offerListData[index];
                               if (offer == null) {
                                 return const SizedBox.shrink();
@@ -873,107 +1104,56 @@ class _HomeActivityState extends State<HomeActivity> {
                   ],
                 ),
                 child: Row(
-                                            children: [
-                                              Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.location_on_outlined,
-                                                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "Current Location",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 10,
-                              fontFamily: "Pop300",
-                            ),
-                          ),
-                          Text(
-                            sharedPreferences?.getString(Constant.location) ?? "Select Location",
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 14,
-                              fontFamily: "Pop500",
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Floating minimized header
-          if (_scrollOffset > 100)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                height: 80,
-                padding: EdgeInsets.only(
-                  top: statusBarHeight + 5, 
-                  bottom: 10, 
-                  left: 20, 
-                  right: 20
-                ),
-                decoration: BoxDecoration(
-                  color: ColorClass.base_color,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
                   children: [
                     GestureDetector(
-                      onTap: () {
-                        _scrollController.animateTo(
-                          0,
-                          duration: Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LocationPickerScreen(
+                              currentLocation: sharedPreferences?.getString(Constant.location),
+                            ),
+                          ),
                         );
+                        
+                        if (result != null && mounted) {
+                          // Refresh vendors with new location
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          await getMixedVendors(context);
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
                       },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        sharedPreferences?.getString(Constant.location) ?? "Select Location",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: "Pop500",
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.location_on_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              sharedPreferences?.getString(Constant.location) ?? "Select Location",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontFamily: "Pop500",
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     if (_isUserLoggedIn)
@@ -1018,49 +1198,118 @@ class _HomeActivityState extends State<HomeActivity> {
     );
   }
 
+  Widget _buildCategoryCard(CategoryData category, int index) {
+    return GestureDetector(
+      onTap: () {
+        CommonWidget.navigateToScreen(
+          context,
+          CategoriesListActivity(category),
+        );
+      },
+      child: AnimatedContainer(
+        duration: ModernDesignSystem.animationFast,
+        curve: ModernDesignSystem.animationCurve,
+        width: 110,
+        margin: EdgeInsets.only(
+          right: index == categoryData.length - 1 ? 0 : 16,
+        ),
+        decoration: ModernDesignSystem.modernCard(
+          borderRadius: ModernDesignSystem.radiusXL,
+          shadows: ModernDesignSystem.shadowSmall,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      ColorClass.base_color.withOpacity(0.15),
+                      ColorClass.base_color.withOpacity(0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(ModernDesignSystem.radiusRound),
+                ),
+                child: Icon(
+                  Icons.car_repair,
+                  color: ColorClass.base_color,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                category.categoryTitle ?? "",
+                style: ModernDesignSystem.bodyMedium(
+                  color: Colors.black87,
+                ).copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  letterSpacing: 0.1,
+                  height: 1.2,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildQuickActionCard(String title, IconData icon, VoidCallback onTap, {Color? iconColor, Color? backgroundColor}) {
     final defaultIconColor = iconColor ?? ColorClass.base_color;
     final defaultBackgroundColor = backgroundColor ?? ColorClass.base_color.withOpacity(0.1);
     
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+      child: AnimatedContainer(
+        duration: ModernDesignSystem.animationFast,
+        curve: ModernDesignSystem.animationCurve,
+        padding: const EdgeInsets.all(ModernDesignSystem.spacingL),
+        decoration: ModernDesignSystem.modernCard(
+          borderRadius: ModernDesignSystem.radiusL,
+          shadows: ModernDesignSystem.shadowMedium,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: defaultBackgroundColor,
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(ModernDesignSystem.radiusRound),
+                boxShadow: ModernDesignSystem.getColoredShadow(defaultIconColor, opacity: 0.1),
               ),
               child: Icon(
                 icon,
                 color: defaultIconColor,
-                size: 24,
+                size: 28,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: ModernDesignSystem.spacingM),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontFamily: "Pop500",
+              style: ModernDesignSystem.bodyMedium(
                 color: Colors.black87,
+              ).copyWith(
+                fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1069,70 +1318,93 @@ class _HomeActivityState extends State<HomeActivity> {
   }
 
   Widget _buildVendorCard(MixedVendorData vendor) {
-    return GestureDetector(
-      onTap: vendor.isOpen ? () {
-        if (vendor.isAppVendor) {
-          CommonWidget.navigateToScreen(
-            context,
-            SpecialistsActivity(vendor.id),
-          );
-        } else {
-          _openInMaps(vendor);
-        }
-      } : null,
-      child: Container(
-                              width: 280,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: vendor.isOpen ? Colors.white : Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: vendor.isOpen 
-                ? Colors.black.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    // Use RepaintBoundary to isolate repaints and improve performance
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: vendor.isOpen ? () {
+          if (vendor.isAppVendor) {
+            // Use async to prevent blocking the UI thread
+            Future.microtask(() {
+              if (mounted) {
+                CommonWidget.navigateToScreen(
+                  context,
+                  SpecialistsActivity(vendor.id),
+                );
+              }
+            });
+          } else {
+            _openInMaps(vendor);
+          }
+        } : null,
+        child: Container(
+          width: 280,
+          margin: const EdgeInsets.only(right: 16),
+          decoration: ModernDesignSystem.modernCard(
+            color: vendor.isOpen ? Colors.white : Colors.grey[50],
+            borderRadius: ModernDesignSystem.radiusL,
+            shadows: vendor.isOpen 
+                ? ModernDesignSystem.shadowMedium
+                : ModernDesignSystem.shadowSmall,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-                                      child: Container(
-              height: 110,
-              width: double.infinity,
-              color: Colors.grey[200],
-              child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      vendor.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min, // Optimize layout
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(ModernDesignSystem.radiusL),
+                  topRight: Radius.circular(ModernDesignSystem.radiusL),
+                ),
+                child: Container(
+                  height: 110,
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          vendor.imageUrl!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              vendor.isAppVendor ? Icons.local_car_wash : Icons.location_on,
+                              size: 48,
+                              color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
+                            );
+                          },
+                          headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                          },
+                          cacheWidth: 280, // Limit image width for memory efficiency
+                          cacheHeight: 110, // Limit image height for memory efficiency
+                        )
+                      : Icon(
                           vendor.isAppVendor ? Icons.local_car_wash : Icons.location_on,
                           size: 48,
                           color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
-                        );
-                      },
-                    )
-                  : Icon(
-                      vendor.isAppVendor ? Icons.local_car_wash : Icons.location_on,
-                      size: 48,
-                      color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
-                    ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+                        ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                 Row(
                   children: [
                     Expanded(
@@ -1219,12 +1491,13 @@ class _HomeActivityState extends State<HomeActivity> {
                       ),
                     ],
                   ],
-                  ),
-              ],
-            ),
+                ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -1298,70 +1571,68 @@ class _HomeActivityState extends State<HomeActivity> {
       return const SizedBox.shrink();
     }
     
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: Container(
-              height: 100,
-          width: double.infinity,
-              color: ColorClass.base_color.withOpacity(0.1),
-              child: const Icon(
-                Icons.local_offer,
-                size: 48,
-                color: Colors.orange,
+    // Use RepaintBoundary to isolate repaints and improve performance
+    return RepaintBoundary(
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: ModernDesignSystem.modernCard(
+          borderRadius: ModernDesignSystem.radiusL,
+          shadows: ModernDesignSystem.shadowMedium,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Optimize layout
+          children: [
+              ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(ModernDesignSystem.radiusL),
+                topRight: Radius.circular(ModernDesignSystem.radiusL),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                Text(
-                  offer.title ?? "Special Offer",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontFamily: "Pop600",
-                    color: Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              child: Container(
+                height: 100,
+                width: double.infinity,
+                color: ColorClass.base_color.withOpacity(0.1),
+                child: const Icon(
+                  Icons.local_offer,
+                  size: 48,
+                  color: Colors.orange,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  offer.description ?? "Limited time offer",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontFamily: "Pop400",
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    offer.title ?? "Special Offer",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontFamily: "Pop600",
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    offer.description ?? "Limited time offer",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: "Pop400",
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1386,9 +1657,7 @@ class _HomeActivityState extends State<HomeActivity> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => CommonWidget.safePop(context),
               child: const Text(
                 "Cancel",
                 style: TextStyle(
@@ -1399,7 +1668,7 @@ class _HomeActivityState extends State<HomeActivity> {
             ),
               ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                CommonWidget.safePop(context);
                 // Open external link or show contact info
                 _launchUrl("https://cahrz.com/become-vendor");
               },
@@ -1450,13 +1719,17 @@ class _HomeActivityState extends State<HomeActivity> {
 
   Future<void> getServices(BuildContext context) async {
     try {
-    var response = await dataManager!.getAllServices(context);
+      var response = await dataManager!.getAllServices(context);
       if (response != null) {
-      setState(() {
-        servicesData.clear();
-          servicesData.addAll(response);
-          filteredServicesData = List.from(servicesData);
-        });
+        var responseData = jsonDecode(response.body);
+        if (responseData['status'] == 'success' && responseData['data'] != null) {
+          setState(() {
+            servicesData.clear();
+            final servicesList = responseData['data'] as List;
+            servicesData.addAll(servicesList.map((item) => ServicesData.fromJson(item)).toList());
+            filteredServicesData = List.from(servicesData);
+          });
+        }
       }
     } catch (e) {
       print('Error getting services: $e');
@@ -1622,7 +1895,7 @@ class _HomeActivityState extends State<HomeActivity> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => CommonWidget.safePop(context),
               child: Text(
                 "Close",
                 style: TextStyle(
@@ -1633,7 +1906,7 @@ class _HomeActivityState extends State<HomeActivity> {
             ),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pop(context);
+                CommonWidget.safePop(context);
                 _openInMaps(vendor);
               },
               icon: const Icon(Icons.map, size: 16),
@@ -1792,9 +2065,14 @@ class _HomeActivityState extends State<HomeActivity> {
       height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(), // Prevent scroll conflicts
+        cacheExtent: 500, // Cache more items for smoother scrolling
+        addAutomaticKeepAlives: false, // Don't keep widgets alive when off-screen
+        addRepaintBoundaries: true, // Add repaint boundaries automatically
         itemCount: filteredMixedVendorsData.length,
         itemBuilder: (context, index) {
           final vendor = filteredMixedVendorsData[index];
+          // Use key for better widget recycling
           return _buildVendorCard(vendor);
         },
       ),

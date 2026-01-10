@@ -426,7 +426,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Navigator.pop(context);
+                          CommonWidget.safePop(context);
                         },
                         child: Image.asset(
                           CommonWidget.getImagePath("backspace.png"),
@@ -672,23 +672,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         }
         
         if (vendor.isAppVendor) {
-          // For app vendors, navigate to booking page
-          if (vendor.services.isNotEmpty) {
-            List<Services> services = vendor.services.map((serviceName) {
-              return Services(
-                sId: vendor.id,
-                serviceTitle: serviceName,
-                price: 0, // Default price
-                categoryName: vendor.category,
-                averageRating: vendor.rating?.round(),
-                totalReviews: vendor.reviewCount,
-              );
-            }).toList();
-            CommonWidget.navigateToScreen(context, SeviceListScreen(services));
-          } else {
-            // If no services, show vendor info
-            _showVendorInfoBottomSheet(vendor);
-          }
+          // For app vendors, navigate directly to vendor details page
+          CommonWidget.navigateToScreen(
+            context,
+            SpecialistsActivity(vendor.id),
+          );
         } else {
           // For Google Places vendors, show bottom sheet with navigation options
           print('Showing Google vendor bottom sheet for: ${vendor.name}'); // Debug log
@@ -1189,21 +1177,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.pop(context);
-                          // Navigate to booking or service list
-                          if (vendor.services.isNotEmpty) {
-                            List<Services> services = vendor.services.map((serviceName) {
-                              return Services(
-                                sId: vendor.id,
-                                serviceTitle: serviceName,
-                                price: 0,
-                                categoryName: vendor.category,
-                                averageRating: vendor.rating?.round(),
-                                totalReviews: vendor.reviewCount,
-                              );
-                            }).toList();
-                            CommonWidget.navigateToScreen(context, SeviceListScreen(services));
-                          }
+                          CommonWidget.safePop(context);
+                          // Navigate directly to vendor details page
+                          CommonWidget.navigateToScreen(
+                            context,
+                            SpecialistsActivity(vendor.id),
+                          );
                         },
                         icon: Icon(Icons.calendar_today, size: 18),
                         label: Text('Book Service'),
@@ -1489,7 +1468,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          Navigator.pop(context);
+                          CommonWidget.safePop(context);
                           _navigateToVendor(vendor);
                         },
                         icon: Icon(Icons.directions, size: 18),
@@ -1508,7 +1487,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.pop(context);
+                          CommonWidget.safePop(context);
                           _callVendor(vendor);
                         },
                         icon: Icon(Icons.phone, size: 18),

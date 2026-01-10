@@ -173,12 +173,38 @@ class MixedVendorData {
     
     try {
       if (servicesData is List) {
-        return servicesData.map((e) => e.toString()).toList();
+        return servicesData.map((e) {
+          // If it's a Map (service object), extract serviceTitle
+          if (e is Map<String, dynamic>) {
+            return e['serviceTitle']?.toString() ?? 
+                   e['categoryName']?.toString() ?? 
+                   e['_id']?.toString() ?? 
+                   'Service';
+          }
+          // If it's already a String, use it
+          if (e is String) {
+            // Check if it looks like raw data (starts with {)
+            if (e.startsWith('{')) {
+              return 'Service';
+            }
+            return e;
+          }
+          // Otherwise convert to string, but check if it looks like raw data
+          final str = e.toString();
+          if (str.startsWith('{')) {
+            return 'Service';
+          }
+          return str;
+        }).toList();
       } else if (servicesData is Map) {
         // If services is a map, extract the keys or values
         return servicesData.keys.map((e) => e.toString()).toList();
       } else {
-        return [servicesData.toString()];
+        final str = servicesData.toString();
+        if (str.startsWith('{')) {
+          return ['Service'];
+        }
+        return [str];
       }
     } catch (e) {
       print('Error extracting services: $e');

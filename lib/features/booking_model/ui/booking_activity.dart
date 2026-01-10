@@ -123,7 +123,7 @@ class _BookingActivityState extends State<BookingActivity> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => CommonWidget.safePop(context),
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -308,7 +308,7 @@ class _BookingActivityState extends State<BookingActivity> {
                               Icon(Icons.attach_money, color: ColorClass.base_color, size: 16),
                               const SizedBox(width: 8),
                               Text(
-                                "Price: ₹${selectedPackagePrice ?? bookingdata.price ?? "0"}",
+                                "Price: \$${selectedPackagePrice ?? bookingdata.price ?? "0"}",
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontFamily: "Pop600",
@@ -414,7 +414,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                       return DropdownMenuItem<String>(
                                         value: package['id'],
                                         child: Text(
-                                          "${package['name']} - ₹${package['price']}",
+                                          "${package['name']} - \$${package['price']}",
                                           style: TextStyle(
                                             color: Colors.black87,
                                             fontFamily: "Pop400",
@@ -881,7 +881,7 @@ class _BookingActivityState extends State<BookingActivity> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => CommonWidget.safePop(context),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -972,7 +972,8 @@ class _BookingActivityState extends State<BookingActivity> {
                             final isAvailable = _isTimeSlotAvailable(data);
                             final isWithinServiceHours = _isWithinServiceHours(data);
                             final isCapacityAvailable = _isCapacityAvailable(data);
-                            final canBook = isAvailable && isWithinServiceHours && isCapacityAvailable;
+                            final isNotPastSlot = _isNotPastSlot(data);
+                            final canBook = isAvailable && isWithinServiceHours && isCapacityAvailable && isNotPastSlot;
                             
                             return GestureDetector(
                               onTap: canBook ? () {
@@ -981,7 +982,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                   timeController.text = timeText;
                                   postTime = data.slot?.toString() ?? '';
                                 });
-                                Navigator.pop(context);
+                                CommonWidget.safePop(context);
                               } : null,
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
@@ -1044,7 +1045,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                       if (!canBook) ...[
                                         const SizedBox(height: 2),
                                         Text(
-                                          _getUnavailableReason(data, isWithinServiceHours, isCapacityAvailable),
+                                          _getUnavailableReasonText(data, isWithinServiceHours, isCapacityAvailable, isNotPastSlot),
                                           style: TextStyle(
                                             color: Colors.red[400],
                                             fontFamily: "Pop400",
@@ -1103,7 +1104,7 @@ class _BookingActivityState extends State<BookingActivity> {
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => CommonWidget.safePop(context),
             icon: const Icon(Icons.refresh, size: 16),
             label: const Text("Try Another Date"),
             style: ElevatedButton.styleFrom(
@@ -1130,29 +1131,108 @@ class _BookingActivityState extends State<BookingActivity> {
     }
 
     try {
-      // Parse the time slot (e.g., "09:00-10:00")
-      final slotTime = timeSlot.slot!.split('-')[0]; // Get start time
-      final slotHour = int.parse(slotTime.split(':')[0]);
-      final slotMinute = int.parse(slotTime.split(':')[1]);
+      // Parse the time slot from original format (e.g., "09:00 - 10:00" or "09:00-10:00")
+      String slotString = timeSlot.slot ?? "";
+      // Handle both " - " and "-" separators
+      final slotParts = slotString.contains(" - ") 
+          ? slotString.split(" - ") 
+          : slotString.split("-");
       
-      // Parse vendor open time
-      final openTime = DateTime.parse(bookingdata.vendorId!.openTime!);
-      final openHour = openTime.hour;
-      final openMinute = openTime.minute;
+      if (slotParts.length < 2) {
+        return true; // Invalid format, allow the slot
+      }
       
-      // Parse vendor close time
-      final closeTime = DateTime.parse(bookingdata.vendorId!.closeTime!);
-      final closeHour = closeTime.hour;
-      final closeMinute = closeTime.minute;
+      // Get start time and parse it
+      String startTimeStr = slotParts[0].trim();
+      // Remove any AM/PM if present
+      startTimeStr = startTimeStr.replaceAll(RegExp(r'[AaPp][Mm]'), '').trim();
+      final startTimeParts = startTimeStr.split(':');
+      if (startTimeParts.length < 2) {
+        return true; // Invalid format, allow the slot
+      }
+      
+      int slotHour = int.parse(startTimeParts[0]);
+      int slotMinute = int.parse(startTimeParts[1].split(' ')[0]); // Remove any trailing spaces/AM/PM
+      
+      // Parse vendor open time (expected format: "09:00" or "09:00:00" or ISO string)
+      String openTimeStr = bookingdata.vendorId!.openTime!.trim();
+      int openHour, openMinute;
+      
+      // Check if it's an ISO date string or just time
+      if (openTimeStr.contains('T') || openTimeStr.contains('-')) {
+        // It's an ISO date string, parse as DateTime
+        try {
+          final openTime = DateTime.parse(openTimeStr);
+          openHour = openTime.hour;
+          openMinute = openTime.minute;
+        } catch (e) {
+          // If parsing fails, try to extract time part
+          if (openTimeStr.contains('T')) {
+            final timePart = openTimeStr.split('T')[1].split(':');
+            openHour = int.parse(timePart[0]);
+            openMinute = int.parse(timePart[1]);
+          } else {
+            return true; // Can't parse, allow the slot
+          }
+        }
+      } else {
+        // It's just a time string like "09:00" or "09:00:00"
+        final openTimeParts = openTimeStr.split(':');
+        if (openTimeParts.length < 2) {
+          return true; // Invalid format, allow the slot
+        }
+        openHour = int.parse(openTimeParts[0]);
+        openMinute = int.parse(openTimeParts[1]);
+      }
+      
+      // Parse vendor close time (same logic as open time)
+      String closeTimeStr = bookingdata.vendorId!.closeTime!.trim();
+      int closeHour, closeMinute;
+      
+      if (closeTimeStr.contains('T') || closeTimeStr.contains('-')) {
+        // It's an ISO date string, parse as DateTime
+        try {
+          final closeTime = DateTime.parse(closeTimeStr);
+          closeHour = closeTime.hour;
+          closeMinute = closeTime.minute;
+        } catch (e) {
+          // If parsing fails, try to extract time part
+          if (closeTimeStr.contains('T')) {
+            final timePart = closeTimeStr.split('T')[1].split(':');
+            closeHour = int.parse(timePart[0]);
+            closeMinute = int.parse(timePart[1]);
+          } else {
+            return true; // Can't parse, allow the slot
+          }
+        }
+      } else {
+        // It's just a time string like "21:00" or "21:00:00"
+        final closeTimeParts = closeTimeStr.split(':');
+        if (closeTimeParts.length < 2) {
+          return true; // Invalid format, allow the slot
+        }
+        closeHour = int.parse(closeTimeParts[0]);
+        closeMinute = int.parse(closeTimeParts[1]);
+      }
       
       // Convert to minutes for easier comparison
       final slotMinutes = slotHour * 60 + slotMinute;
       final openMinutes = openHour * 60 + openMinute;
       final closeMinutes = closeHour * 60 + closeMinute;
       
-      return slotMinutes >= openMinutes && slotMinutes < closeMinutes;
+      // Check if slot is within service hours
+      // Note: If close time is before open time (e.g., 22:00 to 02:00), it means it spans midnight
+      if (closeMinutes < openMinutes) {
+        // Service hours span midnight (e.g., 22:00 to 02:00)
+        return slotMinutes >= openMinutes || slotMinutes < closeMinutes;
+      } else {
+        // Normal service hours (e.g., 09:00 to 21:00)
+        return slotMinutes >= openMinutes && slotMinutes < closeMinutes;
+      }
     } catch (e) {
-      return true; // If parsing fails, allow the slot
+      print("❌ Error parsing service hours: $e");
+      print("❌ Slot: ${timeSlot.slot}, OpenTime: ${bookingdata.vendorId?.openTime}, CloseTime: ${bookingdata.vendorId?.closeTime}");
+      return true; // If parsing fails, allow the slot to avoid blocking all bookings
     }
   }
 
@@ -1160,16 +1240,107 @@ class _BookingActivityState extends State<BookingActivity> {
     if (timeSlot.capacity == null || timeSlot.booked == null) {
       return true; // If no capacity info, allow booking
     }
+    // Block if booked count is greater than or equal to capacity
     return timeSlot.booked! < timeSlot.capacity!;
   }
 
-  String _getUnavailableReason(TimeSlots timeSlot, bool isWithinServiceHours, bool isCapacityAvailable) {
-    if (!isWithinServiceHours) {
-      return "Outside hours";
+  bool _isNotPastSlot(TimeSlots timeSlot) {
+    try {
+      // If no date is selected, allow the slot (date validation will happen separately)
+      if (dateString.isEmpty) {
+        return true;
+      }
+
+      // Parse the selected date
+      final selectedDate = DateFormat('yyyy-MM-dd').parse(dateString);
+      final now = DateTime.now();
+      final todayDate = DateTime(now.year, now.month, now.day);
+      final selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+      // If selected date is in the future, allow the slot
+      if (selectedDateOnly.isAfter(todayDate)) {
+        return true;
+      }
+
+      // If selected date is in the past, block all slots
+      if (selectedDateOnly.isBefore(todayDate)) {
+        return false;
+      }
+
+      // If selected date is today, check if the time slot has passed
+      if (selectedDateOnly.isAtSameMomentAs(todayDate)) {
+        // Parse the time slot to get the start time
+        // The slot format from API is typically "HH:mm - HH:mm" in UTC
+        String slotString = timeSlot.slot ?? "";
+        final slotParts = slotString.contains(" - ") 
+            ? slotString.split(" - ") 
+            : slotString.split("-");
+        
+        if (slotParts.isEmpty) {
+          return true; // Invalid format, allow the slot
+        }
+
+        // Get start time and parse it
+        String startTimeStr = slotParts[0].trim();
+        // Remove any AM/PM if present
+        startTimeStr = startTimeStr.replaceAll(RegExp(r'[AaPp][Mm]'), '').trim();
+        final startTimeParts = startTimeStr.split(':');
+        
+        if (startTimeParts.length < 2) {
+          return true; // Invalid format, allow the slot
+        }
+
+        int slotHour = int.parse(startTimeParts[0]);
+        int slotMinute = int.parse(startTimeParts[1].split(' ')[0]);
+
+        // The slot time from API is in UTC, so we need to convert it to local time for comparison
+        // Create UTC DateTime for the slot start time today
+        final slotDateTimeUTC = DateTime.utc(
+          now.year,
+          now.month,
+          now.day,
+          slotHour,
+          slotMinute,
+        );
+        
+        // Convert to local time
+        final slotDateTimeLocal = slotDateTimeUTC.toLocal();
+
+        // Check if the slot time has passed (add 10 minutes buffer to account for booking time)
+        // This gives users a reasonable window to complete their booking
+        final bufferTime = now.add(const Duration(minutes: 10));
+        
+        // Compare the slot start time (in local time) with current time + buffer
+        return slotDateTimeLocal.isAfter(bufferTime);
+      }
+
+      return true;
+    } catch (e) {
+      print("❌ Error checking if slot is past: $e");
+      print("❌ Slot: ${timeSlot.slot}, Selected Date: $dateString");
+      return true; // If parsing fails, allow the slot
     }
-    if (!isCapacityAvailable) {
-      return "Full";
+  }
+
+  String _getUnavailableReasonText(TimeSlots timeSlot, bool isWithinServiceHours, bool isCapacityAvailable, bool isNotPastSlot) {
+    try {
+      if (!isNotPastSlot) {
+        return "Past slot";
+      }
+      if (!isWithinServiceHours) {
+        return "Outside hours";
+      }
+      if (!isCapacityAvailable) {
+        return "Full";
+      }
+      return "Unavailable";
+    } catch (e) {
+      print("❌ Error in _getUnavailableReasonText: $e");
+      return "Unavailable";
     }
-    return "Unavailable";
+  }
+
+  String _getUnavailableReason(TimeSlots timeSlot, bool isWithinServiceHours, bool isCapacityAvailable, bool isNotPastSlot) {
+    return _getUnavailableReasonText(timeSlot, isWithinServiceHours, isCapacityAvailable, isNotPastSlot);
   }
 }

@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../Common/Color.dart';
 import '../../categories_module/ui/sevice_list_screen.dart';
 import '../../home_module/model/services_model_data.dart';
+import '../../specialists_module/ui/specialists_activity.dart';
 import '../data_manager/explore_list_data_manager.dart';
 import '../model/location_list_model_bean.dart';
 
@@ -165,7 +166,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
   Future<void> getVendorsWithCategory(String category) async {
     try {
       print('🔄 Loading vendors for category: $category');
-      ApiFuntions.showLoaderDialog(context);
       
       var response = await dataManager!.getAllVendors(
         context, 
@@ -178,7 +178,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
       print('📊 Vendors count: ${data.data?.length ?? 0}');
       
       if (data.status == "success") {
-        Navigator.pop(context);
         setState(() {
           servicesData.clear();
           servicesData.addAll(data.data!);
@@ -240,13 +239,11 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                     return;
                   }
                   
-                  if (vendor.services.isNotEmpty) {
-                    CommonWidget.navigateToScreen(context,
-                        SeviceListScreen(vendor.services));
-                  } else {
-                    _showBottomSheet(name, lat, lng, vendor.location?.name ?? "",
-                        vendor.sId ?? "", vendor.distance ?? 0.0);
-                  }
+                  // Navigate directly to vendor details page
+                  CommonWidget.navigateToScreen(
+                    context,
+                    SpecialistsActivity(vendor.sId ?? ''),
+                  );
                 },
                 icon: isGoogleVendor 
                     ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed) // Red for Google vendors
@@ -265,19 +262,22 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           print('📊 Google vendors: $googleVendorCount, App vendors: $appVendorCount');
         });
       } else {
-        Navigator.pop(context);
+        CommonWidget.safePop(context);
         print('❌ Vendors API failed: ${data.message}');
         CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
       }
     } catch (e) {
-      Navigator.pop(context);
+      if (context.mounted && Navigator.canPop(context)) {
+        CommonWidget.safePop(context);
+      }
       print('❌ Error loading vendors: $e');
-      CommonWidget.errorShowSnackBarFor(context, "Error: $e");
+      if (context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Error: $e");
+      }
     }
   }
 
   Future<void> _fetchNearbyPetrolPumps() async {
-    ApiFuntions.showLoaderDialog(context);
     print(
         "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_current.latitude},${_current.longitude}&radius=10000&type=car_wash&key=AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw");
     String url =
@@ -285,7 +285,9 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
 
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
-      Navigator.pop(context);
+      if (context.mounted && Navigator.canPop(context)) {
+        CommonWidget.safePop(context);
+      }
       final data = LocationListModelBean.fromJson(jsonDecode(response.body));
       if (data.status == "OK") {
         print("========================================${response.statusCode}");
@@ -315,7 +317,9 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
         print("========================================${response.body}");
       }
     } else {
-      Navigator.pop(context);
+      if (context.mounted && Navigator.canPop(context)) {
+        CommonWidget.safePop(context);
+      }
     }
   }
 
@@ -376,13 +380,11 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                 markerId: MarkerId(name),
                 position: LatLng(lat, lng),
                 onTap: () {
-                  if(place.services.isNotEmpty){
-                    CommonWidget.navigateToScreen(context,
-                        SeviceListScreen(place.services));
-                  }else {
-                    _showBottomSheet(name, lat, lng, place.location?.name ?? "",
-                      place.sId ?? "", place.distance??0.0);
-                  }
+                  // Navigate directly to vendor details page
+                  CommonWidget.navigateToScreen(
+                    context,
+                    SpecialistsActivity(place.sId ?? ''),
+                  );
                 },
                 //infoWindow: InfoWindow(title: name),
                 // icon: place.services.length>0?(carIcon ?? BitmapDescriptor.defaultMarker): BitmapDescriptor.defaultMarkerWithHue(
@@ -648,17 +650,11 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                           return;
                         }
                         
-                        if (vendor.services.isNotEmpty) {
-                          CommonWidget.navigateToScreen(context,
-                              SeviceListScreen(vendor.services));
-                        } else {
-                          _showBottomSheet(
-                              vendor.displayName ?? "",
-                              vendor.location?.coordinates?.lat ?? 0.0,
-                              vendor.location?.coordinates?.long ?? 0.0,
-                              vendor.location?.name ?? "",
-                              vendor.sId ?? "", vendor.distance??0.0);
-                        }
+                        // Navigate directly to vendor details page
+                        CommonWidget.navigateToScreen(
+                          context,
+                          SpecialistsActivity(vendor.sId ?? ''),
+                        );
                       },
                       child: Container(
                           margin: const EdgeInsets.only(bottom: 10),
@@ -720,28 +716,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
                               ),
                               Stack(
                                 children: [
-                                  Image.network(
-                                    vendor.displayPicture ?? "",
-                                    height: 200,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    color: isOffline ? Colors.grey : null,
-                                    colorBlendMode: isOffline ? BlendMode.saturation : null,
-                                    errorBuilder: (
-                                      BuildContext context,
-                                      Object error,
-                                      StackTrace? stackTrace,
-                                    ) {
-                                      return Image.asset(
-                                        CommonWidget.getImagePath("loading.png"),
-                                        width: double.infinity,
-                                        height: 200,
-                                        fit: BoxFit.fill,
-                                        color: isOffline ? Colors.grey : null,
-                                        colorBlendMode: isOffline ? BlendMode.saturation : null,
-                                      );
-                                    },
-                                  ),
+                                  _buildVendorImage(vendor, isOffline),
                                   if (isOffline)
                                     Positioned.fill(
                                       child: Container(
@@ -888,5 +863,63 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
       CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
       openGoogleMapsNavigation(lat, lng);
     }
+  }
+
+  /// Build vendor/service image with proper fallback
+  Widget _buildVendorImage(ServicesData vendor, bool isOffline) {
+    // Try vendor displayPicture first, then first service coverImage
+    String? imageUrl = vendor.displayPicture;
+    
+    if ((imageUrl == null || imageUrl.isEmpty) && vendor.services.isNotEmpty) {
+      imageUrl = vendor.services.first.coverImage;
+    }
+
+    return imageUrl != null && imageUrl.isNotEmpty
+        ? Image.network(
+            imageUrl,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            color: isOffline ? Colors.grey : null,
+            colorBlendMode: isOffline ? BlendMode.saturation : null,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage(isOffline);
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 200,
+                width: double.infinity,
+                color: Colors.grey[200],
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                    strokeWidth: 2,
+                  ),
+                ),
+              );
+            },
+          )
+        : _buildPlaceholderImage(isOffline);
+  }
+
+  /// Build placeholder image when no image is available
+  Widget _buildPlaceholderImage(bool isOffline) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isOffline ? Colors.grey[300] : ColorClass.base_color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        Icons.store,
+        size: 60,
+        color: isOffline ? Colors.grey[500] : ColorClass.base_color,
+      ),
+    );
   }
 }
