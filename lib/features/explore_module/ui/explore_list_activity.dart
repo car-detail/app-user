@@ -66,16 +66,7 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      GestureDetector(
-                        onTap: (){
-                          CommonWidget.safePop(context);
-                        },
-                        child: Image.asset(
-                          CommonWidget.getImagePath("backspace.png"),
-                          height: 40,
-                          width: 40,
-                        ),
-                      ),
+                      CommonWidget.buildGreenHeaderBackButton(context),
                       Expanded(child: CommonWidget.getTextWidget500("Explore",color: Colors.white,size: 18)),
                       InkWell(
                         onTap: () {
@@ -96,6 +87,12 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
           ),
           Expanded(child: Container(
             margin: const EdgeInsets.all(15),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                if (mounted && context.mounted) {
+                  await getServices(context);
+                }
+              },
             child: ListView.builder(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
@@ -105,8 +102,6 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                   final vendor = servicesData[index];
                   final isOffline = (vendor.isAppVendor ?? false) && !(vendor.isShopOpen ?? true);
                   
-                  print('🔍 Explore List - Vendor: ${vendor.displayName}, isAppVendor: ${vendor.isAppVendor}, isShopOpen: ${vendor.isShopOpen}, isOffline: $isOffline');
-                  print('🔍 Offline calculation: (${vendor.isAppVendor} ?? false) && !(${vendor.isShopOpen} ?? true) = ${(vendor.isAppVendor ?? false)} && !${(vendor.isShopOpen ?? true)} = ${(vendor.isAppVendor ?? false) && !(vendor.isShopOpen ?? true)}');
                   
                   return GestureDetector(
                     onTap: (){
@@ -130,7 +125,7 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                         color: Colors.grey.withOpacity(0.1),
                         spreadRadius: 1,
                         blurRadius: 4,
-                        offset: Offset(0, 2),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -161,8 +156,8 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                                 // OFFLINE badge
                                 if (isOffline)
                                   Container(
-                                    margin: EdgeInsets.only(left: 8),
-                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    margin: const EdgeInsets.only(left: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: Colors.red.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(4),
@@ -243,6 +238,7 @@ class _CategoriesListActivityState extends State<ExploreListActivity> {
                   )),
             );
             }),
+            ),
           ))
         ],
       ),

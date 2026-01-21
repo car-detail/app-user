@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:car_app/Common/Constant.dart';
 
 class GooglePlacesService {
   static const String _apiKey = "AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw";
@@ -28,7 +27,6 @@ class GooglePlacesService {
         throw Exception('Failed to fetch places: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching Google Places: $e');
       return [];
     }
   }
@@ -48,7 +46,6 @@ class GooglePlacesService {
       }
       return null;
     } catch (e) {
-      print('Error fetching place details: $e');
       return null;
     }
   }
@@ -75,7 +72,6 @@ class GooglePlacesService {
         throw Exception('Failed to search places: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error searching places: $e');
       return [];
     }
   }

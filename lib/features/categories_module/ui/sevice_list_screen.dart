@@ -94,7 +94,6 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
         final service = Services.fromJson(item);
         return _buildServiceCard(context, service);
       } catch (e) {
-        print("Error converting Map to Services: $e");
         return _buildErrorCard("Invalid service data");
       }
     }
@@ -173,7 +172,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                         ? Image.network(
                             service.coverImage!,
                             fit: BoxFit.cover,
-                            headers: {
+                            headers: const {
                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                             },
                             loadingBuilder: (context, child, loadingProgress) {
@@ -205,7 +204,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                             : (service.categoryName != null && service.categoryName!.isNotEmpty)
                                 ? service.categoryName!
                                 : "Service",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontFamily: "Pop600",
                           color: Colors.black87,
@@ -345,7 +344,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                         ? Image.network(
                             vendor.displayPicture!,
                             fit: BoxFit.cover,
-                            headers: {
+                            headers: const {
                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                             },
                             loadingBuilder: (context, child, loadingProgress) {
@@ -388,8 +387,8 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                           // OFFLINE badge
                           if (isOffline)
                             Container(
-                              margin: EdgeInsets.only(left: 8),
-                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.red.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
@@ -514,7 +513,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
@@ -554,7 +553,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                           ? Image.network(
                               vendor.displayPicture!,
                               fit: BoxFit.cover,
-                              headers: {
+                              headers: const {
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                               },
                               errorBuilder: (context, error, stackTrace) {
@@ -571,7 +570,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                       children: [
                         Text(
                           vendor.displayName ?? "Unknown Vendor",
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontFamily: "Pop600",
                             color: Colors.black87,
@@ -630,8 +629,8 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                         // Navigate to Google Maps
                         _openGoogleMaps(vendor);
                       },
-                      icon: Icon(Icons.directions, color: Colors.white),
-                      label: Text(
+                      icon: const Icon(Icons.directions, color: Colors.white),
+                      label: const Text(
                         "Navigate",
                         style: TextStyle(
                           color: Colors.white,
@@ -640,7 +639,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ColorClass.base_color,
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -654,8 +653,8 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                         // Call vendor (if phone number available)
                         _callVendor(vendor);
                       },
-                      icon: Icon(Icons.phone, color: Colors.white),
-                      label: Text(
+                      icon: const Icon(Icons.phone, color: Colors.white),
+                      label: const Text(
                         "Call",
                         style: TextStyle(
                           color: Colors.white,
@@ -664,7 +663,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -676,7 +675,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
               const SizedBox(height: 16),
               // Additional Info
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
@@ -684,7 +683,7 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "About this location",
                       style: TextStyle(
                         fontSize: 16,
@@ -717,14 +716,12 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
       final lng = vendor.location!.coordinates!.long;
       final url = "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng";
       // You can use url_launcher here to open the URL
-      print("Opening Google Maps: $url");
     }
   }
 
   void _callVendor(ServicesData vendor) {
     // You can implement phone calling functionality here
     // For now, just show a message
-    print("Calling vendor: ${vendor.displayName}");
   }
 
   void _showOfflineMessage(BuildContext context) {

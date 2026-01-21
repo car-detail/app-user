@@ -19,10 +19,10 @@ class _NotificationActivityState extends State<NotificationActivity> {
       body: Column(
         children: [
           CommonWidget.gettopbar("Notification", context),
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
-          if (widget.notificationsList.length > 0)
+          if (widget.notificationsList.isNotEmpty)
           Expanded(
               child: ListView.builder(
                     padding: EdgeInsets.zero,
@@ -31,7 +31,7 @@ class _NotificationActivityState extends State<NotificationActivity> {
                   itemBuilder: (context, index) {
                       var data = widget.notificationsList[index];
                     return Container(
-                        padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -42,14 +42,14 @@ class _NotificationActivityState extends State<NotificationActivity> {
                               decoration: BoxDecoration(
                                     color: ColorClass.base_light_color,
                                     borderRadius:
-                                        BorderRadius.all(Radius.circular(30))),
+                                        const BorderRadius.all(Radius.circular(30))),
                                 child: Center(
                                     child: Image.asset(
                                   CommonWidget.getImagePath("noti_icon.png"),
                                   height: 25,
                                   width: 25,
                                 ))),
-                            SizedBox(
+                            const SizedBox(
                               width: 5,
                             ),
                           Expanded(
@@ -65,7 +65,7 @@ class _NotificationActivityState extends State<NotificationActivity> {
                                     textsize: 12)
                             ],
                           )),
-                            SizedBox(
+                            const SizedBox(
                               width: 5,
                             ),
 

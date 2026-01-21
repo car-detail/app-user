@@ -22,10 +22,8 @@ class LocationListModelBean {
     final Map<String, dynamic> data = <String, dynamic>{};
 
     data['next_page_token'] = nextPageToken;
-    if (results != null) {
-      data['results'] = results.map((v) => v.toJson()).toList();
-    }
-    data['status'] = status;
+    data['results'] = results.map((v) => v.toJson()).toList();
+      data['status'] = status;
     return data;
   }
 }
@@ -169,7 +167,7 @@ class Location {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['lat'] = lat;
     data['lng'] = lng;
     return data;

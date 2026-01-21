@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:car_app/Common/Constant.dart';
 
 class AllVendorsScreen extends StatefulWidget {
-  const AllVendorsScreen({Key? key}) : super(key: key);
+  const AllVendorsScreen({super.key});
 
   @override
   _AllVendorsScreenState createState() => _AllVendorsScreenState();
@@ -55,7 +55,6 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
         isLoading = false;
       });
     } catch (e) {
-      print('Error loading vendors: $e');
       setState(() {
         isLoading = false;
       });
@@ -79,7 +78,6 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
         isLoading = false;
       });
     } catch (e) {
-      print('Error searching vendors: $e');
       setState(() {
         isLoading = false;
       });
@@ -93,11 +91,9 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
       appBar: AppBar(
         backgroundColor: ColorClass.base_color,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        leading: Container(
+          margin: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
+          child: CommonWidget.buildGreenHeaderBackButton(context),
         ),
         title: const Text(
           "All Vendors",
@@ -350,7 +346,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      "${vendor.rating?.toStringAsFixed(1) ?? "0.0"}",
+                      vendor.rating?.toStringAsFixed(1) ?? "0.0",
                       style: const TextStyle(
                         fontSize: 14,
                         fontFamily: "Pop500",

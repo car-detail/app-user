@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import '../../../Api/ApiFuntion.dart';
 import '../../../Common/BaseActivity.dart';
 import '../../../Common/Color.dart';
@@ -25,6 +26,7 @@ class LoginActivity extends StatefulWidget {
 
 class _LoginActivityState extends State<LoginActivity> {
   var mobileController = TextEditingController();
+  String selectedCountryCode = '+1'; // Default to US
 
   ApiFuntions apiFuntions = ApiFuntions();
   LoginDataManager? loginDataManager;
@@ -42,15 +44,11 @@ class _LoginActivityState extends State<LoginActivity> {
     loginDataManager = LoginDataManager(sharedPreferences!);
     try{
       var possition = await _determinePosition();
-      print(
-          "============================================================= ${possition.toString()}");
       List<Placemark> placemarks = await placemarkFromCoordinates(possition.latitude, possition.longitude);
-      print("========================= ${placemarks[0].locality}");
       sharedPreferences!.setString(Constant.location, placemarks[0].locality??"");
       sharedPreferences!.setString(Constant.lat, possition.latitude.toString());
       sharedPreferences!.setString(Constant.long, possition.longitude.toString());
     }catch(e){
-      print("======================================$e");
     }
 
 
@@ -80,10 +78,49 @@ class _LoginActivityState extends State<LoginActivity> {
                       children: [
                         CommonWidget.getTextWidget500(widget.title,
                             color: ColorClass.base_color, size: 20),
-                        CommonWidget.getTextFieldWithgrayboderWithIcon(
-                            "Enter mobile number",
-                            "mobile_phone_rect",
-                            mobileController,keytype: TextInputType.phone),
+                        // Country Code and Mobile Number Row
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: CountryCodePicker(
+                                onChanged: (CountryCode countryCode) {
+                                  setState(() {
+                                    selectedCountryCode = countryCode.dialCode ?? '+1';
+                                  });
+                                },
+                                initialSelection: 'US',
+                                favorite: const ['+1', 'US', '+91', 'IN'],
+                                showCountryOnly: false,
+                                showOnlyCountryWhenClosed: false,
+                                alignLeft: false,
+                                padding: EdgeInsets.zero,
+                                textStyle: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                                flagWidth: 20,
+                                showFlag: true,
+                                showFlagDialog: true,
+                                hideMainText: false,
+                                hideSearch: false,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: CommonWidget.getTextFieldWithgrayboderWithIcon(
+                                  "Enter mobile number",
+                                  "mobile_phone_rect",
+                                  mobileController,
+                                  keytype: TextInputType.phone),
+                            ),
+                          ],
+                        ),
                         const SizedBox(
                           height: 20,
                         ),
@@ -153,15 +190,52 @@ class _LoginActivityState extends State<LoginActivity> {
   }
 
   postLogin() async {
-    var response =
-        await loginDataManager!.postlogin(mobileController.text, context);
-    var data = GenerateOTPModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      //loginDataManager!.setDataInShared(data.data!);
-      //CommonWidget.successShowSnackBarFor(context, data.message.toString());
-      CommonWidget.navigateToScreen(context, OTPScreenActivity(mobileController.text));
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    try {
+      // Validate phone number length (minimum 7 digits, maximum 15 digits)
+      String phoneDigits = mobileController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
+      
+      // Remove country code from phoneDigits if it's already included
+      // Extract country code digits (e.g., "+1" -> "1", "+91" -> "91")
+      String countryCodeDigits = selectedCountryCode.replaceAll(RegExp(r'[^0-9]'), '');
+      if (countryCodeDigits.isNotEmpty && phoneDigits.startsWith(countryCodeDigits)) {
+        phoneDigits = phoneDigits.substring(countryCodeDigits.length);
+      }
+      
+      if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+        CommonWidget.errorShowSnackBarFor(
+          context, 
+          "Please enter a valid phone number (7-15 digits)"
+        );
+        return;
+      }
+      
+      // Combine country code and mobile number
+      String fullPhoneNumber = '$selectedCountryCode$phoneDigits';
+      
+      // Use Firebase Phone Auth
+      await loginDataManager!.sendFirebaseOTP(
+        fullPhoneNumber,
+        (String verificationId) {
+          // OTP sent successfully
+          // Create a mock GenerateOTPModelBean with verificationId
+          var mockData = GenerateOTPModelBean(
+            status: "success",
+            message: "OTP sent successfully",
+            data: Data(
+              details: verificationId, // Store verificationId in details
+            ),
+          );
+          
+          CommonWidget.navigateToScreen(
+              context, OTPScreenActivity(mockData, fullPhoneNumber));
+        },
+        (String error) {
+          // Error sending OTP
+          CommonWidget.errorShowSnackBarFor(context, error);
+        },
+      );
+    } catch (e) {
+      CommonWidget.errorShowSnackBarFor(context, "Something went wrong. Please try again.");
     }
   }
 }

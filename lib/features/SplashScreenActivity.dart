@@ -28,31 +28,30 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
   
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
-    print("Under Splash start Screen ");
-    userid = sharedPreferences!.getString(Constant.id) ?? "";
+    final userIdValue = sharedPreferences!.getString(Constant.id) ?? "";
     
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (userid != null && userid != "") {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            //builder: (BuildContext context) => DashboardActivity(data:data),
-            //builder: (BuildContext context) => DashboardActivity(),
-            builder: (BuildContext context) => DashboardActivity(),
-          ),
-              (route) => false,
-        );
-       } //else {
-      //   Navigator.pushAndRemoveUntil(
-      //     context,
-      //     MaterialPageRoute(
-      //       //builder: (BuildContext context) => DashboardActivity(data:data),
-      //       builder: (BuildContext context) => LoginActivity("Login"),
-      //     ),
-      //         (route) => false,
-      //   );
-      // }
+    setState(() {
+      userid = userIdValue;
     });
+    
+    // Check if user is logged in - navigate immediately if yes
+    if (userIdValue.isNotEmpty) {
+      // Small delay for splash screen visibility, then navigate
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) => DashboardActivity(),
+            ),
+            (route) => false,
+          );
+        }
+      });
+      return; // Don't show login buttons if user is logged in
+    }
+    
+    // User is not logged in - show login buttons
   }
 
   @override
@@ -71,15 +70,15 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if(userid == "" || userid == null)
+              // Only show Get Started button if user is NOT logged in
+              if(userid == null || userid!.isEmpty)
               GestureDetector(
                   onTap: () {
                     FocusManager.instance.primaryFocus?.unfocus();
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        //builder: (BuildContext context) => DashboardActivity(data:data),
-                        builder: (BuildContext context) => const ModernLoginActivity(isSignUp: false),
+                        builder: (BuildContext context) => const ModernLoginActivity(),
                       ),
                           (route) => false,
                     );
@@ -87,39 +86,12 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                   child: Container(
                     margin: const EdgeInsets.only(left: 30, right: 30),
                     child: CommonWidget.getGradinetButton(
-                        "Sign in",
+                        "Get Started",
                         startcolor: 0xff006538,
                         endcolor: 0xff006538,
-                        height: 40
+                        height: 50
                     ),
                   )),
-              if(userid == "" || userid == null)
-              const SizedBox(height: 20,),
-              if(userid == "" || userid == null)
-              GestureDetector(
-                  onTap: () {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        //builder: (BuildContext context) => DashboardActivity(data:data),
-                        builder: (BuildContext context) => const ModernLoginActivity(isSignUp: true),
-                      ),
-                          (route) => false,
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 30, right: 30),
-                    child: CommonWidget.getGradinetButton(
-                        "Sign Up",
-                        startcolor: 0xffE8F7F1,
-                        endcolor: 0xffE8F7F1,
-                        textColor: 0xff1CA669,
-                        height: 40
-                    ),
-                  )),
-              if(userid == "" || userid == null)
-              const SizedBox(height: 20,)
             ],
           ),
           ),

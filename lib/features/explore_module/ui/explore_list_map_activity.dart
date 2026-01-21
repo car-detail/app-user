@@ -130,10 +130,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
 
   Future<void> loadCategories() async {
     try {
-      print('🔄 Loading categories from API...');
       var response = await dataManager!.getCategories(context);
-      print('📋 Categories API response status: ${response.statusCode}');
-      print('📋 Categories API response body: ${response.body}');
       
       var data = jsonDecode(response.body);
       
@@ -143,19 +140,15 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           for (var category in data['data']) {
             if (category['categoryTitle'] != null && category['isActive'] == true) {
               categories.add(category['categoryTitle']);
-              print('✅ Added category: ${category['categoryTitle']}');
             }
           }
         });
-        print('📋 Final categories list: $categories');
       } else {
-        print('⚠️ Categories API failed, using defaults');
         setState(() {
           categories = ['All', 'Car Wash', 'Car Repair', 'Car Service', 'Tire Service', 'Electrical Service'];
         });
       }
     } catch (e) {
-      print('❌ Error loading categories: $e');
       // Keep default categories if API fails
       setState(() {
         categories = ['All', 'Car Wash', 'Car Repair', 'Car Service', 'Tire Service', 'Electrical Service'];
@@ -165,7 +158,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
 
   Future<void> getVendorsWithCategory(String category) async {
     try {
-      print('🔄 Loading vendors for category: $category');
       
       var response = await dataManager!.getAllVendors(
         context, 
@@ -174,8 +166,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
       );
       var data = ServicesModelData.fromJson(jsonDecode(response.body));
       
-      print('📊 Vendors API response status: ${data.status}');
-      print('📊 Vendors count: ${data.data?.length ?? 0}');
       
       if (data.status == "success") {
         setState(() {
@@ -183,12 +173,10 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           servicesData.addAll(data.data!);
           markers.clear();
           
-          print('🗺️ Adding markers for ${servicesData.length} vendors');
           
           // Debug: Print vendor data
           for (int i = 0; i < servicesData.length && i < 3; i++) {
             var vendor = servicesData[i];
-            print('🔍 Vendor $i: ${vendor.displayName}, isAppVendor: ${vendor.isAppVendor}, isShopOpen: ${vendor.isShopOpen}');
           }
           
           // Reset vendor counts
@@ -225,8 +213,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
               appVendorCount++;
             }
             
-            print('📍 Vendor: $name, isGoogle: $isGoogleVendor, isAppVendor: ${vendor.isAppVendor}, isShopOpen: ${vendor.isShopOpen}, isOffline: $isOffline, category: ${vendor.category}');
-            print('🔍 Raw vendor data: ${vendor.toJson()}');
             
             markers.add(
               Marker(
@@ -258,19 +244,15 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
             );
           }
           
-          print('🗺️ Total markers added: ${markers.length}');
-          print('📊 Google vendors: $googleVendorCount, App vendors: $appVendorCount');
         });
       } else {
         CommonWidget.safePop(context);
-        print('❌ Vendors API failed: ${data.message}');
         CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
       }
     } catch (e) {
       if (context.mounted && Navigator.canPop(context)) {
         CommonWidget.safePop(context);
       }
-      print('❌ Error loading vendors: $e');
       if (context.mounted) {
         CommonWidget.errorShowSnackBarFor(context, "Error: $e");
       }
@@ -278,8 +260,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
   }
 
   Future<void> _fetchNearbyPetrolPumps() async {
-    print(
-        "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_current.latitude},${_current.longitude}&radius=10000&type=car_wash&key=AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw");
     String url =
         "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_current.latitude},${_current.longitude}&radius=10000&type=car_wash&key=AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw";
 
@@ -290,8 +270,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
       }
       final data = LocationListModelBean.fromJson(jsonDecode(response.body));
       if (data.status == "OK") {
-        print("========================================${response.statusCode}");
-        print("========================================${response.body}");
         for (var place in data.results) {
           double lat = place.geometry!.location!.lat!;
           double lng = place.geometry!.location!.lng!;
@@ -313,8 +291,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           });
         }
       } else {
-        print("========================================${response.statusCode}");
-        print("========================================${response.body}");
       }
     } else {
       if (context.mounted && Navigator.canPop(context)) {
@@ -374,7 +350,6 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
           double lng = place.location?.coordinates?.long??0.0;
           String name = place.displayName ?? "";
           setState(() {
-            print("=======================$lat =====================$lng");
             markers.add(
               Marker(
                 markerId: MarkerId(name),
@@ -498,7 +473,7 @@ class _ExploreListMapActivityState extends State<ExploreListMapActivity> {
             child: Row(
               children: [
                 Expanded(
-                  child: Container(
+                  child: SizedBox(
                     height: 50,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,

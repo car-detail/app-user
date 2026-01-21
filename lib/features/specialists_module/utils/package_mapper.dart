@@ -6,6 +6,11 @@ List<Map<String, dynamic>> mapPackagesForDisplay(dynamic rawPackages) {
   return rawPackages
       .map<Map<String, dynamic>?>((pkg) => _normalizePackage(pkg))
       .whereType<Map<String, dynamic>>()
+      // Filter out inactive packages - only show active packages to users
+      .where((pkg) {
+        final isActive = pkg['raw']?['isActive'] ?? true;
+        return isActive == true;
+      })
       .toList();
 }
 
@@ -79,7 +84,7 @@ String? _buildDurationFromServices(List<Map<String, dynamic>> servicesIncluded) 
 
   final durations = servicesIncluded
       .map((service) => service['duration']?.toString())
-      .where((duration) => duration != null && duration!.isNotEmpty)
+      .where((duration) => duration != null && duration.isNotEmpty)
       .cast<String>()
       .toSet()
       .toList();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:car_app/Common/Color.dart';
 import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data_manager/specialists_data_manager.dart';
 import '../utils/package_mapper.dart';
+import '../../booking_model/ui/booking_activity.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   final String vendorId;
@@ -15,11 +17,11 @@ class AllPackagesScreen extends StatefulWidget {
   final List<Map<String, dynamic>> initialPackages;
 
   const AllPackagesScreen({
-    Key? key,
+    super.key,
     required this.vendorId,
     required this.vendorName,
     this.initialPackages = const [],
-  }) : super(key: key);
+  });
 
   @override
   _AllPackagesScreenState createState() => _AllPackagesScreenState();
@@ -94,7 +96,6 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
         });
       }
     } catch (e) {
-      print('Error loading packages: $e');
       setState(() {
         isLoading = false;
         packages = [];
@@ -105,14 +106,22 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: ColorClass.base_color,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: ColorClass.base_color,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: ColorClass.base_color,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => CommonWidget.safePop(context),
+        leading: Container(
+          margin: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
+          child: CommonWidget.buildGreenHeaderBackButton(context),
         ),
         title: Text(
           "Packages - ${widget.vendorName}",
@@ -128,6 +137,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
           : packages.isEmpty
               ? (errorMessage != null ? _buildErrorState() : _buildEmptyState())
               : _buildPackagesList(),
+      ),
     );
   }
 
@@ -379,7 +389,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: Text(
+                    child: const Text(
                       "Book Package",
                       style: TextStyle(
                         fontSize: 16,
@@ -397,26 +407,14 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   }
 
   void _bookPackage(Map<String, dynamic> package) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Book ${package['title'] ?? package['packageName'] ?? 'Service Package'}"),
-        content: Text(
-            "This package costs \$${package['price'] ?? 'TBD'} and takes ${package['duration'] ?? 'custom time'} to complete."),
-        actions: [
-          TextButton(
-            onPressed: () => CommonWidget.safePop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              CommonWidget.safePop(context);
-              CommonWidget.successShowSnackBarFor(context, "Package booking initiated!");
-            },
-            child: const Text("Book Now"),
-          ),
-        ],
-      ),
-    );
+    // Navigate directly to booking page with vendor ID
+    if (widget.vendorId.isNotEmpty) {
+      CommonWidget.navigateToScreen(
+        context,
+        BookingActivity(widget.vendorId),
+      );
+    } else {
+      CommonWidget.errorShowSnackBarFor(context, "Vendor information is missing. Cannot proceed with booking.");
+    }
   }
 }

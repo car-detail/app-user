@@ -1,13 +1,10 @@
 import 'dart:convert';
-import 'dart:math';
-import 'package:car_app/Common/Constants.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Api/ApiFuntion.dart';
 import '../../../Common/Constant.dart';
 import '../model/mixed_vendor_data.dart';
-import '../../../services/google_places_service.dart';
 
 class HomeDataManager {
   SharedPreferences sharedPreferences;
@@ -60,8 +57,10 @@ class HomeDataManager {
   }
 
   getOffer(BuildContext context) {
+    // 50 miles = 80,467 meters
+    const int maxDistanceMeters = 80467;
     return apiFuntions.getdatauser(context,
-        "${Constant.getOffer}lat=${sharedPreferences.getString(Constant.lat) ?? "30.7200094"}&long=${sharedPreferences.getString(Constant.long) ?? "76.7080831"}");
+        "${Constant.getOffer}lat=${sharedPreferences.getString(Constant.lat) ?? "30.7200094"}&long=${sharedPreferences.getString(Constant.long) ?? "76.7080831"}&maxDistance=$maxDistanceMeters");
   }
 
   /// Get vendors from backend (app vendors + Google Places vendors combined)
@@ -77,34 +76,27 @@ class HomeDataManager {
       );
       
       final responseData = jsonDecode(response.body);
-      print('Vendors API response: $responseData'); // Debug log
       
       List<MixedVendorData> vendors = [];
       
       if (responseData['status'] == 'success' && responseData['data'] != null) {
         final vendorsData = responseData['data'] as List;
-        print('Found ${vendorsData.length} vendors'); // Debug log
         
         for (var vendor in vendorsData) {
-          print('Processing vendor: ${vendor['displayName']}'); // Debug log
           
           // Check if this is a Google Places vendor (has _id starting with 'ChIJ')
           if (vendor['_id'] != null && vendor['_id'].toString().startsWith('ChIJ')) {
             // Google Places vendor from backend - convert to MixedVendorData
-            print('Google Places vendor: ${vendor['displayName']}');
             vendors.add(MixedVendorData.fromBackendGoogleVendor(vendor));
           } else {
             // App vendor - convert to MixedVendorData
-            print('App vendor: ${vendor['displayName']}');
             vendors.add(MixedVendorData.fromAppVendor(vendor));
           }
         }
       }
       
-      print('Total vendors processed: ${vendors.length}');
       return vendors;
     } catch (e) {
-      print('Error getting vendors: $e');
       return [];
     }
   }
@@ -123,13 +115,11 @@ class HomeDataManager {
       );
       
       final responseData = jsonDecode(response.body);
-      print('Vendors API response for radius ${radius}m: $responseData');
       
       List<MixedVendorData> vendors = [];
       
       if (responseData['status'] == 'success' && responseData['data'] != null) {
         final vendorsData = responseData['data'] as List;
-        print('Found ${vendorsData.length} vendors for radius ${radius}m');
         
         for (var vendor in vendorsData) {
           // Check if this is a Google Places vendor (has _id starting with 'ChIJ')
@@ -143,7 +133,6 @@ class HomeDataManager {
       
       return vendors;
     } catch (e) {
-      print('Error getting vendors for radius: $e');
       return [];
     }
   }
@@ -163,13 +152,11 @@ class HomeDataManager {
       );
       
       final responseData = jsonDecode(response.body);
-      print('Vendors API response for category "$category": $responseData');
       
       List<MixedVendorData> vendors = [];
       
       if (responseData['status'] == 'success' && responseData['data'] != null) {
         final vendorsData = responseData['data'] as List;
-        print('Found ${vendorsData.length} vendors for category "$category"');
         
         for (var vendor in vendorsData) {
           // Check if this is a Google Places vendor (has _id starting with 'ChIJ')
@@ -183,7 +170,6 @@ class HomeDataManager {
       
       return vendors;
     } catch (e) {
-      print('Error getting vendors for category: $e');
       return [];
     }
   }
@@ -203,13 +189,11 @@ class HomeDataManager {
       );
       
       final responseData = jsonDecode(response.body);
-      print('Vendors API response for category "$category" with radius ${radius}m: $responseData');
       
       List<MixedVendorData> vendors = [];
       
       if (responseData['status'] == 'success' && responseData['data'] != null) {
         final vendorsData = responseData['data'] as List;
-        print('Found ${vendorsData.length} vendors for category "$category" with radius ${radius}m');
         
         for (var vendor in vendorsData) {
           // Check if this is a Google Places vendor (has _id starting with 'ChIJ')
@@ -223,7 +207,6 @@ class HomeDataManager {
       
       return vendors;
     } catch (e) {
-      print('Error getting vendors for category with radius: $e');
       return [];
     }
   }
@@ -243,13 +226,11 @@ class HomeDataManager {
       );
       
       final responseData = jsonDecode(response.body);
-      print('Search API response for "$searchQuery": $responseData');
       
       List<MixedVendorData> vendors = [];
       
       if (responseData['status'] == 'success' && responseData['data'] != null) {
         final vendorsData = responseData['data'] as List;
-        print('Found ${vendorsData.length} vendors for search "$searchQuery"');
         
         for (var vendor in vendorsData) {
           try {
@@ -260,14 +241,12 @@ class HomeDataManager {
               vendors.add(MixedVendorData.fromAppVendor(vendor));
             }
           } catch (e) {
-            print('Error converting vendor ${vendor['displayName']}: $e');
           }
         }
       }
       
       return vendors;
     } catch (e) {
-      print('Error searching vendors: $e');
       return [];
     }
   }

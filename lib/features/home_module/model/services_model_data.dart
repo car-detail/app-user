@@ -96,10 +96,8 @@ class ServicesData {
     data['distance'] = distance;
     data['category'] = category;
     data['isAppVendor'] = isAppVendor;
-    if (services != null) {
-      data['services'] = services.map((v) => v.toJson()).toList();
-    }
-    return data;
+    data['services'] = services.map((v) => v.toJson()).toList();
+      return data;
   }
 
 }
@@ -240,8 +238,6 @@ class Services {
         });
       }
     } catch (e) {
-      print("❌ Error parsing Services: $e");
-      print("❌ Services JSON data: $json");
       // Set default values to prevent crashes
       sId = json['_id']?.toString();
       serviceTitle = "Service";
@@ -365,8 +361,6 @@ class Category {
       updatedAt = json['updatedAt']?.toString();
       iV = json['__v'] is int ? json['__v'] : int.tryParse(json['__v']?.toString() ?? '0');
     } catch (e) {
-      print("❌ Error parsing Category: $e");
-      print("❌ Category JSON data: $json");
       // Set default values to prevent crashes
       sId = json['_id']?.toString();
       categoryTitle = "Category";

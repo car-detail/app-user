@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,31 +40,35 @@ class _BookingListActivityState extends State<BookingListActivity> {
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = BookingDataManager(sharedPreferences!);
     DateTime dateTime = DateTime.now();
-    print("dateTime.timeZoneName------${dateTime.timeZoneName}");
-    print("dateTime.timeZoneOffset------${dateTime.timeZoneOffset}");
     final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
-    print(currentTimeZone);
     //getBookingList(context);
-    getBookingListFilter(context);
+    if (mounted && context.mounted) {
+      getBookingListFilter(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (Navigator.canPop(context)) {
-          CommonWidget.safePop(context);
-          return false;
-        }
-        return true;
-      },
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: ColorClass.base_color,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: ColorClass.base_color,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         body: Column(
         children: [
           // Modern Header
           Container(
-            padding: const EdgeInsets.only(top: 45, bottom: 20, left: 20, right: 20),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top,
+              bottom: 20,
+              left: 20,
+              right: 20,
+            ),
             decoration: BoxDecoration(
               color: ColorClass.base_color,
               borderRadius: const BorderRadius.only(
@@ -73,21 +78,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
             ),
             child: Row(
               children: [
-                GestureDetector(
-                  onTap: () => CommonWidget.safePop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ),
+                CommonWidget.buildGreenHeaderBackButton(context),
                 const SizedBox(width: 16),
                 const Text(
                   "My Bookings",
@@ -102,13 +93,13 @@ class _BookingListActivityState extends State<BookingListActivity> {
             ),
           ),
           
-          // Filter Tabs
+          // Filter Tabs - Simple design
           Container(
-            margin: const EdgeInsets.all(20),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
@@ -127,15 +118,22 @@ class _BookingListActivityState extends State<BookingListActivity> {
           
           // Bookings List
           Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                if (mounted && context.mounted) {
+                  await getBookingListFilter(context);
+                }
+              },
             child: records.isEmpty
                 ? _buildEmptyState()
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: records.length,
                     itemBuilder: (context, index) {
                       var data = records[index];
                       return _buildBookingCard(data);
                     },
+                    ),
                   ),
           ),
         ],
@@ -147,15 +145,17 @@ class _BookingListActivityState extends State<BookingListActivity> {
   Widget _buildFilterTab(String title, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          filterType = title;
-          getBookingListFilter(context);
-        });
+        if (mounted && context.mounted) {
+          setState(() {
+            filterType = title;
+            getBookingListFilter(context);
+          });
+        }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? ColorClass.base_color : Colors.transparent,
+          color: isSelected ? const Color(0xFF1CB273) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -163,9 +163,8 @@ class _BookingListActivityState extends State<BookingListActivity> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
-            fontFamily: "Pop500",
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             color: isSelected ? Colors.white : Colors.grey[600],
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),
@@ -174,15 +173,16 @@ class _BookingListActivityState extends State<BookingListActivity> {
 
   Widget _buildBookingCard(Records data) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -190,13 +190,13 @@ class _BookingListActivityState extends State<BookingListActivity> {
         children: [
           // Header with vendor info
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Vendor Avatar with proper error handling
+                // Vendor Avatar
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.grey[200],
@@ -205,8 +205,8 @@ class _BookingListActivityState extends State<BookingListActivity> {
                       ? ClipOval(
                           child: Image.network(
                             data.vendorDisplayPicture!,
-                            width: 50,
-                            height: 50,
+                            width: 40,
+                            height: 40,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return _buildDefaultAvatar();
@@ -215,28 +215,19 @@ class _BookingListActivityState extends State<BookingListActivity> {
                         )
                       : _buildDefaultAvatar(),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 10),
                 // Vendor details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        data.serviceTitle ?? "Service",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: "Pop600",
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
                         data.serviceCategory ?? "Category",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontFamily: "Pop400",
-                          color: Colors.grey[600],
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontFamily: "Pop600",
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
                     ],
@@ -244,17 +235,16 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 ),
                 // Status badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getStatusColor(data.orderStatus ?? "pending"),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     data.orderStatus ?? "Pending",
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
-                      fontFamily: "Pop500",
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -265,22 +255,129 @@ class _BookingListActivityState extends State<BookingListActivity> {
           
           // Booking details
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Column(
               children: [
+                // Selected Service or Package Section (show whichever is available)
+                if (data.packageName != null && data.packageName!.isNotEmpty)
+                  // Show Package if available
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.grey[200]!, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: ColorClass.base_color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(
+                            Icons.inventory_2_rounded,
+                            color: ColorClass.base_color,
+                            size: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Selected Package",
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontFamily: "Pop400",
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 1),
+                              Text(
+                                data.packageName!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: "Pop600",
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  // Show Service if package not available
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.grey[200]!, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: ColorClass.base_color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(
+                            Icons.local_car_wash_rounded,
+                            color: ColorClass.base_color,
+                            size: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Selected Service",
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontFamily: "Pop400",
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 1),
+                              Text(
+                                data.serviceCategory ?? "Category",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: "Pop600",
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 6),
                 _buildDetailRow(Icons.access_time, "Time Slot", CommonWidget.convertToLocalTime(data.timeSlot ?? "")),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 _buildDetailRow(Icons.calendar_today, "Date", DateFormat('dd-MM-yyyy').format(DateTime.parse(data.date ?? ""))),
-                const SizedBox(height: 8),
-                _buildDetailRow(Icons.attach_money, "Price", "\$${data.price ?? "0"}"),
+                const SizedBox(height: 6),
+                if (data.price != null && data.price! > 0)
+                  _buildDetailRow(Icons.attach_money, "Price", "\$${data.price}"),
                 
                 // Action buttons
                 if (data.orderStatus == "Pending") ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: ElevatedButton(
                           onPressed: () {
                             try {
                               final Uri emailLaunchUri = Uri(
@@ -289,34 +386,45 @@ class _BookingListActivityState extends State<BookingListActivity> {
                               );
                               launchUrl(emailLaunchUri);
                             } catch (e) {
-                              print(e);
                             }
                           },
-                          icon: const Icon(Icons.call, size: 18),
-                          label: const Text("Call Vendor"),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: ColorClass.base_color,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.call, size: 16),
+                              SizedBox(width: 4),
+                              Text("Call", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 6),
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: OutlinedButton(
                           onPressed: () => showDetailPopUp(context, data),
-                          icon: const Icon(Icons.close, size: 18),
-                          label: const Text("Cancel"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red, width: 1),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.close, size: 16),
+                              SizedBox(width: 4),
+                              Text("Cancel", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ],
                           ),
                         ),
                       ),
@@ -326,7 +434,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 
                 // Add Review button for completed bookings
                 if (data.orderStatus == "Completed") ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -334,14 +442,14 @@ class _BookingListActivityState extends State<BookingListActivity> {
                         // TODO: Navigate to rating screen
                         // CommonWidget.navigateToScreen(context, RatingReviewScreen(data.sId.toString()));
                       },
-                      icon: const Icon(Icons.star, size: 18),
-                      label: const Text("Add Review"),
+                      icon: const Icon(Icons.star, size: 16),
+                      label: const Text("Add Review", style: TextStyle(fontSize: 13)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                     ),
@@ -350,11 +458,15 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 
                 // Cancellation details
                 if (data.orderStatus == "Cancelled") ...[
-                  const SizedBox(height: 16),
-                  if (data.cancelledBy != null && data.cancelledBy!.isNotEmpty)
+                  const SizedBox(height: 6),
+                  if (data.cancelledBy != null && data.cancelledBy!.isNotEmpty) ...[
                     _buildDetailRow(Icons.person_off, "Cancelled By", data.cancelledBy!),
-                  if (data.commentByUser != null && data.commentByUser!.isNotEmpty)
+                    const SizedBox(height: 4),
+                  ],
+                  if (data.commentByUser != null && data.commentByUser!.isNotEmpty) ...[
                     _buildDetailRow(Icons.comment, "User Remark", data.commentByUser!),
+                    const SizedBox(height: 4),
+                  ],
                   if (data.commentByVendor != null && data.commentByVendor!.isNotEmpty)
                     _buildDetailRow(Icons.comment, "Vendor Remark", data.commentByVendor!),
                 ],
@@ -369,12 +481,12 @@ class _BookingListActivityState extends State<BookingListActivity> {
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 8),
+        Icon(icon, size: 14, color: Colors.grey[600]),
+        const SizedBox(width: 6),
         Text(
           "$label: ",
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontFamily: "Pop500",
             color: Colors.grey[600],
           ),
@@ -383,7 +495,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
           child: Text(
             value,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontFamily: "Pop400",
               color: Colors.black87,
             ),
@@ -396,7 +508,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
   Widget _buildDefaultAvatar() {
     return Icon(
       Icons.business,
-      size: 24,
+      size: 20,
       color: Colors.grey[600],
     );
   }
@@ -448,30 +560,121 @@ class _BookingListActivityState extends State<BookingListActivity> {
   }
 
   getBookingListFilter(BuildContext context) async {
-    var response = await dataManager!.getBookingListFilter(context, filterType);
-    var data = BookingListBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      setState(() {
-        records.clear();
-        records.addAll(data.data!.records!);
-      });
-      //CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-    } else {
-      setState(() {
-        records.clear();
-      });
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    if (!mounted || !context.mounted) return;
+    
+    try {
+      var response = await dataManager!.getBookingListFilter(context, filterType);
+      
+      if (!mounted || !context.mounted) return;
+      
+      // Check if response is HTML (error page) instead of JSON
+      if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "API Error: Received HTML instead of JSON. Please check your backend connection.");
+        }
+        if (mounted) {
+          setState(() {
+            records.clear();
+          });
+        }
+        return;
+      }
+      
+      // Check response status code
+      if (response.statusCode != 200) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Unable to load bookings. Please check your connection and try again.");
+        }
+        if (mounted) {
+          setState(() {
+            records.clear();
+          });
+        }
+        return;
+      }
+      
+      try {
+        var data = BookingListBean.fromJson(jsonDecode(response.body));
+        if (data.status == "success") {
+          if (mounted) {
+            setState(() {
+              records.clear();
+              records.addAll(data.data!.records!);
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              records.clear();
+            });
+          }
+          if (mounted && context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, data.message ?? "Failed to load bookings. Please try again.");
+          }
+        }
+      } catch (jsonError) {
+        if (mounted) {
+          setState(() {
+            records.clear();
+          });
+        }
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Error parsing bookings data. Please try again.");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          records.clear();
+        });
+      }
+      if (mounted && context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Error loading bookings. Please check your connection and try again.");
+      }
     }
   }
 
   putStatusCancel(BuildContext context, Records datas) async {
-    var response = await dataManager!
-        .putStatusCancel(context, reasone.text, datas.sId.toString());
-    var data = CompletedModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      reasone.text = "";
-      CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-      getBookingListFilter(context);
+    if (!mounted || !context.mounted) return;
+    
+    try {
+      var response = await dataManager!
+          .putStatusCancel(context, reasone.text, datas.sId.toString());
+      
+      if (!mounted || !context.mounted) return;
+      
+      // Check response status code
+      if (response.statusCode != 200) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Unable to cancel booking. Please try again.");
+        }
+        return;
+      }
+      
+      try {
+        var data = CompletedModelBean.fromJson(jsonDecode(response.body));
+        if (data.status == "success") {
+          reasone.text = "";
+          if (mounted && context.mounted) {
+            CommonWidget.successShowSnackBarFor(context, data.message ?? "Booking cancelled successfully!");
+          }
+          if (mounted && context.mounted) {
+            getBookingListFilter(context);
+          }
+        } else {
+          if (mounted && context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, data.message ?? "Failed to cancel booking. Please try again.");
+          }
+        }
+      } catch (jsonError) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Error processing request. Please try again.");
+        }
+      }
+    } catch (e) {
+      if (mounted && context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Error cancelling booking. Please check your connection and try again.");
+      }
     }
   }
 
@@ -493,7 +696,9 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 alignment: AlignmentDirectional.topEnd,
                 child: GestureDetector(
                   onTap: () {
-                    CommonWidget.safePop(context);
+                    if (mounted && context.mounted) {
+                      CommonWidget.safePop(context);
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.only(top: 10, right: 10),

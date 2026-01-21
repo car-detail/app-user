@@ -31,7 +31,7 @@ class _BookingActivityState extends State<BookingActivity> {
             ),
             decoration: BoxDecoration(
               color: ColorClass.base_color,
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(25),
                 bottomRight: Radius.circular(25),
               ),
@@ -40,14 +40,14 @@ class _BookingActivityState extends State<BookingActivity> {
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Icon(
+                  child: const Icon(
                     Icons.arrow_back_ios,
                     color: Colors.white,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
+                const Expanded(
                   child: Text(
                     "Book Service",
                     style: TextStyle(
@@ -63,13 +63,13 @@ class _BookingActivityState extends State<BookingActivity> {
           // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Vendor Info Card
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -99,7 +99,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                     ? Image.network(
                                         widget.vendor.imageUrl!,
                                         fit: BoxFit.cover,
-                                        headers: {
+                                        headers: const {
                                           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                                         },
                                         errorBuilder: (context, error, stackTrace) {
@@ -124,7 +124,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                 children: [
                                   Text(
                                     widget.vendor.name,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontFamily: "Pop600",
                                       color: Colors.black87,
@@ -139,27 +139,27 @@ class _BookingActivityState extends State<BookingActivity> {
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                  if (widget.vendor.distance != null) ...[
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.location_on,
-                                          size: 16,
+                                  ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.location_on,
+                                        size: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "${(widget.vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: "Pop400",
                                           color: Colors.grey[600],
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "${(widget.vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontFamily: "Pop400",
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
                                 ],
                               ),
                             ),
@@ -168,7 +168,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         const SizedBox(height: 20),
                         // Services List
                         if (widget.vendor.services.isNotEmpty) ...[
-                          Text(
+                          const Text(
                             "Available Services",
                             style: TextStyle(
                               fontSize: 16,
@@ -178,8 +178,8 @@ class _BookingActivityState extends State<BookingActivity> {
                           ),
                           const SizedBox(height: 12),
                           ...widget.vendor.services.map((service) => Container(
-                            margin: EdgeInsets.only(bottom: 8),
-                            padding: EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.grey[50],
                               borderRadius: BorderRadius.circular(8),
@@ -194,7 +194,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                         service.replaceAll('_', ' ').split(' ').map((word) => 
                                           word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : ''
                                         ).join(' '),
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 14,
                                           fontFamily: "Pop500",
                                           color: Colors.black87,
@@ -222,7 +222,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                 ),
                               ],
                             ),
-                          )).toList(),
+                          )),
                         ] else ...[
                           Text(
                             "No services available",
@@ -239,7 +239,7 @@ class _BookingActivityState extends State<BookingActivity> {
                   const SizedBox(height: 20),
                   // Booking Form
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -254,7 +254,7 @@ class _BookingActivityState extends State<BookingActivity> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "Booking Details",
                           style: TextStyle(
                             fontSize: 18,
@@ -264,7 +264,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         ),
                         const SizedBox(height: 16),
                         // Service Selection
-                        Text(
+                        const Text(
                           "Select Service",
                           style: TextStyle(
                             fontSize: 14,
@@ -274,7 +274,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(8),
@@ -282,7 +282,7 @@ class _BookingActivityState extends State<BookingActivity> {
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: widget.vendor.services.isNotEmpty ? widget.vendor.services.first : null,
-                                hint: Text("Choose a service"),
+                                hint: const Text("Choose a service"),
                                 isExpanded: true,
                                 items: widget.vendor.services.map((service) {
                                   return DropdownMenuItem<String>(
@@ -300,7 +300,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         ),
                         const SizedBox(height: 16),
                         // Date Selection
-                        Text(
+                        const Text(
                           "Select Date",
                           style: TextStyle(
                             fontSize: 14,
@@ -310,7 +310,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(8),
@@ -332,7 +332,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         ),
                         const SizedBox(height: 16),
                         // Time Selection
-                        Text(
+                        const Text(
                           "Select Time",
                           style: TextStyle(
                             fontSize: 14,
@@ -342,7 +342,7 @@ class _BookingActivityState extends State<BookingActivity> {
                         ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(8),
@@ -373,12 +373,12 @@ class _BookingActivityState extends State<BookingActivity> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: ColorClass.base_color,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: Text(
+                            child: const Text(
                               "Book Now",
                               style: TextStyle(
                                 fontSize: 16,
@@ -404,7 +404,7 @@ class _BookingActivityState extends State<BookingActivity> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
+        title: const Text(
           "Booking Confirmation",
           style: TextStyle(
             fontFamily: "Pop600",

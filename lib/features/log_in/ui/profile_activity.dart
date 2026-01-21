@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -20,6 +21,11 @@ import '../../dashboard_module/ui/dashboard_activity.dart';
 import '../data_manager/LoginDataManager.dart';
 import '../model/user_detail_model_bean.dart';
 import 'modern_login_activity.dart';
+import '../../home_module/data_manager/home_data_manager.dart';
+import '../../home_module/model/services_model_data.dart';
+import '../../home_module/model/offer_list_model.dart';
+import '../../specialists_module/ui/all_packages_screen.dart';
+import '../../specialists_module/ui/all_offers_screen.dart';
 
 class ProfileActivity extends StatefulWidget {
   const ProfileActivity({super.key});
@@ -43,11 +49,23 @@ class _ProfileActivityState extends State<ProfileActivity> {
   ApiFuntions apiFuntions = ApiFuntions();
   LoginDataManager? loginDataManager;
   late SharedPreferences? sharedPreferences;
+  HomeDataManager? homeDataManager;
+  List<OfferListModelData> offers = [];
+  bool isLoadingOffers = false;
+  PageController? offerPageController;
+  int currentOfferPage = 0;
 
   @override
   void initState() {
     super.initState();
+    offerPageController = PageController();
     init();
+  }
+
+  @override
+  void dispose() {
+    offerPageController?.dispose();
+    super.dispose();
   }
 
   void init() async {
@@ -57,51 +75,106 @@ class _ProfileActivityState extends State<ProfileActivity> {
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
     loginDataManager = LoginDataManager(sharedPreferences!);
+    homeDataManager = HomeDataManager(sharedPreferences!);
+    
+    // Load data from SharedPreferences first as fallback
+    if (mounted) {
+      setState(() {
+        firstNameController.text = sharedPreferences!.getString(Constant.firstName) ?? "";
+        lastNameController.text = sharedPreferences!.getString(Constant.lastName) ?? "";
+        emailController.text = sharedPreferences!.getString(Constant.email) ?? "";
+        locationController.text = sharedPreferences!.getString(Constant.location) ?? "";
+        profileurl = sharedPreferences!.getString(Constant.image) ?? "";
+      });
+    }
+    
     getUser(context);
+    getOffers(context);
   }
 
   getUser(BuildContext context) async {
-    var response = await loginDataManager!.getUserDetails(context);
-    var data = UserDetailsModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      sharedPreferences!
-          .setString(Constant.firstName, data.data!.firstName ?? "");
-      sharedPreferences!
-          .setString(Constant.lastName, data.data!.lastName ?? "");
-      sharedPreferences!.setString(Constant.email, data.data!.email ?? "");
-      sharedPreferences!.setString(Constant.isEmailVerified,
-          data.data!.isEmailVerified.toString() ?? "");
-      sharedPreferences!.setString(Constant.mobile, data.data!.mobile ?? "");
-      sharedPreferences!
-          .setString(Constant.isNewUser, data.data!.isNewUser.toString() ?? "");
-      sharedPreferences!
-          .setString(Constant.roleName, data.data!.roleName ?? "");
-      sharedPreferences!
-          .setString(Constant.id, data.data!.sId.toString() ?? "");
-      setState(() {
-        firstNameController.text = data.data!.firstName ?? "";
-        lastNameController.text = data.data!.lastName ?? "";
-        emailController.text = data.data!.email ?? "";
-        profileurl = data.data!.image ?? "";
-        
-        // Load location from user data or SharedPreferences
-        if (data.data!.location?.name != null && (data.data!.location!.name?.isNotEmpty ?? false)) {
-          locationController.text = data.data!.location!.name ?? "";
-          currentLat = data.data!.location!.coordinates?.lat?.toDouble() ?? 0.0;
-          currentLng = data.data!.location!.coordinates?.long?.toDouble() ?? 0.0;
-        } else {
-          // Load from SharedPreferences (captured on login)
-          locationController.text = sharedPreferences!.getString(Constant.location) ?? "";
-          currentLat = double.tryParse(sharedPreferences!.getString(Constant.lat) ?? "0.0") ?? 0.0;
-          currentLng = double.tryParse(sharedPreferences!.getString(Constant.long) ?? "0.0") ?? 0.0;
+    if (!mounted || !context.mounted) return;
+    
+    try {
+      var response = await loginDataManager!.getUserDetails(context);
+      
+      if (!mounted || !context.mounted) return;
+      
+      
+      // Check if response is HTML (error page) instead of JSON
+      if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "API Error: Received HTML instead of JSON. Please check your backend connection.");
         }
-      });
+        return;
+      }
+      
+      // Check response status code
+      if (response.statusCode != 200) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Unable to load user details. Please check your connection and try again.");
+        }
+        return;
+      }
+      
+      try {
+        var jsonData = jsonDecode(response.body);
+        var data = UserDetailsModelBean.fromJson(jsonData);
+        
+        
+        if (data.status == "success" && data.data != null) {
+          sharedPreferences!
+              .setString(Constant.firstName, data.data!.firstName ?? "");
+          sharedPreferences!
+              .setString(Constant.lastName, data.data!.lastName ?? "");
+          sharedPreferences!.setString(Constant.email, data.data!.email ?? "");
+          sharedPreferences!.setString(Constant.image, data.data!.image ?? "");
+          sharedPreferences!.setString(Constant.isEmailVerified,
+              data.data!.isEmailVerified.toString() ?? "");
+          sharedPreferences!.setString(Constant.mobile, data.data!.mobile ?? "");
+          sharedPreferences!
+              .setString(Constant.isNewUser, data.data!.isNewUser.toString() ?? "");
+          sharedPreferences!
+              .setString(Constant.roleName, data.data!.roleName ?? "");
+          sharedPreferences!
+              .setString(Constant.id, data.data!.sId.toString() ?? "");
+          
+          if (mounted) {
+            setState(() {
+              firstNameController.text = data.data!.firstName ?? "";
+              lastNameController.text = data.data!.lastName ?? "";
+              emailController.text = data.data!.email ?? "";
+              profileurl = data.data!.image ?? "";
+              
+              
+              // Load location from user data or SharedPreferences
+              if (data.data!.location?.name != null && (data.data!.location!.name?.isNotEmpty ?? false)) {
+                locationController.text = data.data!.location!.name ?? "";
+                currentLat = data.data!.location!.coordinates?.lat?.toDouble() ?? 0.0;
+                currentLng = data.data!.location!.coordinates?.long?.toDouble() ?? 0.0;
+              } else {
+                // Load from SharedPreferences (captured on login)
+                locationController.text = sharedPreferences!.getString(Constant.location) ?? "";
+                currentLat = double.tryParse(sharedPreferences!.getString(Constant.lat) ?? "0.0") ?? 0.0;
+                currentLng = double.tryParse(sharedPreferences!.getString(Constant.long) ?? "0.0") ?? 0.0;
+              }
+            });
+          }
 
-      print("Profile image url  $profileurl");
-
-      //CommonWidget.navigateToScreen(context, OTPScreenActivity());
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+        } else {
+          if (mounted && context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, data.message ?? "Failed to load user details. Please try again.");
+          }
+        }
+      } catch (jsonError) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Error parsing user details. Please try again.");
+        }
+      }
+    } catch (e) {
+      if (mounted && context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Error loading user details. Please check your connection and try again.");
+      }
     }
   }
 
@@ -148,7 +221,10 @@ class _ProfileActivityState extends State<ProfileActivity> {
       }
       
       CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-      //CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+      // Navigate back to profile view after successful save
+      if (mounted && context.mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     } else {
       CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
     }
@@ -241,14 +317,44 @@ class _ProfileActivityState extends State<ProfileActivity> {
   }
 
   postImage(BuildContext context) async {
-    List<File> image = [selectedFiles[0]];
-    var response = await loginDataManager!.postImage(image, context);
-    var data = ImageModuleData.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      imageURl = data.data?.url ?? "";
-      //CommonWidget.successShowSnackBarFor(context, data.message??"");
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    if (!mounted || !context.mounted) return;
+    
+    try {
+      List<File> image = [selectedFiles[0]];
+      var response = await loginDataManager!.postImage(image, context);
+      
+      if (!mounted || !context.mounted) return;
+      
+      // Check response status code
+      if (response.statusCode != 200) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Unable to upload image. Please try again.");
+        }
+        return;
+      }
+      
+      try {
+        var data = ImageModuleData.fromJson(jsonDecode(response.body));
+        if (data.status == "success") {
+          if (mounted) {
+            setState(() {
+              imageURl = data.data?.url ?? "";
+            });
+          }
+        } else {
+          if (mounted && context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, data.message ?? "Failed to upload image. Please try again.");
+          }
+        }
+      } catch (jsonError) {
+        if (mounted && context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Error processing image upload. Please try again.");
+        }
+      }
+    } catch (e) {
+      if (mounted && context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Error uploading image. Please check your connection and try again.");
+      }
     }
   }
 
@@ -257,150 +363,89 @@ class _ProfileActivityState extends State<ProfileActivity> {
     final screenHeight = MediaQuery.of(context).size.height;
     final statusBarHeight = MediaQuery.of(context).padding.top;
     
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Modern Header with gradient
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    ColorClass.base_color,
-                    ColorClass.base_color.withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(ModernDesignSystem.radiusXL),
-                  bottomRight: Radius.circular(ModernDesignSystem.radiusXL),
-                ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: ColorClass.base_color,
+        statusBarIconBrightness: Brightness.light,
               ),
-              child: Stack(
-                children: [
-                  // Decorative elements
-                  Positioned(
-                    top: -30,
-                    right: -30,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -20,
-                    left: -20,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  // Back button and logout button
-                  Padding(
-                    padding: const EdgeInsets.all(ModernDesignSystem.spacingM),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => CommonWidget.safePop(context),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            padding: const EdgeInsets.all(ModernDesignSystem.spacingS),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white),
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+        leading: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.black87),
                           onPressed: () {
-                            CommonPopUp.showalertDialog(
+            try {
+              if (mounted && context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else if (mounted && context.mounted) {
+                // If can't pop, navigate to dashboard as fallback
+                Navigator.pushReplacement(
                               context,
-                              "",
-                              "Are you sure - You want to logout?",
-                              "No",
-                              "Yes",
-                              "info",
-                              () => CommonWidget.safePop(context),
-                              () async {
-                                CommonWidget.safePop(context);
-                                sharedPreferences!.clear();
-                                CommonWidget.navigateToKillAllScreen(
-                                    context, const ModernLoginActivity(isSignUp: false));
-                              },
-                              190,
-                              positivetitlecolorButton: ColorClass.red,
-                              navtextColorButton: ColorClass.green,
-                              isboldtitle: false,
-                            );
-                          },
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            padding: const EdgeInsets.all(ModernDesignSystem.spacingS),
-                          ),
-                        ),
-                      ],
+                  MaterialPageRoute(builder: (context) => DashboardActivity(currentIndex: 0)),
+                );
+              }
+            } catch (e) {
+              // Fallback navigation
+              if (mounted && context.mounted) {
+                try {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => DashboardActivity(currentIndex: 0)),
+                  );
+                } catch (e2) {
+                }
+              }
+            }
+          },
+        ),
+        actions: [
+          // Small logout button in top right
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: const Icon(Icons.logout, size: 20),
+              color: Colors.red,
+              onPressed: () {
+                _showLogoutDialog(context);
+              },
+              tooltip: "Logout",
                     ),
                   ),
                 ],
               ),
-            ),
-            
-            // Main Content Card
-            Expanded(
-              child: Transform.translate(
-                offset: const Offset(0, -40),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: ModernDesignSystem.spacingL),
-                  decoration: ModernDesignSystem.modernCard(
-                    borderRadius: ModernDesignSystem.radiusXL,
-                    shadows: ModernDesignSystem.shadowLarge,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(ModernDesignSystem.spacingXL),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Title
-                        Text(
-                          "Profile Details",
-                          style: ModernDesignSystem.heading2(
-                            color: ColorClass.base_color,
-                          ),
-                        ),
-                        const SizedBox(height: ModernDesignSystem.spacingXL),
-                        
                         // Profile Picture
                         Center(
                           child: Stack(
                             children: [
-                              Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: ColorClass.base_color.withOpacity(0.2),
-                                    width: 4,
-                                  ),
-                                  boxShadow: ModernDesignSystem.getColoredShadow(
-                                    ColorClass.base_color,
-                                    opacity: 0.2,
-                                  ),
-                                ),
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundColor: ColorClass.base_color.withOpacity(0.1),
                                 child: ClipOval(
                                   child: profileurl != "" && selectedFiles.isEmpty
                                       ? Image.network(
                                           profileurl,
+                                  height: 120,
+                                  width: 120,
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) {
                                             return Image.asset(
@@ -435,16 +480,11 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                     }
                                   },
                                   child: Container(
-                                    width: 40,
-                                    height: 40,
+                            padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: ColorClass.base_color,
                                       shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 3,
-                                      ),
-                                      boxShadow: ModernDesignSystem.shadowMedium,
+                              border: Border.all(color: Colors.white, width: 3),
                                     ),
                                     child: const Icon(
                                       Icons.camera_alt,
@@ -457,62 +497,97 @@ class _ProfileActivityState extends State<ProfileActivity> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: ModernDesignSystem.spacingXL),
+                const SizedBox(height: 32),
                         
-                        // Input Fields
-                        _buildModernTextField(
-                          "First Name",
-                          firstNameController,
-                          icon: Icons.person_outline,
+                // First Name Field
+                _buildDetailRow("First Name", firstNameController),
+                const SizedBox(height: 20),
+                
+                // Last Name Field
+                _buildDetailRow("Last Name", lastNameController),
+                const SizedBox(height: 20),
+                
+                // Email Field
+                _buildDetailRow("Email", emailController, keyboardType: TextInputType.emailAddress),
+                const SizedBox(height: 20),
+                
+                // Location Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Location",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey[300]!,
+                          width: 1,
                         ),
-                        const SizedBox(height: ModernDesignSystem.spacingM),
-                        _buildModernTextField(
-                          "Last Name",
-                          lastNameController,
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: ModernDesignSystem.spacingM),
-                        _buildModernTextField(
-                          "Email Address",
-                          emailController,
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: ModernDesignSystem.spacingM),
-                        
-                        // Location Field with button
-                        Row(
+                      ),
+                      child: Row(
                           children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16),
+                            child: Icon(
+                              Icons.location_on,
+                              color: ColorClass.base_color,
+                              size: 24,
+                            ),
+                          ),
                             Expanded(
-                              child: _buildModernTextField(
-                                "Location",
-                                locationController,
-                                icon: Icons.location_on_outlined,
+                            child: TextField(
+                              controller: locationController,
                                 readOnly: true,
+                              decoration: const InputDecoration(
+                                hintText: "Location",
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
                               ),
                             ),
-                            const SizedBox(width: ModernDesignSystem.spacingM),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
                             Container(
+                            margin: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: ColorClass.base_color,
-                                borderRadius: BorderRadius.circular(ModernDesignSystem.radiusM),
-                                boxShadow: ModernDesignSystem.getColoredShadow(
-                                  ColorClass.base_color,
-                                  opacity: 0.3,
-                                ),
+                              shape: BoxShape.circle,
                               ),
                               child: IconButton(
-                                icon: const Icon(Icons.my_location, color: Colors.white),
+                              icon: const Icon(
+                                Icons.my_location,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                                 onPressed: _getCurrentLocation,
                                 tooltip: "Get Current Location",
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: ModernDesignSystem.spacingXL),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
                         
                         // Save Button
-                        ElevatedButton(
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
                           onPressed: () {
                             if (BaseActivity.checkEmptyField(
                                 editingController: firstNameController,
@@ -537,31 +612,67 @@ class _ProfileActivityState extends State<ProfileActivity> {
                               postUserDetails(context);
                             }
                           },
-                          style: ModernDesignSystem.modernButtonStyle(
+                    style: ElevatedButton.styleFrom(
                             backgroundColor: ColorClass.base_color,
-                            borderRadius: ModernDesignSystem.radiusM,
-                            padding: const EdgeInsets.symmetric(vertical: ModernDesignSystem.spacingL),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                           ),
-                          child: Text(
-                            "Save",
-                            style: ModernDesignSystem.bodyLarge(
-                              color: Colors.white,
-                            ).copyWith(
+                    child: const Text(
+                      "Save Changes",
+                      style: TextStyle(
+                        fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
                             ),
                           ),
                         ),
-                        const SizedBox(height: ModernDesignSystem.spacingL),
+                ),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Logout",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "Are you sure you want to logout?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                sharedPreferences!.clear();
+                CommonWidget.navigateToKillAllScreen(
+                    context, const ModernLoginActivity());
+              },
+              child: const Text("Logout"),
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -619,6 +730,731 @@ class _ProfileActivityState extends State<ProfileActivity> {
             horizontal: ModernDesignSystem.spacingL,
             vertical: ModernDesignSystem.spacingL,
           ),
+        ),
+      ),
+    );
+  }
+
+  // Fetch offers
+  Future<void> getOffers(BuildContext context) async {
+    if (homeDataManager == null) return;
+    
+    setState(() {
+      isLoadingOffers = true;
+    });
+    
+    try {
+      var response = await homeDataManager!.getOffer(context);
+      if (response != null && response.statusCode == 200) {
+        var responseData = jsonDecode(response.body);
+        if (responseData['status'] == 'success' && responseData['data'] != null) {
+          setState(() {
+            offers.clear();
+            List<dynamic> offersJson = responseData['data'] as List;
+            for (var offerJson in offersJson) {
+              if (offerJson != null) {
+                offers.add(OfferListModelData.fromJson(offerJson));
+              }
+            }
+            isLoadingOffers = false;
+          });
+        } else {
+          setState(() {
+            offers = [];
+            isLoadingOffers = false;
+          });
+        }
+      } else {
+        setState(() {
+          offers = [];
+          isLoadingOffers = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        offers = [];
+        isLoadingOffers = false;
+      });
+    }
+  }
+
+  // Build Packages Section
+  Widget _buildPackagesSection(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final safeAreaPadding = mediaQuery.padding;
+    const parentMargin = ModernDesignSystem.spacingL;
+    const parentPadding = ModernDesignSystem.spacingXL;
+    final offset = parentMargin + parentPadding;
+    
+    return OverflowBox(
+      maxWidth: screenWidth,
+      alignment: Alignment.centerLeft,
+      child: Transform.translate(
+        offset: Offset(-offset, 0),
+        child: SizedBox(
+          width: screenWidth,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: Colors.grey[200]!),
+                bottom: BorderSide(color: Colors.grey[200]!),
+              ),
+            ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Packages",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontFamily: "Pop600",
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to home to browse vendors with packages
+                      CommonWidget.navigateToKillAllScreen(context, DashboardActivity(currentIndex: 0));
+                    },
+                    child: Text(
+                      "See All",
+                      style: TextStyle(
+                        color: ColorClass.base_color,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.card_giftcard, color: Colors.grey[400], size: 48),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Browse vendors to see packages",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Packages are available from individual vendors",
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+            ),
+        ),
+        ),
+      ),
+    );
+  }
+
+  // Build Personal Details Card
+  Widget _buildPersonalDetailsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  ColorClass.base_color.withOpacity(0.1),
+                  ColorClass.base_color.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.person,
+                  color: ColorClass.base_color,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Personal Details",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: ColorClass.base_color,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                // Profile Image
+                Center(
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: ColorClass.base_color.withOpacity(0.1),
+                        child: ClipOval(
+                          child: profileurl != "" && selectedFiles.isEmpty
+                              ? Image.network(
+                                  profileurl,
+                                  height: 100,
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      CommonWidget.getImagePath("chat_profile.png"),
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
+                                )
+                              : selectedFiles.isNotEmpty
+                                  ? CommonWidget.determineImageAsset(
+                                      selectedFiles[0].path ?? "")
+                                  : Image.asset(
+                                      CommonWidget.getImagePath("chat_profile.png"),
+                                      fit: BoxFit.cover,
+                                    ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () async {
+                            var data = await BaseActivity.pickmedia(false);
+                            if (data != null) {
+                              if (mounted) {
+                                setState(() {
+                                  selectedFiles.clear();
+                                  selectedFiles.addAll(data);
+                                });
+                              }
+                              postImage(context);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: ColorClass.base_color,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Details
+                _buildDetailRow("First Name", firstNameController),
+                const SizedBox(height: 12),
+                _buildDetailRow("Last Name", lastNameController),
+                const SizedBox(height: 12),
+                _buildDetailRow("Email", emailController),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build Detail Row with TextField
+  Widget _buildDetailRow(String label, TextEditingController controller, {TextInputType? keyboardType}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType ?? TextInputType.text,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: ColorClass.base_color, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Build Offers Section
+  Widget _buildOffersSection(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final safeAreaPadding = mediaQuery.padding;
+    const parentMargin = ModernDesignSystem.spacingL;
+    const parentPadding = ModernDesignSystem.spacingXL;
+    final offset = parentMargin + parentPadding;
+    
+    return OverflowBox(
+      maxWidth: screenWidth,
+      alignment: Alignment.centerLeft,
+      child: Transform.translate(
+        offset: Offset(-offset, 0),
+        child: SizedBox(
+          width: screenWidth,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: Colors.grey[200]!),
+                bottom: BorderSide(color: Colors.grey[200]!),
+              ),
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Offers",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                    fontFamily: "Pop600",
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to home where offers are shown
+                    CommonWidget.navigateToKillAllScreen(context, DashboardActivity(currentIndex: 0));
+                  },
+                  child: Text(
+                    "See All",
+                    style: TextStyle(
+                      color: ColorClass.base_color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isLoadingOffers)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (offers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.local_offer, color: Colors.grey[400], size: 48),
+                    const SizedBox(height: 8),
+                    Text(
+                      "No offers available",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Column(
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: PageView.builder(
+                    controller: offerPageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        currentOfferPage = index;
+                      });
+                    },
+                    itemCount: offers.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildFullWidthOfferCard(offers[index]),
+                      );
+                    },
+                  ),
+                ),
+                if (offers.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        offers.length,
+                        (index) => Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: currentOfferPage == index
+                                ? ColorClass.base_color
+                                : Colors.grey[300],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Build Full Width Offer Card for Carousel
+  Widget _buildFullWidthOfferCard(OfferListModelData offer) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Background Image or Color
+            if (offer.image != null && offer.image!.isNotEmpty)
+              Image.network(
+                offer.image!,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          ColorClass.base_color,
+                          ColorClass.base_color.withOpacity(0.7),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              )
+            else
+              Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      ColorClass.base_color,
+                      ColorClass.base_color.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+            // Content Overlay
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_fire_department,
+                          color: Colors.orange[300],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            offer.title ?? "Offer",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: "Pop600",
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      offer.description ?? "",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (offer.discount != null && offer.discount! > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "${offer.discount}% OFF",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.all_inclusive,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Never expires",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: (offer.isActive ?? true) ? Colors.green : Colors.grey,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            (offer.isActive ?? true) ? "Active" : "Inactive",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build Offer Card (for horizontal list - keeping for compatibility)
+  Widget _buildOfferCard(OfferListModelData offer) {
+    return Container(
+      width: 200,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    offer.title ?? "Offer",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontFamily: "Pop600",
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              offer.description ?? "",
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    "${offer.discount ?? 0}% OFF",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (offer.isActive ?? true) ? Colors.green : Colors.grey,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    (offer.isActive ?? true) ? "Active" : "Inactive",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

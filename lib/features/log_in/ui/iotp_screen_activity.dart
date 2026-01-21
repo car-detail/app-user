@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,10 +21,10 @@ import '../model/GenerateOTPModelBean.dart';
 import '../model/VerifyOtpModelBean.dart';
 
 class OTPScreenActivity extends StatefulWidget {
-  //GenerateOTPModelBean data;
+  GenerateOTPModelBean data;
   String mobileNo;
 
-  OTPScreenActivity(this.mobileNo, {super.key});
+  OTPScreenActivity(this.data, this.mobileNo, {super.key});
 
   @override
   State<OTPScreenActivity> createState() => _OTPScreenActivityState();
@@ -42,11 +43,24 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
   late SharedPreferences? sharedPreferences;
   final bool _isPasswordVisible = false;
   int maxLength = 10;
+  
+  // Resend OTP timer
+  int _resendTimer = 60; // 60 seconds countdown
+  bool _canResend = false;
+  Timer? _timer;
+  bool _isResending = false;
 
   @override
   void initState() {
     super.initState();
     init();
+    _startResendTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void init() async {
@@ -56,6 +70,62 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
     loginDataManager = LoginDataManager(sharedPreferences!);
+  }
+
+  void _startResendTimer() {
+    _resendTimer = 60;
+    _canResend = false;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendTimer > 0) {
+        setState(() {
+          _resendTimer--;
+        });
+      } else {
+        setState(() {
+          _canResend = true;
+        });
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _resendOTP() async {
+    if (!_canResend || _isResending) return;
+
+    setState(() {
+      _isResending = true;
+      // Clear OTP field when resending
+      _fieldOne.clear();
+    });
+
+    try {
+      await loginDataManager!.sendFirebaseOTP(
+        widget.mobileNo,
+        (String verificationId) {
+          // OTP sent successfully
+          setState(() {
+            // Update the verification ID in widget.data
+            widget.data.data?.details = verificationId;
+            _isResending = false;
+          });
+          _startResendTimer(); // Restart the timer
+          CommonWidget.successShowSnackBarFor(context, "OTP has been resent successfully");
+        },
+        (String error) {
+          // Error sending OTP
+          setState(() {
+            _isResending = false;
+          });
+          CommonWidget.errorShowSnackBarFor(context, error);
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _isResending = false;
+      });
+      CommonWidget.errorShowSnackBarFor(context, "Failed to resend OTP. Please try again.");
+    }
   }
 
   @override
@@ -97,14 +167,16 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Back button (optional, can be removed if not needed)
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.arrow_back, color: Colors.grey[700]),
+                        // Back button - Styled with proper alignment
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: CommonWidget.buildBackButton(
+                            context,
+                            backgroundColor: Colors.white,
+                            iconColor: Colors.black87,
+                            iconSize: 20,
                               onPressed: () => CommonWidget.safePop(context),
                             ),
-                          ],
                         ),
                         
                         const SizedBox(height: 8),
@@ -112,7 +184,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                         // SMS verification message - Split into two lines as per design
                         RichText(
                           textAlign: TextAlign.center,
-                          text: TextSpan(
+                          text: const TextSpan(
                             text: "SMS verification code has been sent to your\n",
                             style: TextStyle(
                               fontSize: 15,
@@ -139,15 +211,13 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                         
                         // Resend OTP - Proper spacing
                         Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              // TODO: Implement resend OTP
-                              CommonWidget.errorShowSnackBarFor(context, "Resend OTP functionality coming soon");
-                            },
+                          child: _canResend
+                              ? GestureDetector(
+                                  onTap: _isResending ? null : _resendOTP,
                             child: RichText(
                               text: TextSpan(
                                 text: "OTP not received? ",
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: "Pop400",
                                   color: Colors.black87,
                                   fontSize: 14,
@@ -155,16 +225,41 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                                 ),
                                 children: [
                                   TextSpan(
-                                    text: "Resend",
-                                    style: TextStyle(
-                                      fontFamily: "Pop600",
-                                      color: ColorClass.base_color,
+                                          text: _isResending ? "Resending..." : "Resend",
+                                          style: TextStyle(
+                                            fontFamily: "Pop600",
+                                            color: _isResending 
+                                                ? Colors.grey 
+                                                : ColorClass.base_color,
+                                            fontSize: 14,
+                                            decoration: _isResending 
+                                                ? TextDecoration.none 
+                                                : TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : RichText(
+                                  text: TextSpan(
+                                    text: "OTP not received? ",
+                                    style: const TextStyle(
+                                      fontFamily: "Pop400",
+                                      color: Colors.black87,
                                       fontSize: 14,
-                                      decoration: TextDecoration.underline,
+                                      height: 1.4,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: "Resend in ${_resendTimer}s",
+                                        style: TextStyle(
+                                          fontFamily: "Pop600",
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
                                     ),
                                   ),
                                 ],
-                              ),
                             ),
                           ),
                         ),
@@ -172,7 +267,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                         const SizedBox(height: 32),
                         
                         // Enter OTP label
-                        Text(
+                        const Text(
                           "Enter OTP",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -202,7 +297,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                                border: Border.all(color: ColorClass.base_color, width: 1.5),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
@@ -285,25 +380,62 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
   }
 
   postOTP(BuildContext context) async {
-    var response = await loginDataManager!.postOTP(
-        _fieldOne.text,
-        "",
-        widget.mobileNo,
-        context);
-    var data = VerifyOtpModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      //loginDataManager!.setDataInShared(data.data!);
+    try {
+      
+      // Get verificationId from widget.data.data?.details
+      String verificationId = widget.data.data?.details ?? "";
+      
+      
+      if (verificationId.isEmpty) {
+        CommonWidget.errorShowSnackBarFor(context, "Invalid verification ID. Please try again.");
+        return;
+      }
+      
+      if (_fieldOne.text.length != 6) {
+        CommonWidget.errorShowSnackBarFor(context, "Please enter a valid 6-digit OTP.");
+        return;
+      }
+      
+      var response = await loginDataManager!.postOTP(
+          _fieldOne.text,
+          verificationId, // Pass verificationId instead of sessionId
+          widget.mobileNo,
+          context);
+      
+      
+      // Check if response is HTML (error page) instead of JSON
+      if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
+        CommonWidget.errorShowSnackBarFor(context, "API Error: Received HTML instead of JSON. Please check your backend connection.");
+        return;
+      }
+      
+      var data = VerifyOtpModelBean.fromJson(jsonDecode(response.body));
+      
+      if (data.status == "success") {
       sharedPreferences!
           .setString(Constant.accessToken, data.data!.accessToken ?? "");
       sharedPreferences!
           .setString(Constant.refreshToken, data.data!.refreshToken ?? "");
       sharedPreferences!.setString(Constant.refreshTokenExpireTime,
           data.data!.refreshTokenExpireTime.toString() ?? "");
-      //CommonWidget.successShowSnackBarFor(context, data.message.toString());
       getUser(context);
-      //CommonWidget.navigateToScreen(context, OTPScreenActivity());
     } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+        // Check if the error message indicates invalid OTP
+        String errorMessage = data.message ?? "";
+        if (errorMessage.toLowerCase().contains("invalid") || 
+            errorMessage.toLowerCase().contains("incorrect") ||
+            errorMessage.toLowerCase().contains("wrong") ||
+            errorMessage.toLowerCase().contains("expired") ||
+            errorMessage.toLowerCase().contains("code") && errorMessage.toLowerCase().contains("expired")) {
+          CommonWidget.errorShowSnackBarFor(context, "Invalid OTP. Please check and try again.");
+        } else if (errorMessage.isNotEmpty) {
+          CommonWidget.errorShowSnackBarFor(context, errorMessage);
+        } else {
+          CommonWidget.errorShowSnackBarFor(context, "Invalid OTP. Please check and try again.");
+        }
+      }
+    } catch (e) {
+      CommonWidget.errorShowSnackBarFor(context, "OTP verification failed: ${e.toString()}");
     }
   }
 
@@ -341,9 +473,8 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
       //CommonWidget.navigateToScreen(context, OTPScreenActivity());
       } else {
         CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
-      }
-    } catch (e) {
-      print("Error parsing user details: $e");
+    }
+  } catch (e) {
       CommonWidget.errorShowSnackBarFor(context, "Error parsing user details. Please try again.");
     }
   }

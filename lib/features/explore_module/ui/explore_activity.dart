@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -14,6 +15,7 @@ import '../../home_module/model/mixed_vendor_data.dart';
 import '../../home_module/data_manager/home_data_manager.dart';
 import '../../booking/ui/booking_activity.dart';
 import '../../specialists_module/ui/specialists_activity.dart';
+import '../../home_module/ui/location_picker_screen.dart';
 
 class ExploreActivity extends StatefulWidget {
   const ExploreActivity({super.key});
@@ -29,6 +31,11 @@ class _ExploreActivityState extends State<ExploreActivity> {
   bool isLoading = true;
   String searchQuery = "";
   String selectedFilter = "All";
+  String? selectedLocation;
+  double? selectedRadius; // in meters
+  List<String> radiusOptions = ["1 mile", "5 miles", "10 miles", "25 miles", "50 miles"];
+  String selectedRadiusOption = "10 miles";
+  TextEditingController? _searchController;
   
   HomeDataManager? dataManager;
   SharedPreferences? sharedPreferences;
@@ -37,34 +44,56 @@ class _ExploreActivityState extends State<ExploreActivity> {
   
   // Map related variables
   GoogleMapController? _mapController;
-  Set<Marker> _markers = {};
+  final Set<Marker> _markers = {};
   LatLng? _currentLocation;
-  LatLng _defaultLocation = LatLng(30.7200094, 76.7080831); // Chandigarh
+  final LatLng _defaultLocation = const LatLng(30.7200094, 76.7080831); // Chandigarh
   BitmapDescriptor? _vendorIcon;
   
   // Zoom and radius tracking
   double _currentZoom = 12.0;
-  double _lastFetchedRadius = 10000; // 10km default
+  double _lastFetchedRadius = 16093.44; // 10 miles default
   Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     _initializeData();
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _searchController?.dispose();
     super.dispose();
   }
 
   Future<void> _initializeData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = HomeDataManager(sharedPreferences!);
+    selectedLocation = sharedPreferences?.getString(Constant.location);
+    selectedRadius = _parseRadius(selectedRadiusOption);
     await _loadIcons();
     await _loadCategories();
     await _loadVendors();
+  }
+
+  double _parseRadius(String radiusOption) {
+    // Convert miles to meters (1 mile = 1609.34 meters)
+    switch (radiusOption) {
+      case "1 mile":
+        return 1609.34; // 1 mile in meters
+      case "5 miles":
+        return 8046.72; // 5 miles in meters
+      case "10 miles":
+        return 16093.44; // 10 miles in meters
+      case "25 miles":
+        return 40233.6; // 25 miles in meters
+      case "50 miles":
+        return 80467.2; // 50 miles in meters
+      default:
+        return 16093.44; // 10 miles default
+    }
   }
 
   Future<void> _loadCategories() async {
@@ -121,7 +150,6 @@ class _ExploreActivityState extends State<ExploreActivity> {
       // Create markers for map
       _createMarkers();
     } catch (e) {
-      print('Error loading vendors: $e');
       setState(() {
         isLoading = false;
       });
@@ -129,12 +157,12 @@ class _ExploreActivityState extends State<ExploreActivity> {
   }
 
   Future<void> _filterVendors() async {
-    print('Filtering vendors with query: "$searchQuery" and filter: "$selectedFilter"');
     try {
       List<MixedVendorData> vendors = [];
 
       final lat = _currentLocation?.latitude ?? _defaultLocation.latitude;
       final lng = _currentLocation?.longitude ?? _defaultLocation.longitude;
+      final radius = selectedRadius ?? _lastFetchedRadius;
 
       if (selectedFilter != "All") {
         vendors = await dataManager!.getMixedVendorsByCategoryWithRadius(
@@ -142,7 +170,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
           selectedFilter,
           lat,
           lng,
-          _lastFetchedRadius,
+          radius,
         );
       } else if (searchQuery.isNotEmpty) {
         vendors = await dataManager!.searchVendors(context, searchQuery);
@@ -151,19 +179,18 @@ class _ExploreActivityState extends State<ExploreActivity> {
           context,
           lat,
           lng,
-          _lastFetchedRadius,
+          radius,
         );
       }
 
       setState(() {
         allVendors = vendors;
         filteredVendors = List.from(allVendors);
+        _lastFetchedRadius = radius;
       });
 
       _createMarkers();
-      print('Filtered vendors count (from API): ${filteredVendors.length}');
     } catch (e) {
-      print('Error filtering vendors: $e');
     }
   }
 
@@ -228,7 +255,6 @@ class _ExploreActivityState extends State<ExploreActivity> {
         _currentLocation = _defaultLocation;
       }
     } catch (e) {
-      print('Error getting current location: $e');
       _currentLocation = _defaultLocation;
     }
   }
@@ -284,7 +310,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
       
       // Debounce the API call to avoid too many requests
       _debounceTimer?.cancel();
-      _debounceTimer = Timer(Duration(seconds: 2), () {
+      _debounceTimer = Timer(const Duration(seconds: 2), () {
         _loadVendorsForRadius(newRadius, position.target);
       });
     }
@@ -293,18 +319,18 @@ class _ExploreActivityState extends State<ExploreActivity> {
   double _calculateRadiusFromZoom(double zoom) {
     // Convert zoom level to approximate radius in meters
     // Higher zoom = smaller radius, lower zoom = larger radius
-    if (zoom >= 15) return 1000;  // 1km
-    if (zoom >= 14) return 2000;  // 2km
-    if (zoom >= 13) return 5000;  // 5km
-    if (zoom >= 12) return 10000; // 10km
-    if (zoom >= 11) return 20000; // 20km
-    if (zoom >= 10) return 50000; // 50km
-    return 100000; // 100km for very low zoom
+    // Values converted from miles to meters (1 mile = 1609.34 meters)
+    if (zoom >= 15) return 1609.34;  // 1 mile
+    if (zoom >= 14) return 3218.69;  // 2 miles
+    if (zoom >= 13) return 8046.72;  // 5 miles
+    if (zoom >= 12) return 16093.44; // 10 miles
+    if (zoom >= 11) return 32186.88; // 20 miles
+    if (zoom >= 10) return 80467.2;  // 50 miles
+    return 160934.4; // 100 miles for very low zoom
   }
 
   Future<void> _loadVendorsForRadius(double radius, LatLng center) async {
     try {
-      print('Loading vendors for radius: ${radius}m at ${center.latitude}, ${center.longitude}');
       
       // Get mixed vendors with new radius
       final mixedVendors = await dataManager!.getMixedVendorsWithRadius(
@@ -322,20 +348,19 @@ class _ExploreActivityState extends State<ExploreActivity> {
       // Update markers
       _createMarkers();
     } catch (e) {
-      print('Error loading vendors for radius: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (Navigator.canPop(context)) {
-          CommonWidget.safePop(context);
-          return false;
-        }
-        return true;
-      },
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: ColorClass.base_color,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: ColorClass.base_color,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         body: Column(
@@ -350,7 +375,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
             ),
             decoration: BoxDecoration(
               color: ColorClass.base_color,
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(25),
                 bottomRight: Radius.circular(25),
               ),
@@ -360,16 +385,9 @@ class _ExploreActivityState extends State<ExploreActivity> {
                 // Top Row
                 Row(
                   children: [
-                    GestureDetector(
-                      onTap: () => CommonWidget.safePop(context),
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
+                    CommonWidget.buildGreenHeaderBackButton(context),
                     const SizedBox(width: 16),
-                    Expanded(
+                    const Expanded(
                       child: Text(
                         "Explore Nearby",
                         style: TextStyle(
@@ -403,12 +421,18 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
+                    controller: _searchController,
                     onChanged: (value) {
+                      // Only update the search query state, don't call API
                       setState(() {
                         searchQuery = value;
                       });
+                    },
+                    onSubmitted: (value) {
+                      // Call API only when user presses enter/submit
                       _filterVendors();
                     },
+                    textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: "Search vendors...",
                       hintStyle: TextStyle(
@@ -416,43 +440,212 @@ class _ExploreActivityState extends State<ExploreActivity> {
                         fontFamily: "Pop400",
                       ),
                       prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+                      suffixIcon: searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, color: Colors.grey[500]),
+                              onPressed: () {
+                                setState(() {
+                                  searchQuery = "";
+                                  _searchController?.clear();
+                                });
+                                _filterVendors(); // Refresh to show all vendors
+                              },
+                            )
+                          : IconButton(
+                              icon: Icon(Icons.search, color: ColorClass.base_color),
+                              onPressed: () {
+                                // Trigger search on icon tap
+                                _filterVendors();
+                              },
+                            ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: filterOptions.map((filter) {
-                      final isSelected = selectedFilter == filter;
-                      return Container(
-                        margin: EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(
-                            filter,
-                            style: TextStyle(
-                              color: isSelected ? ColorClass.base_color : Colors.black87,
-                              fontFamily: "Pop500",
-                              fontSize: 12,
+                // Filter Dropdowns - Category, Location, and Radius (Uniform Design)
+                Row(
+                  children: [
+                    // Category Dropdown
+                    Expanded(
+                      child: Container(
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedFilter,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600], size: 20),
+                          items: filterOptions.map((String filter) {
+                            return DropdownMenuItem<String>(
+                              value: filter,
+                              child: Row(
+                                children: [
+                                  if (filter == selectedFilter)
+                                    Icon(
+                                      Icons.check,
+                                      size: 18,
+                                      color: ColorClass.base_color,
+                                    )
+                                  else
+                                    const SizedBox(width: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    filter,
+                                    style: TextStyle(
+                                      fontFamily: "Pop500",
+                                      fontSize: 14,
+                                      color: filter == selectedFilter 
+                                          ? ColorClass.base_color 
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                selectedFilter = newValue;
+                              });
+                              _filterVendors();
+                            }
+                          },
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Location Filter Button (Uniform size)
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LocationPickerScreen(
+                                  currentLocation: selectedLocation,
+                                ),
+                              ),
+                            );
+                            
+                            if (result != null && mounted) {
+                              setState(() {
+                                selectedLocation = result['location'] as String?;
+                                _currentLocation = LatLng(
+                                  result['lat'] as double,
+                                  result['lng'] as double,
+                                );
+                                // Save to shared preferences
+                                sharedPreferences?.setString(Constant.location, selectedLocation ?? "");
+                                sharedPreferences?.setString(Constant.lat, result['lat'].toString());
+                                sharedPreferences?.setString(Constant.long, result['lng'].toString());
+                              });
+                              await _filterVendors();
+                            }
+                          },
+                          child: Center(
+                            child: Icon(
+                              Icons.location_on,
+                              color: selectedLocation != null ? ColorClass.base_color : Colors.grey[600],
+                              size: 20,
                             ),
                           ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              selectedFilter = filter;
-                            });
-                            _filterVendors();
-                          },
-                          backgroundColor: Colors.white.withOpacity(0.9),
-                          selectedColor: Colors.white,
-                          checkmarkColor: ColorClass.base_color,
                         ),
-                      );
-                    }).toList(),
-                  ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Radius Dropdown (Uniform size)
+                    Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: PopupMenuButton<String>(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                          height: 44,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.tune,
+                                size: 18,
+                                color: selectedRadiusOption != "10 miles" 
+                                    ? ColorClass.base_color 
+                                    : Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                selectedRadiusOption,
+                                style: TextStyle(
+                                  color: selectedRadiusOption != "10 miles" 
+                                      ? ColorClass.base_color 
+                                      : Colors.black87,
+                                  fontFamily: "Pop500",
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey[600]),
+                            ],
+                          ),
+                        ),
+                        onSelected: (String value) async {
+                          setState(() {
+                            selectedRadiusOption = value;
+                            selectedRadius = _parseRadius(value);
+                          });
+                          await _filterVendors();
+                        },
+                        itemBuilder: (BuildContext context) {
+                          return radiusOptions.map((String option) {
+                            return PopupMenuItem<String>(
+                              value: option,
+                              child: Row(
+                                children: [
+                                  if (option == selectedRadiusOption)
+                                    Icon(
+                                      Icons.check,
+                                      size: 18,
+                                      color: ColorClass.base_color,
+                                    )
+                                  else
+                                    const SizedBox(width: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    option,
+                                    style: TextStyle(
+                                      fontFamily: "Pop500",
+                                      fontSize: 14,
+                                      color: option == selectedRadiusOption 
+                                          ? ColorClass.base_color 
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -467,10 +660,17 @@ class _ExploreActivityState extends State<ExploreActivity> {
                   )
                 : isMapView
                     ? _buildMapView()
-                    : _buildListView(),
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          if (mounted && context.mounted) {
+                            await _loadVendors();
+                          }
+                        },
+                        child: _buildListView(),
+                      ),
           ),
         ],
-        ),
+      ),
       ),
     );
   }
@@ -483,7 +683,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
@@ -546,7 +746,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       itemCount: filteredVendors.length,
       itemBuilder: (context, index) {
         final vendor = filteredVendors[index];
@@ -571,7 +771,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
             onMapCreated: (GoogleMapController controller) {
               _mapController = controller;
               // Add a small delay to ensure map is fully loaded
-              Future.delayed(Duration(milliseconds: 500), () {
+              Future.delayed(const Duration(milliseconds: 500), () {
                 if (_markers.isNotEmpty) {
                   _mapController!.animateCamera(
                     CameraUpdate.newLatLngBounds(
@@ -686,7 +886,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
           left: 16,
           right: 16,
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -694,7 +894,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 8,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -703,7 +903,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
               children: [
                 Text(
                   "${filteredVendors.length} vendors found",
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontFamily: "Pop500",
                     color: Colors.black87,
@@ -714,7 +914,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     Container(
                       width: 12,
                       height: 12,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.blue,
                         shape: BoxShape.circle,
                       ),
@@ -732,7 +932,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     Container(
                       width: 12,
                       height: 12,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
@@ -835,7 +1035,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                         ? Image.network(
                             vendor.imageUrl!,
                             fit: BoxFit.cover,
-                            headers: {
+                            headers: const {
                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                             },
                             loadingBuilder: (context, child, loadingProgress) {
@@ -877,7 +1077,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                           ),
                           if (isOffline)
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.red[100],
                                 borderRadius: BorderRadius.circular(12),
@@ -907,26 +1107,26 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       // Distance and Type
                       Row(
                         children: [
-                          if (vendor.distance != null) ...[
-                            Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey[600],
+                          ...[
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: "Pop400",
+                              color: isOffline ? Colors.grey[500] : Colors.grey[600],
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: "Pop400",
-                                color: isOffline ? Colors.grey[500] : Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                          ],
+                          ),
+                          const SizedBox(width: 16),
+                        ],
                           // Vendor Type Badge
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: isOffline
                                   ? Colors.red.withOpacity(0.1)
@@ -1008,7 +1208,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
@@ -1048,7 +1248,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                           ? Image.network(
                               vendor.imageUrl!,
                               fit: BoxFit.cover,
-                              headers: {
+                              headers: const {
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                               },
                               errorBuilder: (context, error, stackTrace) {
@@ -1065,7 +1265,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       children: [
                         Text(
                           vendor.name,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontFamily: "Pop600",
                             color: Colors.black87,
@@ -1080,27 +1280,27 @@ class _ExploreActivityState extends State<ExploreActivity> {
                             color: Colors.grey[600],
                           ),
                         ),
-                        if (vendor.distance != null) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 16,
+                        ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: "Pop400",
                                 color: Colors.grey[600],
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles away",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontFamily: "Pop400",
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
+                      ],
                       ],
                     ),
                   ),
@@ -1115,8 +1315,8 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       onPressed: () {
                         _openGoogleMaps(vendor);
                       },
-                      icon: Icon(Icons.directions, color: Colors.white),
-                      label: Text(
+                      icon: const Icon(Icons.directions, color: Colors.white),
+                      label: const Text(
                         "Navigate",
                         style: TextStyle(
                           color: Colors.white,
@@ -1125,7 +1325,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ColorClass.base_color,
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1138,8 +1338,8 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       onPressed: () {
                         _callVendor(vendor);
                       },
-                      icon: Icon(Icons.phone, color: Colors.white),
-                      label: Text(
+                      icon: const Icon(Icons.phone, color: Colors.white),
+                      label: const Text(
                         "Call",
                         style: TextStyle(
                           color: Colors.white,
@@ -1148,7 +1348,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1160,7 +1360,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
               const SizedBox(height: 16),
               // Additional Info
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
@@ -1168,7 +1368,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "About this location",
                       style: TextStyle(
                         fontSize: 16,
@@ -1205,10 +1405,8 @@ class _ExploreActivityState extends State<ExploreActivity> {
         if (await canLaunch(url)) {
           await launch(url);
         } else {
-          print("Could not launch $url");
         }
       } catch (e) {
-        print("Error launching maps: $e");
       }
     }
   }
@@ -1216,12 +1414,11 @@ class _ExploreActivityState extends State<ExploreActivity> {
   void _callVendor(MixedVendorData vendor) {
     // You can implement phone calling functionality here
     // For now, just show a message
-    print("Calling vendor: ${vendor.name}");
   }
 
   void _showOfflineMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text("This vendor is currently offline"),
         backgroundColor: Colors.red,
         duration: Duration(seconds: 2),

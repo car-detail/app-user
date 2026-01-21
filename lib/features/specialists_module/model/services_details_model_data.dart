@@ -152,8 +152,6 @@ class ServicesDetailsData {
       }
       id = json['id']?.toString();
     } catch (e) {
-      print("❌ Error parsing ServicesDetailsData: $e");
-      print("❌ JSON data: $json");
       // Set default values to prevent crashes
       sId = json['_id']?.toString();
       serviceTitle = "Service";
@@ -219,16 +217,10 @@ class ServicesDetailsData {
     data['isBookmarked'] = isBookmarked;
     data['average_rating'] = averageRating;
     data['total_reviews'] = totalReviews;
-    if (offers != null) {
-      data['offers'] = offers.map((v) => v.toJson()).toList();
-    }
-    if (services != null) {
+    data['offers'] = offers.map((v) => v.toJson()).toList();
       data['services'] = services.map((v) => v.toJson()).toList();
-    }
-    if (packages != null) {
       data['packages'] = packages;
-    }
-    data['id'] = id;
+      data['id'] = id;
     return data;
   }
 }
@@ -303,8 +295,6 @@ class VendorId {
       closeTime = json['closeTime']?.toString();
       isShopOpen = json['isShopOpen'] is bool ? json['isShopOpen'] : json['isShopOpen']?.toString().toLowerCase() == 'true';
     } catch (e) {
-      print("❌ Error parsing VendorId: $e");
-      print("❌ VendorId JSON data: $json");
       // Set default values to prevent crashes
       sId = json['_id']?.toString();
       displayName = "Vendor";
@@ -346,8 +336,6 @@ class TimeSlots {
       sId = json['_id']?.toString();
       id = json['id']?.toString();
     } catch (e) {
-      print("❌ Error parsing TimeSlots: $e");
-      print("❌ TimeSlots JSON data: $json");
       // Set default values to prevent crashes
       slot = "00:00 - 01:00";
       capacity = 1;
@@ -376,6 +364,8 @@ class Offers {
   int? discount;
   String? service;
   String? validUntil;
+  bool? isActive;
+  bool? isCurrentlyActive;
 
   Offers(
       {this.sId,
@@ -384,7 +374,9 @@ class Offers {
         this.image,
         this.discount,
         this.service,
-        this.validUntil});
+        this.validUntil,
+        this.isActive,
+        this.isCurrentlyActive});
 
   Offers.fromJson(Map<String, dynamic> json) {
     try {
@@ -395,9 +387,9 @@ class Offers {
       discount = json['discount'] is int ? json['discount'] : int.tryParse(json['discount']?.toString() ?? '0');
       service = json['service']?.toString();
       validUntil = json['validUntil']?.toString();
+      isActive = json['isActive'] as bool?;
+      isCurrentlyActive = json['isCurrentlyActive'] as bool? ?? json['isActive'] as bool? ?? true;
     } catch (e) {
-      print("❌ Error parsing Offers: $e");
-      print("❌ Offers JSON data: $json");
       // Set default values to prevent crashes
       sId = "";
       title = "Offer";
@@ -406,6 +398,8 @@ class Offers {
       discount = 0;
       service = "";
       validUntil = "";
+      isActive = true;
+      isCurrentlyActive = true;
     }
   }
 
@@ -418,6 +412,8 @@ class Offers {
     data['discount'] = discount;
     data['service'] = service;
     data['validUntil'] = validUntil;
+    data['isActive'] = isActive;
+    data['isCurrentlyActive'] = isCurrentlyActive;
     return data;
   }
 }

@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'Color.dart';
+import '../features/dashboard_module/ui/dashboard_activity.dart';
 
 class CommonWidget {
   static convertHtmlToString(String htmlString) {
@@ -103,19 +104,157 @@ class CommonWidget {
         ),
       );
     } catch (e) {
-      print("Navigation error: $e");
     }
+  }
+
+  // Consistent Back Button Widget
+  static Widget buildBackButton(BuildContext context, {
+    Color? backgroundColor,
+    Color? iconColor,
+    double? iconSize,
+    VoidCallback? onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed ?? () => safePop(context),
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          Icons.arrow_back_ios_new,
+          color: iconColor ?? Colors.black87,
+          size: iconSize ?? 20,
+        ),
+      ),
+    );
+  }
+
+  // Back Button for AppBar leading
+  static Widget buildAppBarBackButton(BuildContext context, {
+    Color? backgroundColor,
+    Color? iconColor,
+    double? iconSize,
+    VoidCallback? onPressed,
+  }) {
+    return buildBackButton(
+      context,
+      backgroundColor: backgroundColor,
+      iconColor: iconColor,
+      iconSize: iconSize,
+      onPressed: onPressed,
+    );
+  }
+
+  // Back Button for Green Headers (standardized UI)
+  static Widget buildGreenHeaderBackButton(BuildContext context, {
+    VoidCallback? onPressed,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        if (onPressed != null) {
+          onPressed();
+        } else {
+          // Safe navigation - try to pop, or navigate to dashboard if can't pop
+          if (!context.mounted) return;
+          
+          try {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              // There's a route to pop - do it
+              navigator.pop();
+            } else {
+              // No route to pop - navigate to dashboard home as fallback
+              // This handles the case when screen is accessed from IndexedStack
+              if (context.mounted) {
+                navigator.pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => DashboardActivity(currentIndex: 0),
+                  ),
+                );
+              }
+            }
+          } catch (e) {
+            // Fallback: try to navigate to dashboard
+            if (context.mounted) {
+              try {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => DashboardActivity(currentIndex: 0),
+                  ),
+                );
+              } catch (e2) {
+              }
+            }
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.arrow_back,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+    );
+  }
+
+  // Back Button for Custom Headers (circular with green background)
+  static Widget buildHeaderBackButton(BuildContext context, {
+    Color? backgroundColor,
+    Color? iconColor,
+    double? size,
+    VoidCallback? onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed ?? () => safePop(context),
+      child: Container(
+        width: size ?? 40,
+        height: size ?? 40,
+        decoration: BoxDecoration(
+          color: backgroundColor ?? ColorClass.base_color.withOpacity(0.15),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.arrow_back_ios_new,
+          size: (size ?? 40) * 0.45,
+          color: iconColor ?? ColorClass.base_color,
+        ),
+      ),
+    );
   }
 
   /// Safe navigation pop - checks if context is mounted and can pop
   static void safePop(BuildContext context, {dynamic result}) {
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      return;
+    }
     try {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(result);
+      // Use maybePop with result handling
+      if (result != null) {
+        final navigator = Navigator.of(context);
+        if (navigator.canPop()) {
+          navigator.pop(result);
+        }
+      } else {
+        // maybePop() only pops if there's a route, otherwise does nothing
+        Navigator.of(context).maybePop();
       }
     } catch (e) {
-      print("Navigation pop error: $e");
     }
   }
 
@@ -127,7 +266,6 @@ class CommonWidget {
         MaterialPageRoute(builder: (context) => page),
       );
     } catch (e) {
-      print("Navigation error: $e");
     }
   }
 
@@ -137,7 +275,6 @@ class CommonWidget {
       Navigator.pushAndRemoveUntil(context,
           MaterialPageRoute(builder: (context) => page), (route) => false);
     } catch (e) {
-      print("Navigation error: $e");
     }
   }
 
@@ -465,7 +602,7 @@ class CommonWidget {
                     height: 30,
                   ),
                 )else
-                SizedBox(height: 30,width: 30,)
+                const SizedBox(height: 30,width: 30,)
               ,
               Expanded(
                 child: Container(
@@ -480,7 +617,7 @@ class CommonWidget {
                   ),
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 30,
                 width: 30,
               )
@@ -536,10 +673,10 @@ class CommonWidget {
       bool isBack = true}) {
     return Stack(
       children: [
-        SizedBox(
+        const SizedBox(
           height: 120,
           width: double.infinity,
-          child: const Image(
+          child: Image(
             image: AssetImage("assets/images/top_bar_new.png"),
             fit: BoxFit.fill,
           ),
@@ -1064,11 +1201,11 @@ class CommonWidget {
             height: 100,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.image, size: 100);
+              return const Icon(Icons.image, size: 100);
             },
           );
         } else {
-          return Icon(Icons.image, size: 100);
+          return const Icon(Icons.image, size: 100);
         }
       } else {
         return Image.file(
@@ -1185,7 +1322,6 @@ class CommonWidget {
     final box = context.findRenderObject() as RenderBox?;
 
     if (box == null) {
-      print("RenderBox is null");
       return;
     }
     await Share.shareXFiles(
@@ -1265,12 +1401,35 @@ class CommonWidget {
       txt =
           '<text removed due to base-64 data, displaying the text could cause the app to crash>';
     }
-    print("====================$txt");
     return txt;
   }
   static String getDateFormat(String date){
+    if (date.isEmpty || date.trim().isEmpty) {
+      return 'N/A';
+    }
+    try {
     DateTime dateTime = DateTime.parse(date);
     String formattedDate = DateFormat("dd MMM yyyy").format(dateTime);
     return formattedDate;
+    } catch (e) {
+      // Try to handle common date formats
+      try {
+        // Try ISO 8601 format
+        if (date.contains('T')) {
+          DateTime dateTime = DateTime.parse(date.split('T')[0]);
+          return DateFormat("dd MMM yyyy").format(dateTime);
+        }
+        // Try timestamp format
+        if (date.contains(RegExp(r'^\d+$'))) {
+          int timestamp = int.tryParse(date) ?? 0;
+          if (timestamp > 0) {
+            DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+            return DateFormat("dd MMM yyyy").format(dateTime);
+          }
+        }
+      } catch (e2) {
+      }
+      return 'Invalid Date';
+    }
   }
 }

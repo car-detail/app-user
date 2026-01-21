@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Common/Color.dart';
@@ -56,7 +57,15 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: ColorClass.base_color,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: ColorClass.base_color,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
       backgroundColor: Colors.grey[50],
       body: Column(
         children: [
@@ -80,22 +89,8 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                GestureDetector(
-                  onTap: () => CommonWidget.safePop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                Text(
+                CommonWidget.buildGreenHeaderBackButton(context),
+                const Text(
                   "Bookmarks",
                   style: TextStyle(
                     color: Colors.white,
@@ -121,6 +116,12 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
           
           // Content Area
           Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                if (mounted && context.mounted) {
+                  await getServices(context);
+                }
+              },
             child: servicesData.isEmpty
                 ? _buildEmptyState()
                 : Container(
@@ -130,10 +131,12 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
                       itemBuilder: (context, index) {
                         return _buildBookmarkCard(servicesData[index], index);
                       },
+                      ),
                     ),
                   ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -266,8 +269,8 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
                           // OFFLINE badge
                           if (isOffline)
                             Container(
-                              margin: EdgeInsets.only(left: 8),
-                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.red.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
@@ -389,7 +392,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: Text(
+          title: const Text(
             "Remove Bookmark",
             style: TextStyle(
               fontSize: 18,

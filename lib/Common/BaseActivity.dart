@@ -1,12 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'Color.dart';
 import 'CommonWidget.dart';
@@ -33,11 +30,8 @@ class BaseActivity {
     try {
       final pickedImage =
           await imagePicker.pickMultiImage(maxHeight: 1000, maxWidth: 1000);
-      print("file.name ${pickedImage[0].name}");
-      print("file.path ${pickedImage[0].path}");
       return pickedImage;
         } catch (e) {
-      print(e);
     }
     return null;
   }
@@ -69,7 +63,6 @@ class BaseActivity {
       }
       return file;
     } catch (e) {
-      print(e);
     }
     return null;
   }
@@ -97,7 +90,6 @@ class BaseActivity {
       }
       return file;
     } catch (e) {
-      print(e);
     }
     return null;
   }
@@ -114,7 +106,6 @@ class BaseActivity {
       }
       return file;
     } catch (e) {
-      print(e);
     }
   }*/
   static Future<List<File>?> pickImage(bool allowMultiple) async {
@@ -134,10 +125,8 @@ class BaseActivity {
           files.addAll(imagePicker.paths.map((path) => File(path!)).toList());
         }
       /*} else {
-        print("Permission not granted");
       }*/
     } catch (e) {
-      print("Error picking files: $e");
     }
     return files;
   }

@@ -46,6 +46,7 @@ class Data {
   String? updatedAt;
   int? iV;
   Location? location;
+  bool? tour_shown;
 
   Data(
       {this.sId,
@@ -67,7 +68,8 @@ class Data {
         this.deviceId,
         this.updatedAt,
         this.iV,
-        this.location});
+        this.location,
+        this.tour_shown});
 
   Data.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -85,11 +87,13 @@ class Data {
     isNewUser = json['isNewUser'];
     roleName = json['roleName'];
     status = json['status'];
-    fcmToken = json['fcmToken'] != null ? json['fcmToken'].cast<String>() : null;
+    fcmToken = json['fcmToken']?.cast<String>();
     deviceId = json['deviceId'];
     updatedAt = json['updatedAt'];
     iV = json['__v'];
     location = json['location'] != null ? Location.fromJson(json['location']) : null;
+    // Default to false if tour_shown is not present in response
+    tour_shown = json['tour_shown'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -113,6 +117,7 @@ class Data {
     data['deviceId'] = deviceId;
     data['updatedAt'] = updatedAt;
     data['__v'] = iV;
+    data['tour_shown'] = tour_shown;
     if (location != null) {
       data['location'] = location!.toJson();
     }

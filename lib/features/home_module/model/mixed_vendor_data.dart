@@ -92,7 +92,6 @@ class MixedVendorData {
   }
 
   factory MixedVendorData.fromBackendGoogleVendor(Map<String, dynamic> vendor) {
-    print('Google vendor data: $vendor'); // Debug log
     
     // Convert Google Places types to service names
     List<String> services = [];
@@ -207,7 +206,6 @@ class MixedVendorData {
         return [str];
       }
     } catch (e) {
-      print('Error extracting services: $e');
       return [];
     }
   }

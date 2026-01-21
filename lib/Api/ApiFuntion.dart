@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +8,6 @@ import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../Common/Color.dart';
-import '../Common/CommonBean.dart';
 import '../Common/CommonWidget.dart';
 import '../Common/Constant.dart';
 import '../features/log_in/ui/modern_login_activity.dart';
@@ -62,7 +59,7 @@ class ApiFuntions {
           debugPrint(response.body);
           sharedPreferences.clear();
           if (context.mounted) {
-            CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity(isSignUp: false));
+            CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
           }
           return response;
         } else {
@@ -141,20 +138,30 @@ class ApiFuntions {
           debugPrint(response.body);
           sharedPreferences.clear();
           if (context.mounted) {
-            CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity(isSignUp: false));
+            CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
           }
           return response;
         } else {
           Map<String, dynamic> message = (jsonDecode(response.body));
 
-          if (message['message'].length > 0) {
-            var mes = message['message'][0];
-            CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+          // Handle message as both string and array (backend returns array)
+          String errorMessage = "";
+          if (message['message'] != null) {
+            if (message['message'] is List && (message['message'] as List).isNotEmpty) {
+              errorMessage = (message['message'] as List)[0].toString();
+            } else if (message['message'] is List && (message['message'] as List).isEmpty) {
+              errorMessage = "An error occurred";
+            } else {
+              errorMessage = message['message'].toString();
+            }
           }
-          var mes = message['message'];
+          
+          if (errorMessage.isNotEmpty) {
+            CommonWidget.errorShowSnackBarFor(context, "$errorMessage Error Code");
+          }
           debugPrint(response.body);
-          debugPrint(mes);
-          showSnackBar(context, mes);
+          debugPrint(errorMessage);
+          showSnackBar(context, errorMessage);
           return response;
           //Common.showToast(mes);
         }
@@ -222,7 +229,7 @@ class ApiFuntions {
       }
           debugPrint(response.body);
           sharedPreferences.clear();
-          CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity(isSignUp: false));
+          CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
           return response;
         } else {
           if (context.mounted && Navigator.canPop(context)) {
@@ -307,7 +314,7 @@ class ApiFuntions {
       }
           debugPrint(response.body);
           sharedPreferences.clear();
-          CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity(isSignUp: false));
+          CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
           return response;
         } else {
           if (context.mounted && Navigator.canPop(context)) {
@@ -610,7 +617,7 @@ class ApiFuntions {
       } else if(response.statusCode == 401){
         debugPrint(response.body);
         sharedPreferences.clear();
-        CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity(isSignUp: false));
+        CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
         return response;
       } else {
         Map<String, dynamic> message = (jsonDecode(response.body));

@@ -8,7 +8,7 @@ import 'package:car_app/features/home_module/model/category_model_data.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
 
 class AllCategoriesScreen extends StatefulWidget {
-  const AllCategoriesScreen({Key? key}) : super(key: key);
+  const AllCategoriesScreen({super.key});
 
   @override
   _AllCategoriesScreenState createState() => _AllCategoriesScreenState();
@@ -54,7 +54,6 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
         });
       }
     } catch (e) {
-      print('Error loading categories: $e');
       setState(() {
         isLoading = false;
       });
@@ -68,11 +67,10 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
       appBar: AppBar(
         backgroundColor: ColorClass.base_color,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        leading: CommonWidget.buildAppBarBackButton(
+          context,
+          backgroundColor: Colors.white.withOpacity(0.2),
+          iconColor: Colors.white,
         ),
         title: const Text(
           "All Categories",

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomplete_textfield.dart';
 
 import '../../../Api/ApiFuntion.dart';
 import '../../../Common/BaseActivity.dart';
@@ -223,7 +224,6 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
       String? isNewUser = prefs.getString(Constant.isNewUser);
       bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
       
-      print("Debug - isNewUser: $isNewUser, isNewUserFlag: $isNewUserFlag, imageURl: $imageURl");
       
       if (!isNewUserFlag && imageURl == "") {
         CommonWidget.successShowSnackBarFor(context, "Please Select Profile Image");
@@ -232,7 +232,6 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
         postUserDetails(context);
       }
     } catch (e) {
-      print("Error validating: $e");
       // If there's an error, treat as new user (make image optional)
       postUserDetails(context);
     }
@@ -240,224 +239,337 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage('assets/images/login_image.png'),
-              fit: BoxFit.cover)),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Column(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
           children: [
-            // Back Button
+            // Clean Header
             Container(
-              margin: const EdgeInsets.only(top: 45, left: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    height: 40,
-                    width: 40,
-                    child: InkWell(
-                      onTap: () {
-                        CommonWidget.safePop(context);
-                      },
-                      child: Image.asset(
-                        CommonWidget.getImagePath("backspace.png"),
-                        height: 20,
-                        width: 20,
-                        color: ColorClass.base_color,
+                  GestureDetector(
+                    onTap: () {
+                      CommonWidget.safePop(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 18,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    "Profile Details",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontFamily: "Pop600",
                     ),
                   ),
                 ],
               ),
             ),
+            
+            // Scrollable Content
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(top: 20),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    //Image(image: AssetImage('assets/images/login_image.png')),
-                    Expanded(
-                  child: Container(
-                margin: const EdgeInsets.only(left: 20, right: 20),
-                child: SingleChildScrollView(
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 20),
+                    
+                    // Profile Image Section
+                    Stack(
                       children: [
-
-                        CommonWidget.getTextWidget500("Profile Details",
-                            color: ColorClass.base_color, size: 20),
                         Container(
-                          alignment: Alignment.center,
-                          child: Stack(
-                            children: [
-                              if (selectedFiles.isEmpty)
-                                ClipOval(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[200],
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 3,
+                            ),
+                          ),
+                          child: selectedFiles.isEmpty
+                              ? ClipOval(
                                   child: Image.asset(
-                                        CommonWidget.getImagePath("chat_profile.png"),
-                                    height: 100,
-                                    width: 100,
-                                    fit: BoxFit.fill,
+                                    CommonWidget.getImagePath("chat_profile.png"),
+                                    fit: BoxFit.cover,
                                   ),
-                                ),
-                              if (selectedFiles.isNotEmpty)
-                                ClipOval(
+                                )
+                              : ClipOval(
                                   child: CommonWidget.determineImageAsset(
-                                      selectedFiles[0].path ?? ""),
-                                ),
-                              Positioned(
-                                bottom: 5,
-                                right: 0,
-                                child: SizedBox(
-                                  width: 30,
-                                  height: 30,
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    child: GestureDetector(
-                                      child: Image.asset(
-                                          CommonWidget.getImagePath("add_image_icon.png")),
-                                      // Icon color and size
-                                      onTap: () async {
-                                        var data = await BaseActivity.pickmedia(false);
-                                        if (data != null) {
-                                          setState(() {
-                                            selectedFiles.clear();
-                                            for (int i = 0;
-                                            i < data.length;
-                                            i++) {
-                                              setState(() {
-                                                selectedFiles.add(data[i]);
-                                              });
-                                            }
-                                                                                    });
-                                        }
-                                        print(selectedFiles.length);
-                                        postImage(context);
-                                      },
-                                    ),
+                                    selectedFiles[0].path ?? "",
                                   ),
                                 ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () async {
+                              var data = await BaseActivity.pickmedia(false);
+                              if (data != null) {
+                                setState(() {
+                                  selectedFiles.clear();
+                                  for (int i = 0; i < data.length; i++) {
+                                    selectedFiles.add(data[i]);
+                                  }
+                                });
+                                postImage(context);
+                              }
+                            },
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: ColorClass.base_color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
                           ),
                         ),
-                        // Show optional text for new users
-                        FutureBuilder<SharedPreferences?>(
-                          future: SharedPreferences.getInstance(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              String? isNewUser = snapshot.data!.getString(Constant.isNewUser);
-                              bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
-                              
-                              if (isNewUserFlag) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8, bottom: 8),
-                                  child: Text(
-                                    "Profile image is optional for new users",
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                );
-                              }
-                            } else {
-                              // If sharedPreferences is not loaded yet, show as new user
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8, bottom: 8),
-                                child: Text(
-                                  "Profile image is optional for new users",
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Optional text for new users
+                    FutureBuilder<SharedPreferences?>(
+                      future: SharedPreferences.getInstance(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          String? isNewUser = snapshot.data!.getString(Constant.isNewUser);
+                          bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
+                          
+                          if (isNewUserFlag) {
+                            return Text(
+                              "Profile image is optional",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                                fontFamily: "Pop400",
+                              ),
+                            );
+                          }
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Form Fields
+                    _buildTextField(
+                      controller: firstNameController,
+                      label: "First Name",
+                      hint: "Enter your first name",
+                      icon: Icons.person_outline,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    _buildTextField(
+                      controller: lastNameController,
+                      label: "Last Name",
+                      hint: "Enter your last name",
+                      icon: Icons.person_outline,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    _buildTextField(
+                      controller: emailController,
+                      label: "Email Address (Optional)",
+                      hint: "Enter your email",
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      isOptional: true,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Location Field
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Location",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                            fontFamily: "Pop500",
+                          ),
                         ),
-                        CommonWidget.getTextFieldWithgrayboder(
-                            "Enter First Name", firstNameController),
-                        CommonWidget.getTextFieldWithgrayboder(
-                            "Enter Last Name", lastNameController),
-                        CommonWidget.getTextFieldWithgrayboder(
-                            "Enter Email Address", emailController),
-                        const SizedBox(height: 12),
-                        // Location Section
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
-                              child: CommonWidget.getTextFieldWithgrayboder(
-                                  "Location", locationController),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: ColorClass.base_color,
-                                borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey[300]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: AddressAutocompleteTextField(
+                                  controller: locationController,
+                                  decoration: InputDecoration(
+                                    hintText: "Search location...",
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 16,
+                                      fontFamily: "Pop400",
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.location_on_outlined,
+                                      color: ColorClass.base_color,
+                                      size: 22,
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 16,
+                                    ),
+                                  ),
+                                  mapsApiKey: 'AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw',
+                                  onSuggestionClick: (place) {
+                                    final address = place.formattedAddress ?? place.name ?? '';
+                                    final lat = place.lat ?? 0.0;
+                                    final lng = place.lng ?? 0.0;
+                                    setState(() {
+                                      locationController.text = address;
+                                      currentLat = lat;
+                                      currentLng = lng;
+                                    });
+                                    if (sharedPreferences != null) {
+                                      sharedPreferences!.setString(Constant.location, address);
+                                      sharedPreferences!.setString(Constant.lat, lat.toString());
+                                      sharedPreferences!.setString(Constant.long, lng.toString());
+                                    }
+                                  },
+                                  language: 'en-US',
+                                ),
                               ),
-                              child: IconButton(
-                                icon: const Icon(Icons.my_location, color: Colors.white),
-                                onPressed: _getCurrentLocation,
-                                tooltip: "Get Current Location",
+                            ),
+                            const SizedBox(width: 12),
+                            GestureDetector(
+                              onTap: _getCurrentLocation,
+                              child: Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: ColorClass.base_color,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: ColorClass.base_color.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.my_location,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(
-                          height: 20,
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          if (BaseActivity.checkEmptyField(
+                            editingController: firstNameController,
+                            message: "Please enter first name",
+                            context: context,
+                          )) {
+                            return;
+                          } else if (BaseActivity.checkEmptyField(
+                            editingController: lastNameController,
+                            message: "Please enter last name",
+                            context: context,
+                          )) {
+                            return;
+                          } else {
+                            // Email is optional, no validation needed
+                            _validateAndSave(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorClass.base_color,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
                         ),
-                        GestureDetector(
-                            onTap: () {
-                              //FocusManager.instance.primaryFocus?.unfocus();
-                              if (BaseActivity.checkEmptyField(
-                                  editingController: firstNameController,
-                                  message: "Please Enter First Name.",
-                                  context: context)) {
-                                return;
-                              } else if (BaseActivity.checkEmptyField(
-                                  editingController: lastNameController,
-                                  message: "Please Enter Last Name.",
-                                  context: context)) {
-                                return;
-                              } else if (BaseActivity.checkEmptyField(
-                                  editingController: emailController,
-                                  message: "Please Enter Email Address.",
-                                  context: context)) {
-                                return;
-                              } else {
-                                // Check if user is new - if so, make profile image optional
-                                _validateAndSave(context);
-                              }
-                            },
-                            child: Container(
-                              child: CommonWidget.getGradinetButton("Save",
-                                  startcolor: 0xff1CA669,
-                                  endcolor: 0xff1CA669,
-                                  height: 40),
-                            )),
-                      ]),
-                ),
-              ))
+                        child: const Text(
+                          "Save",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Pop600",
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -465,6 +577,68 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
           ],
         ),
       ),
+    );
+  }
+  
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool isOptional = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+            fontFamily: "Pop500",
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey[300]!,
+              width: 1,
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+              fontFamily: "Pop400",
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 16,
+                fontFamily: "Pop400",
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: Colors.grey[600],
+                size: 22,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -71,6 +71,8 @@ class Records {
   String? vendorEmail;
   String? cancelledBy;
   String? commentByVendor;
+  String? packageName;
+  String? packageId;
 
   Records(
       {this.sId,
@@ -91,7 +93,9 @@ class Records {
         this.vendorMobile,
         this.vendorEmail,
         this.cancelledBy,
-        this.commentByVendor});
+        this.commentByVendor,
+        this.packageName,
+        this.packageId});
 
   Records.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -113,6 +117,8 @@ class Records {
     vendorEmail = json['vendorEmail'];
     cancelledBy = json['cancelled_by'];
     commentByVendor = json['commentByVendor'];
+    packageName = json['packageName'];
+    packageId = json['packageId'];
   }
 
   Map<String, dynamic> toJson() {
@@ -136,6 +142,8 @@ class Records {
     data['vendorEmail'] = vendorEmail;
     data['cancelled_by'] = cancelledBy;
     data['commentByVendor'] = commentByVendor;
+    data['packageName'] = packageName;
+    data['packageId'] = packageId;
     return data;
   }
 }

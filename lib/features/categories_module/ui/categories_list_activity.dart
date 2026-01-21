@@ -46,7 +46,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   bool _isLoading = true;
   
   // Parallax animation
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
 
   @override
@@ -64,36 +64,42 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   }
 
   void _onScroll() {
+    if (!mounted) return;
     setState(() {
       _scrollOffset = _scrollController.offset;
     });
   }
 
   start() async {
+    if (!mounted) return;
     sharedPreferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
     dataManager = CategoriesListDataManager(sharedPreferences!);
     homeDataManager = HomeDataManager(sharedPreferences!);
-    await getMixedVendors(context);
+    if (mounted && context.mounted) {
+      await getMixedVendors(context);
+    }
   }
 
   getMixedVendors(BuildContext context) async {
     try {
       final categoryTitle = widget.categoryData.categoryTitle ?? '';
-      print('🔍 Fetching vendors for category: $categoryTitle'); // Debug log
       
       // Show loading state
-      setState(() {
-        _isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
       
       // Use category-specific API call
       final vendors = await homeDataManager!.getMixedVendorsByCategory(context, categoryTitle);
       
-      print('🔍 Total vendors from API: ${vendors.length}'); // Debug log
+      if (!mounted) return;
+      
       
       // Debug: Print all vendor types
       for (var vendor in vendors) {
-        print('Vendor: ${vendor.name}, isAppVendor: ${vendor.isAppVendor}, services: ${vendor.services}');
       }
       
       // Calculate distances for all vendors
@@ -108,56 +114,61 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         }
       }
       
-      print('🔍 Vendors after distance calculation: ${vendors.length}'); // Debug log
       
-      setState(() {
-        mixedVendorsData = vendors;
-        filteredVendorsData = List.from(vendors);
-        _isLoading = false;
-      });
-      
-      applyFilters();
-      
-      // Show success message if vendors found
-      if (vendors.isNotEmpty) {
-        CommonWidget.successShowSnackBarFor(context, "Found ${vendors.length} vendors for ${categoryTitle}");
-      } else {
-        CommonWidget.errorShowSnackBarFor(context, "No vendors found for ${categoryTitle}. Try adjusting your location or filters.");
+      if (mounted) {
+        setState(() {
+          mixedVendorsData = vendors;
+          filteredVendorsData = List.from(vendors);
+          _isLoading = false;
+        });
+        
+        applyFilters();
+        
+        // Show success message if vendors found
+        if (vendors.isNotEmpty) {
+          CommonWidget.successShowSnackBarFor(context, "Found ${vendors.length} vendors for $categoryTitle");
+        } else {
+          CommonWidget.errorShowSnackBarFor(context, "No vendors found for $categoryTitle. Try adjusting your location or filters.");
+        }
       }
     } catch (e) {
-      print('❌ Error loading vendors: $e');
-      CommonWidget.errorShowSnackBarFor(context, "Error loading vendors: $e");
-      
-      // Set empty state on error
-      setState(() {
-        mixedVendorsData = [];
-        filteredVendorsData = [];
-        _isLoading = false;
-      });
+      if (mounted && context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Error loading vendors: $e");
+        
+        // Set empty state on error
+        setState(() {
+          mixedVendorsData = [];
+          filteredVendorsData = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
   getServices(BuildContext context) async {
+    if (!mounted) return;
     var response = await dataManager!
         .getAllServices(context, widget.categoryData.categoryTitle ?? "");
+    if (!mounted) return;
     var data = ServicesModelData.fromJson(jsonDecode(response.body));
     if (data.status == "success") {
-      setState(() {
-        servicesData.clear();
-        servicesData.addAll(data.data!);
-      });
+      if (mounted) {
+        setState(() {
+          servicesData.clear();
+          servicesData.addAll(data.data!);
+        });
+      }
       //CommonWidget.successShowSnackBarFor(context, data.message ?? "");
     } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      if (mounted && context.mounted) {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
     }
   }
 
   void applyFilters() {
     List<MixedVendorData> filtered = List.from(mixedVendorsData);
     
-    print('🔍 Applying filters - Total vendors: ${filtered.length}');
-    print('🔍 Max distance: ${maxDistance} miles');
-    print('🔍 Min rating: ${minRating}');
     
     // Apply search filter
     if (searchController.text.isNotEmpty) {
@@ -167,7 +178,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         vendor.address?.toLowerCase().contains(searchTerm) == true ||
         vendor.category?.toLowerCase().contains(searchTerm) == true
       ).toList();
-      print('🔍 After search filter: ${filtered.length} vendors');
     }
     
     // Apply distance filter (convert meters to miles)
@@ -176,18 +186,15 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
       final distanceInMiles = vendor.distance * 0.000621371;
       final passesFilter = distanceInMiles <= maxDistance;
       if (!passesFilter) {
-        print('🔍 Filtering out ${vendor.name}: ${distanceInMiles.toStringAsFixed(2)} miles > ${maxDistance} miles');
       }
       return passesFilter;
     }).toList();
-    print('🔍 After distance filter: ${filtered.length} vendors (removed ${beforeDistanceFilter - filtered.length})');
     
     // Apply rating filter
     final beforeRatingFilter = filtered.length;
     filtered = filtered.where((vendor) => 
       (vendor.rating ?? 0) >= minRating
     ).toList();
-    print('🔍 After rating filter: ${filtered.length} vendors (removed ${beforeRatingFilter - filtered.length})');
     
     // Apply sorting
     switch (selectedSortBy) {
@@ -202,20 +209,24 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         break;
     }
     
-    print('🔍 Final filtered vendors: ${filtered.length}');
     
-    setState(() {
-      filteredVendorsData = filtered;
-    });
+    if (mounted) {
+      setState(() {
+        filteredVendorsData = filtered;
+      });
+    }
   }
 
   void applyFiltersAndRefetch() async {
-    print('🔄 Refetching data with new distance filter: ${maxDistance} miles');
+    if (!mounted) return;
+    
     
     // Show loading state
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     
     // Convert miles to meters for API call
     final maxDistanceMeters = (maxDistance * 1609.34).round();
@@ -231,7 +242,8 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         maxDistanceMeters.toDouble()
       );
       
-      print('🔄 Refetched ${vendors.length} vendors for category "$categoryTitle" within ${maxDistance} miles');
+      if (!mounted) return;
+      
       
       // Calculate distances for all vendors
       final userLat = double.tryParse(sharedPreferences?.getString(Constant.lat) ?? "0") ?? 0;
@@ -245,7 +257,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         }
       }
       
-      print('🔄 After distance calculation: ${vendors.length} vendors');
       
       // Apply additional filters (search, rating)
       List<MixedVendorData> finalFiltered = List.from(vendors);
@@ -258,14 +269,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
           vendor.address?.toLowerCase().contains(searchTerm) == true ||
           vendor.category?.toLowerCase().contains(searchTerm) == true
         ).toList();
-        print('🔄 After search filter: ${finalFiltered.length} vendors');
       }
       
       // Apply rating filter
       finalFiltered = finalFiltered.where((vendor) => 
         (vendor.rating ?? 0) >= minRating
       ).toList();
-      print('🔄 After rating filter: ${finalFiltered.length} vendors');
       
       // Apply sorting
       switch (selectedSortBy) {
@@ -280,29 +289,37 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
           break;
       }
       
-      print('🔄 Final filtered vendors: ${finalFiltered.length}');
       
-      setState(() {
-        mixedVendorsData = vendors;
-        filteredVendorsData = finalFiltered;
-        _isLoading = false;
-      });
-      
-      // Show success message
-      if (finalFiltered.isNotEmpty) {
-        CommonWidget.successShowSnackBarFor(context, "Found ${finalFiltered.length} vendors within ${maxDistance.toStringAsFixed(1)} miles");
-      } else {
-        CommonWidget.errorShowSnackBarFor(context, "No vendors found within ${maxDistance.toStringAsFixed(1)} miles. Try increasing the distance or adjusting other filters.");
+      if (mounted) {
+        setState(() {
+          mixedVendorsData = vendors;
+          filteredVendorsData = finalFiltered;
+          _isLoading = false;
+        });
+        
+        // Show success message
+        if (finalFiltered.isNotEmpty) {
+          if (context.mounted) {
+            CommonWidget.successShowSnackBarFor(context, "Found ${finalFiltered.length} vendors within ${maxDistance.toStringAsFixed(1)} miles");
+          }
+        } else {
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, "No vendors found within ${maxDistance.toStringAsFixed(1)} miles. Try increasing the distance or adjusting other filters.");
+          }
+        }
       }
       
     } catch (e) {
-      print('❌ Error refetching vendors: $e');
-      setState(() {
-        _isLoading = false;
-      });
-      // Fallback to local filtering if API call fails
-      applyFilters();
-      CommonWidget.errorShowSnackBarFor(context, "Error refetching vendors. Using local filters instead.");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        // Fallback to local filtering if API call fails
+        applyFilters();
+        if (context.mounted) {
+          CommonWidget.errorShowSnackBarFor(context, "Error refetching vendors. Using local filters instead.");
+        }
+      }
     }
   }
 
@@ -313,7 +330,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Filter Options'),
+              title: const Text('Filter Options'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -348,7 +365,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                   // Sort by
                   DropdownButton<String>(
                     value: selectedSortBy,
-                    items: [
+                    items: const [
                       DropdownMenuItem(value: 'distance', child: Text('Distance')),
                       DropdownMenuItem(value: 'rating', child: Text('Rating')),
                       DropdownMenuItem(value: 'name', child: Text('Name')),
@@ -366,14 +383,14 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('Cancel'),
+                  child: const Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                     applyFiltersAndRefetch();
                   },
-                  child: Text('Apply'),
+                  child: const Text('Apply'),
                 ),
               ],
             );
@@ -394,11 +411,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         children: [
           // Animated toolbar with parallax effect
           AnimatedContainer(
-            duration: Duration(milliseconds: 100),
+            duration: const Duration(milliseconds: 100),
             height: toolbarHeight,
             child: Container(
             color: ColorClass.base_color,
-              padding: EdgeInsets.only(top: 45, bottom: 10),
+              padding: const EdgeInsets.only(top: 45, bottom: 10),
             child: Stack(
               children: [
                   // Parallax background
@@ -445,7 +462,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               onTap: () {
                                 _showFilterDialog();
                               },
-                              child: Icon(
+                              child: const Icon(
                                 Icons.filter_list,
                                 color: Colors.white,
                                 size: 24,
@@ -482,7 +499,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                   color: ColorClass.base_color,
                   size: 20,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   'Category: ',
                   style: TextStyle(
@@ -499,7 +516,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                     fontFamily: "Pop600",
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 if (filteredVendorsData.isNotEmpty)
                   Text(
                     '${filteredVendorsData.length} vendors',
@@ -519,10 +536,10 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Search vendors...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear),
+                        icon: const Icon(Icons.clear),
                         onPressed: () {
                           searchController.clear();
                           applyFilters();
@@ -549,7 +566,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'Loading vendors...',
                             style: TextStyle(
@@ -558,7 +575,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               fontFamily: "Pop500",
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             'Finding ${widget.categoryData.categoryTitle} services near you',
                             style: TextStyle(
@@ -581,7 +598,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                                 size: 64,
                                 color: Colors.grey[400],
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Text(
                                 'No vendors found',
                                 style: TextStyle(
@@ -590,7 +607,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                                   fontFamily: "Pop600",
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text(
                                 'No ${widget.categoryData.categoryTitle} services found in your area.\nTry adjusting your location or filters.',
                                 style: TextStyle(
@@ -600,13 +617,13 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               ElevatedButton.icon(
                                 onPressed: () {
                                   getMixedVendors(context);
                                 },
-                                icon: Icon(Icons.refresh, size: 18),
-                                label: Text('Refresh'),
+                                icon: const Icon(Icons.refresh, size: 18),
+                                label: const Text('Refresh'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: ColorClass.base_color,
                                   foregroundColor: Colors.white,
@@ -663,7 +680,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
     
     return GestureDetector(
       onTap: () {
-        print('Tapped vendor: ${vendor.name}, isAppVendor: ${vendor.isAppVendor}, isOffline: $isOffline'); // Debug log
         
         // Prevent navigation for offline vendors
         if (isOffline) {
@@ -679,7 +695,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
           );
         } else {
           // For Google Places vendors, show bottom sheet with navigation options
-          print('Showing Google vendor bottom sheet for: ${vendor.name}'); // Debug log
           _showGoogleVendorBottomSheet(vendor);
         }
       },
@@ -695,7 +710,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -710,7 +725,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       height: 70,
                       width: 70,
                       fit: BoxFit.cover,
-                      headers: {
+                      headers: const {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                       },
                       loadingBuilder: (context, child, loadingProgress) {
@@ -730,8 +745,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        print('Image load error for ${vendor.name}: $error'); // Debug log
-                        print('Image URL: ${vendor.imageUrl}'); // Debug log
                         return Container(
                           height: 70,
                           width: 70,
@@ -782,8 +795,8 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                             // OFFLINE badge
                             if (isOffline)
                               Container(
-                                margin: EdgeInsets.only(left: 8),
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: Colors.red.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4),
@@ -803,8 +816,8 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       // Category indicator
                       if (vendor.category != null && vendor.category!.isNotEmpty)
                         Container(
-                          margin: EdgeInsets.only(right: 8),
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -821,7 +834,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       // Vendor type indicator
                       if (vendor.isAppVendor)
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: ColorClass.base_color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -837,12 +850,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                         )
                       else
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.blue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Google',
                             style: TextStyle(
                               fontSize: 10,
@@ -909,14 +922,14 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       
                       // Status
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: vendor.isOpen ? Colors.green : Colors.red,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           vendor.isOpen ? 'Open' : 'Closed',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10,
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -972,7 +985,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
       builder: (BuildContext context) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.6,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
@@ -983,7 +996,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
             children: [
               // Handle bar
               Container(
-                margin: EdgeInsets.only(top: 12),
+                margin: const EdgeInsets.only(top: 12),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
@@ -994,7 +1007,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
               
               // Header
               Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
                     // Vendor image
@@ -1031,7 +1044,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                             ),
                     ),
                     
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     
                     // Vendor info
                     Expanded(
@@ -1046,7 +1059,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               color: ColorClass.base_color,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           if (vendor.address != null)
                             Text(
                               vendor.address!,
@@ -1057,19 +1070,19 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(Icons.location_on, size: 16, color: Colors.grey[500]),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 "${(vendor.distance * 0.000621371).toStringAsFixed(1)} miles",
                                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               if (vendor.rating != null) ...[
                                 Icon(Icons.star, size: 16, color: Colors.amber[600]),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   vendor.rating!.toStringAsFixed(1),
                                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -1084,12 +1097,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                 ),
               ),
               
-              Divider(height: 1),
+              const Divider(height: 1),
               
               // Content
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1101,14 +1114,14 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           color: ColorClass.base_color,
                         ),
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       if (vendor.services.isNotEmpty)
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: vendor.services.map((service) {
                             return Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: ColorClass.base_light_color,
                                 borderRadius: BorderRadius.circular(16),
@@ -1134,7 +1147,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           ),
                         ),
                       
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       
                       Text(
                         'Status',
@@ -1144,18 +1157,18 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           color: ColorClass.base_color,
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: vendor.isOpen ? Colors.green : Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               vendor.isOpen ? 'Open Now' : 'Closed',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,
@@ -1171,7 +1184,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
               
               // Action buttons
               Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
                     Expanded(
@@ -1184,12 +1197,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                             SpecialistsActivity(vendor.id),
                           );
                         },
-                        icon: Icon(Icons.calendar_today, size: 18),
-                        label: Text('Book Service'),
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: const Text('Book Service'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: ColorClass.base_color,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1214,7 +1227,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
       builder: (BuildContext context) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.7,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
@@ -1225,7 +1238,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
             children: [
               // Handle bar
               Container(
-                margin: EdgeInsets.only(top: 12),
+                margin: const EdgeInsets.only(top: 12),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
@@ -1236,7 +1249,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
               
               // Header
               Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
                     // Vendor image
@@ -1253,7 +1266,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                                   height: 60,
                                   width: 60,
                                   color: Colors.blue[100],
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.location_on,
                                     color: Colors.blue,
                                     size: 28,
@@ -1265,7 +1278,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               height: 60,
                               width: 60,
                               color: Colors.blue[100],
-                              child: Icon(
+                              child: const Icon(
                                 Icons.location_on,
                                 color: Colors.blue,
                                 size: 28,
@@ -1273,7 +1286,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                             ),
                     ),
                     
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     
                     // Vendor info
                     Expanded(
@@ -1293,7 +1306,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                                 ),
                               ),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.blue[100],
                                   borderRadius: BorderRadius.circular(12),
@@ -1309,7 +1322,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           if (vendor.address != null)
                             Text(
                               vendor.address!,
@@ -1320,19 +1333,19 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(Icons.location_on, size: 16, color: Colors.grey[500]),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 "${(vendor.distance * 0.000621371).toStringAsFixed(1)} miles",
                                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               if (vendor.rating != null) ...[
                                 Icon(Icons.star, size: 16, color: Colors.amber[600]),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   vendor.rating!.toStringAsFixed(1),
                                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -1347,12 +1360,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                 ),
               ),
               
-              Divider(height: 1),
+              const Divider(height: 1),
               
               // Content
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1364,14 +1377,14 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           color: Colors.blue[700],
                         ),
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       if (vendor.services.isNotEmpty)
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: vendor.services.map((service) {
                             return Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.blue[50],
                                 borderRadius: BorderRadius.circular(16),
@@ -1398,7 +1411,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           ),
                         ),
                       
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       
                       Text(
                         'Status',
@@ -1408,18 +1421,18 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           color: Colors.blue[700],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: vendor.isOpen ? Colors.green : Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               vendor.isOpen ? 'Open Now' : 'Closed',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,
@@ -1429,7 +1442,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                         ],
                       ),
                       
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       
                       Text(
                         'Note',
@@ -1439,9 +1452,9 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           color: Colors.orange[700],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Container(
-                        padding: EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.orange[50],
                           borderRadius: BorderRadius.circular(8),
@@ -1462,7 +1475,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
               
               // Action buttons
               Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
                     Expanded(
@@ -1471,31 +1484,31 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           CommonWidget.safePop(context);
                           _navigateToVendor(vendor);
                         },
-                        icon: Icon(Icons.directions, size: 18),
-                        label: Text('Navigate'),
+                        icon: const Icon(Icons.directions, size: 18),
+                        label: const Text('Navigate'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.blue[700],
                           side: BorderSide(color: Colors.blue[300]!),
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
                           CommonWidget.safePop(context);
                           _callVendor(vendor);
                         },
-                        icon: Icon(Icons.phone, size: 18),
-                        label: Text('Call'),
+                        icon: const Icon(Icons.phone, size: 18),
+                        label: const Text('Call'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1521,14 +1534,12 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
     final googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name';
     
     // You can use url_launcher here
-    print('Navigate to: $googleMapsUrl');
     CommonWidget.successShowSnackBarFor(context, 'Opening navigation to ${vendor.name}');
   }
 
   void _callVendor(MixedVendorData vendor) {
     if (vendor.phone != null) {
       // You can use url_launcher here to make phone calls
-      print('Calling: ${vendor.phone}');
       CommonWidget.successShowSnackBarFor(context, 'Calling ${vendor.name} at ${vendor.phone}');
     } else {
       CommonWidget.errorShowSnackBarFor(context, 'Phone number not available for this vendor');

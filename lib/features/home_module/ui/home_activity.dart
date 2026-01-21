@@ -22,6 +22,7 @@ import 'package:car_app/features/home_module/ui/all_vendors_screen.dart';
 import 'package:car_app/features/categories_module/ui/all_categories_screen.dart';
 import 'package:car_app/features/home_module/ui/location_picker_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
@@ -38,7 +39,18 @@ import '../model/mixed_vendor_data.dart';
 import '../data_manager/home_data_manager.dart';
 
 class HomeActivity extends StatefulWidget {
-  const HomeActivity({super.key});
+  final GlobalKey? locationKey;
+  final GlobalKey? searchKey;
+  final GlobalKey? categoriesKey;
+  final GlobalKey? nearbyVendorsKey;
+  
+  const HomeActivity({
+    super.key,
+    this.locationKey,
+    this.searchKey,
+    this.categoriesKey,
+    this.nearbyVendorsKey,
+  });
 
   @override
   State<HomeActivity> createState() => _HomeActivityState();
@@ -59,7 +71,7 @@ class _HomeActivityState extends State<HomeActivity> {
   bool _isLoading = true;
   
   // Scroll animation variables
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
   double _lastScrollOffset = 0.0;
   Timer? _scrollThrottleTimer;
@@ -75,10 +87,19 @@ class _HomeActivityState extends State<HomeActivity> {
   // Location search
   final TextEditingController _locationController = TextEditingController();
   bool _isGettingLocation = false;
+  
+  // User info
+  String _userFirstName = "";
+  String _userLastName = "";
+  
+  // Offers carousel
+  PageController? offerPageController;
+  int currentOfferPage = 0;
 
   @override
   void initState() {
     super.initState();
+    offerPageController = PageController();
     // Use post-frame callback to ensure scroll controller is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scrollController.hasClients) {
@@ -91,17 +112,22 @@ class _HomeActivityState extends State<HomeActivity> {
   }
   
   Future<void> _initLocationController() async {
-    if (sharedPreferences == null) {
-      sharedPreferences = await SharedPreferences.getInstance();
-    }
+    sharedPreferences ??= await SharedPreferences.getInstance();
     final currentLocation = sharedPreferences?.getString(Constant.location) ?? "Select Location";
+    final firstName = sharedPreferences?.getString(Constant.firstName) ?? "";
+    final lastName = sharedPreferences?.getString(Constant.lastName) ?? "";
     if (mounted) {
-      _locationController.text = currentLocation;
+      setState(() {
+        _locationController.text = currentLocation;
+        _userFirstName = firstName;
+        _userLastName = lastName;
+      });
     }
   }
 
   @override
   void dispose() {
+    offerPageController?.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchTimer?.cancel();
@@ -111,9 +137,7 @@ class _HomeActivityState extends State<HomeActivity> {
   }
   
   Future<void> _saveLocation(String address, double lat, double lng) async {
-    if (sharedPreferences == null) {
-      sharedPreferences = await SharedPreferences.getInstance();
-    }
+    sharedPreferences ??= await SharedPreferences.getInstance();
     
     await sharedPreferences?.setString(Constant.location, address);
     await sharedPreferences?.setString(Constant.lat, lat.toString());
@@ -272,9 +296,9 @@ class _HomeActivityState extends State<HomeActivity> {
       return;
     }
     
-    // Only update if scroll offset changed significantly (more than 80 pixels)
+    // Only update if scroll offset changed significantly (more than 100 pixels)
     // Much larger threshold to drastically reduce rebuilds
-    if ((currentOffset - _lastScrollOffset).abs() < 80) {
+    if ((currentOffset - _lastScrollOffset).abs() < 100) {
       return;
     }
     
@@ -282,11 +306,11 @@ class _HomeActivityState extends State<HomeActivity> {
     
     // Throttle setState calls very aggressively to prevent UI freezing
     _scrollThrottleTimer?.cancel();
-    _scrollThrottleTimer = Timer(const Duration(milliseconds: 500), () {
+    _scrollThrottleTimer = Timer(const Duration(milliseconds: 200), () {
       if (mounted && _scrollController.hasClients && !_headerFullyCollapsed) {
         final newOffset = _scrollController.offset;
-        // Only update if the change is significant enough (50px) to warrant a rebuild
-        if ((newOffset - _scrollOffset).abs() >= 50) {
+        // Only update if the change is significant enough (150px) to warrant a rebuild
+        if ((newOffset - _scrollOffset).abs() >= 150) {
           setState(() {
             _scrollOffset = newOffset;
           });
@@ -315,21 +339,15 @@ class _HomeActivityState extends State<HomeActivity> {
       
       // Run all API calls in parallel with timeout
       await Future.wait<void>([
-        getCategory(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Category API timeout');
+        getCategory(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
-        getServices(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Services API timeout');
+        getServices(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
-        getOffer(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Offer API timeout');
+        getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
-        getMixedVendors(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Mixed vendors API timeout');
+        getMixedVendors(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
       ]);
-    } catch (e) {
-      print('Error in start method: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -356,7 +374,7 @@ class _HomeActivityState extends State<HomeActivity> {
       });
       
       // Start search timer for debounced search
-      _searchTimer = Timer(Duration(milliseconds: 500), () {
+      _searchTimer = Timer(const Duration(milliseconds: 500), () {
         _performSearch();
       });
     }
@@ -377,7 +395,6 @@ class _HomeActivityState extends State<HomeActivity> {
         _isSearching = false;
       });
       
-      print('Search completed for "$_searchQuery": ${searchResults.length} results');
       
       // Navigate to search results screen
       CommonWidget.navigateToScreen(
@@ -388,7 +405,6 @@ class _HomeActivityState extends State<HomeActivity> {
         ),
       );
     } catch (e) {
-      print('Search error: $e');
       setState(() {
         _isSearching = false;
       });
@@ -399,42 +415,32 @@ class _HomeActivityState extends State<HomeActivity> {
 
   Future<void> _loadAllServices() async {
     try {
-      print('Loading all services...');
       // Get user location for Google Places integration
       var location = await _getUserLocationData();
       var response = await dataManager!.getAllServicesWithLocation(context, location);
       if (response != null) {
         var responseData = jsonDecode(response.body);
-        print('Services API response: $responseData');
         if (responseData['status'] == 'success' && responseData['data'] != null) {
           setState(() {
             servicesData.clear();
             final servicesList = responseData['data'] as List;
-            print('Services list length: ${servicesList.length}');
             servicesData.addAll(servicesList.map((item) => ServicesData.fromJson(item)).toList());
-            print('Loaded ${servicesData.length} vendors with services');
             for (var vendor in servicesData) {
-              print('Vendor: ${vendor.displayName}, Services count: ${vendor.services.length}');
             }
           });
         } else {
-          print('No services data found in API response');
         }
       } else {
-        print('No response from services API');
       }
     } catch (e) {
-      print('Error loading services: $e');
     }
   }
 
 
   List<dynamic> _extractAllServicesAndVendors() {
     List<dynamic> allItems = [];
-    print('Extracting services and vendors from ${servicesData.length} vendors');
     
     for (var vendor in servicesData) {
-      print('Vendor ${vendor.displayName} has ${vendor.services.length} services');
       
       if (vendor.sId != null && !vendor.sId!.startsWith('ChIJ')) {
         // App vendor - add the vendor itself (not individual services)
@@ -446,7 +452,6 @@ class _HomeActivityState extends State<HomeActivity> {
       }
     }
     
-    print('Total extracted items: ${allItems.length}');
     return allItems;
   }
 
@@ -469,7 +474,6 @@ class _HomeActivityState extends State<HomeActivity> {
         'lng': 76.7080831,
       };
     } catch (e) {
-      print('Error getting location: $e');
       // Return default location on error
       return {
         'lat': 30.7200094,
@@ -486,7 +490,7 @@ class _HomeActivityState extends State<HomeActivity> {
     
     // Calculate animation values based on scroll offset
     // Make header height responsive to screen size
-    double baseHeaderHeight = screenHeight * 0.28; // 28% of screen height for better visibility
+    double baseHeaderHeight = screenHeight * 0.22; // Increased to accommodate search bar
     double minHeaderHeight = 0.0; // Allow complete collapse
     
     // If header is fully collapsed, use cached values to prevent unnecessary calculations
@@ -505,7 +509,7 @@ class _HomeActivityState extends State<HomeActivity> {
       
       // Ensure minimum height for very small screens
       if (screenHeight < 600) {
-        baseHeaderHeight = 200.0;
+        baseHeaderHeight = 180.0; // Increased to accommodate search bar
         headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(0.0, baseHeaderHeight);
       }
       
@@ -513,79 +517,143 @@ class _HomeActivityState extends State<HomeActivity> {
       welcomeScale = 1.0 - (_scrollOffset / 150.0).clamp(0.0, 0.3);
     }
     
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: ColorClass.base_color,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
       body: Stack(
         children: [
+            // Main content - Column
           Column(
+              children: [
+                // Green status bar background
+                Container(
+                  height: statusBarHeight,
+                  color: ColorClass.base_color,
+                ),
+                // Column to hold header and content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header - Completely remove from tree when collapsed to prevent any rebuilds
-              if (!_headerFullyCollapsed)
+                if (!_headerFullyCollapsed && headerHeight > 10)
                 IgnorePointer(
                   ignoring: headerHeight < 10, // Ignore pointer events when header is collapsed
                   child: Container(
                     height: headerHeight,
+                      width: double.infinity, // Ensure full width
                     decoration: const BoxDecoration(), // Required when using clipBehavior
                     clipBehavior: Clip.hardEdge, // Clip content when height is 0
-                    child: headerHeight > 10
-                      ? Container(
-                          padding: EdgeInsets.only(
-                            top: statusBarHeight + 10, 
-                            bottom: 16, 
-                            left: 20, 
-                            right: 20
-                          ),
-                          decoration: BoxDecoration(
-                            color: ColorClass.base_color,
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(25),
-                              bottomRight: Radius.circular(25),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
+                          child: Container(
+                      padding: EdgeInsets.only(
+                          top: statusBarHeight + 8, 
+                          bottom: 12, 
+                        left: 20, 
+                        right: 20
+                      ),
+                      decoration: BoxDecoration(
+                        color: ColorClass.base_color,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(25),
+                          bottomRight: Radius.circular(25),
+                        ),
+                      ),
+                      // Add margin to prevent content overlap
+                      margin: const EdgeInsets.only(bottom: 0),
+                      child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                              // Welcome Message
                               Row(
-                                children: [
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
                                   Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
+                                    child: Text(
+                                      _userFirstName.isNotEmpty || _userLastName.isNotEmpty
+                                          ? "Welcome, ${_userFirstName.isNotEmpty ? _userFirstName : _userLastName}${_userLastName.isNotEmpty && _userFirstName.isNotEmpty ? " $_userLastName" : ""}"
+                                          : "Welcome",
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                        fontSize: 18,
+                                        fontFamily: "Pop600",
+                                        fontWeight: FontWeight.bold,
+                                            ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                  const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  CommonWidget.navigateToScreen(
+                                      context, NotificationActivity(const []));
+                                },
+                                child: Container(
+                                      width: 36,
+                                      height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                        Icons.notifications_outlined,
+                                    color: Colors.white,
+                                        size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                              const SizedBox(height: 8),
+                              // Location Field - Cleaner Design
+                              Container(
+                                key: widget.locationKey,
+                                height: 44,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                              ),
+                                child: Row(
+                                children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 12),
+                                      child: Icon(
+                                        Icons.location_on,
+                                        color: ColorClass.base_color,
+                                        size: 18,
                                       ),
+                                    ),
+                                    Expanded(
                                       child: AddressAutocompleteTextField(
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 13,
+                                          fontFamily: "Pop400",
+                                            ),
                                         decoration: InputDecoration(
-                                          prefixIcon: Icon(
-                                            Icons.location_on_outlined,
-                                            color: ColorClass.base_color,
-                                            size: 20,
-                                          ),
                                           hintText: "Search location...",
                                           hintStyle: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                            fontSize: 13,
                                             fontFamily: "Pop400",
                                           ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          filled: true,
-                                          fillColor: Colors.white,
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
                                           contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
+                                            horizontal: 8,
+                                            vertical: 10,
                                           ),
                                           isDense: true,
-                                        ),
+                                          ),
                                         mapsApiKey: 'AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw',
                                         controller: _locationController,
                                         onSuggestionClick: (place) {
@@ -596,209 +664,89 @@ class _HomeActivityState extends State<HomeActivity> {
                                         },
                                         language: 'en-US',
                                       ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: _isGettingLocation ? null : _getCurrentLocation,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: ColorClass.base_color,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: _isGettingLocation
-                                          ? const SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.my_location,
-                                              color: Colors.white,
-                                              size: 20,
                                             ),
+                                    Icon(
+                                      Icons.arrow_drop_down,
+                                      color: Colors.grey[600],
+                                      size: 18,
+                                            ),
+                                    const SizedBox(width: 6),
+                                      ],
                                     ),
+                                ),
+                              const SizedBox(height: 8),
+                              // Search Field
+                                Container(
+                                key: widget.searchKey,
+                                height: 44,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () {
-                                      CommonWidget.navigateToScreen(
-                                          context, NotificationActivity([]));
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(12),
+                                  child: TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _searchQuery = value;
+                                        });
+                                      },
+                                      onSubmitted: (value) {
+                                        if (value.isNotEmpty) {
+                                          _performSearch();
+                                        }
+                                      },
+                                    decoration: InputDecoration(
+                                      hintText: "Search for services, locations...",
+                                      hintStyle: TextStyle(
+                                        fontFamily: "Pop400",
+                                        color: Colors.grey[600],
+                                      fontSize: 13,
                                       ),
-                                      child: const Icon(
-                                        Icons.notifications_active_rounded,
-                                        color: Colors.white,
-                                        size: 24,
+                                    prefixIcon: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Icon(
+                                        Icons.search,
+                                  color: ColorClass.base_color,
+                                        size: 18,
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (welcomeOpacity > 0.1)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 6),
-                                  child: RepaintBoundary(
-                                    child: Opacity(
-                                      opacity: welcomeOpacity,
-                                      child: Transform.scale(
-                                        scale: welcomeScale,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Text(
-                                                      "Welcome to Cahrz!",
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 16,
-                                                        fontFamily: "Pop600",
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                padding: const EdgeInsets.all(10),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.car_repair,
-                                                  color: Colors.white,
-                                                  size: 28,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  CommonWidget.navigateToScreen(context, const ProfileActivity());
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.all(10),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white.withOpacity(0.2),
-                                                    borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      suffixIcon: _searchQuery.isNotEmpty
+                                        ? IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      _searchQuery = "";
+                                                      filteredMixedVendorsData = List.from(mixedVendorsData);
+                                                      _isSearching = false;
+                                                    });
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.clear,
+                                                    color: Colors.grey[600],
+                                              size: 18,
                                                   ),
-                                                  child: const Icon(
-                                                    Icons.person,
-                                                    color: Colors.white,
-                                                    size: 22,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                            )
+                                          : null,
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                      contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
                                       ),
+                                    isDense: true,
                                     ),
                                   ),
                                 ),
-                                if (welcomeOpacity > 0.3)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 6),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: TextField(
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _searchQuery = value;
-                                          });
-                                        },
-                                        onSubmitted: (value) {
-                                          if (value.isNotEmpty) {
-                                            _performSearch();
-                                          }
-                                        },
-                                        decoration: InputDecoration(
-                                          hintText: "Search for services, locations...",
-                                          hintStyle: TextStyle(
-                                            fontFamily: "Pop400",
-                                            color: Colors.grey[600],
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.search,
-                                            color: ColorClass.base_color,
-                                          ),
-                                          suffixIcon: _searchQuery.isNotEmpty
-                                              ? Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        _performSearch();
-                                                      },
-                                                      icon: Icon(
-                                                        Icons.search,
-                                                        color: ColorClass.base_color,
-                                                      ),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          _searchQuery = "";
-                                                          filteredMixedVendorsData = List.from(mixedVendorsData);
-                                                          _isSearching = false;
-                                                        });
-                                                      },
-                                                      icon: Icon(
-                                                        Icons.clear,
-                                                        color: Colors.grey[600],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                              : null,
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 10,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                               ],
                             ),
-                          )
-                      : const SizedBox.shrink(), // Empty widget when header is collapsed
+                          ),
                   ),
                 ),
-              // Main Content
+              // Main Content - Expanded ensures it takes remaining space after header
           Expanded(
+                child: Container(
+                  // Clip to prevent content from showing under header
+                  decoration: const BoxDecoration(), // Required when using clipBehavior
+                  clipBehavior: Clip.hardEdge,
                 child: RefreshIndicator(
                   onRefresh: () async {
                     setState(() {
@@ -866,148 +814,97 @@ class _HomeActivityState extends State<HomeActivity> {
                       )
                     : SingleChildScrollView(
                         controller: _scrollController,
-                        physics: const ClampingScrollPhysics(), // Better performance than AlwaysScrollableScrollPhysics
-                        padding: const EdgeInsets.only(
+                        physics: const AlwaysScrollableScrollPhysics(), // Smooth scrolling
+                        padding: EdgeInsets.only(
                           left: 15,
                           right: 15,
-                          top: 15,
+                          top: (!_headerFullyCollapsed && headerHeight > 10) 
+                              ? 28 
+                              : (_scrollOffset > 100) 
+                                  ? 88  // Account for floating minimized header (80px) + spacing
+                                  : 0, 
                           bottom: 90, // Extra padding for bottom navigation
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                        // Categories Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Categories",
-                              style: ModernDesignSystem.heading3(
-                                color: Colors.black87,
-                              ).copyWith(
-                                fontFamily: "Pop600",
-                                fontSize: 22,
-                              ),
+                        // Categories Grid - 2 per row, full width (No heading)
+                        Container(
+                          key: widget.categoriesKey,
+                          child: categoryData.isNotEmpty
+                              ? GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(), // Disable grid scrolling
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 2.8, // Optimized aspect ratio for better fit
                             ),
-                            if (categoryData.length > 4)
-                              TextButton(
-                                onPressed: () {
-                                  CommonWidget.navigateToScreen(
-                                    context,
-                                    const AllCategoriesScreen(),
-                                  );
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                ),
-                                child: Text(
-                                  "See All",
-                                  style: TextStyle(
-                                    color: ColorClass.base_color,
-                                    fontFamily: "Pop500",
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 120,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            clipBehavior: Clip.none,
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: categoryData.length,
-                            itemBuilder: (context, index) {
+                            itemCount: categoryData.length > 4 ? 4 : categoryData.length, // Show max 4 categories
+                      itemBuilder: (context, index) {
                               return _buildCategoryCard(categoryData[index], index);
                             },
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        // Quick Actions
-                        const Text(
-                          "Quick Actions",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontFamily: "Pop600",
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                                )
+                              : const SizedBox.shrink(),
+                                  ),
+                        const SizedBox(height: 20),
+                        // Quick Actions - Useful Features
+                        const SizedBox(height: 8),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                            Expanded(
-                              child: _buildQuickActionCard(
-                                "Book Service",
-                                Icons.calendar_today,
-                                () async {
-                                  // Fetch all services and navigate
-                                  await _loadAllServices();
-                                  if (mounted) {
-                                    List<dynamic> allItems = _extractAllServicesAndVendors();
-                                    CommonWidget.navigateToScreen(context, SeviceListScreen(allItems));
-                                  }
-                                },
-                                iconColor: Colors.blue[600],
-                                backgroundColor: Colors.blue.withOpacity(0.1),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildQuickActionCard(
+                            _buildCircularQuickAction(
                                 "My Bookings",
-                                Icons.list_alt,
+                              Icons.book_online_rounded,
                                 () {
                                   CommonWidget.navigateToScreen(context, const BookingListActivity());
                                 },
-                                iconColor: Colors.orange[600],
-                                backgroundColor: Colors.orange.withOpacity(0.1),
-                              ),
+                              Colors.blue,
                             ),
-                          ],
+                            _buildCircularQuickAction(
+                              "Bookmarks",
+                              Icons.bookmark_rounded,
+                              () {
+                                CommonWidget.navigateToScreen(context, const BookmarkActivity());
+                              },
+                              Colors.orange,
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildQuickActionCard(
+                            _buildCircularQuickAction(
                                 "Explore Map",
-                                Icons.map,
+                              Icons.map_rounded,
                                 () {
                                   CommonWidget.navigateToScreen(context, const ExploreActivity());
                                 },
-                                iconColor: Colors.green[600],
-                                backgroundColor: Colors.green.withOpacity(0.1),
-                              ),
+                              Colors.green,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildQuickActionCard(
-                                "Bookmarks",
-                                Icons.bookmark,
+                            _buildCircularQuickAction(
+                              "Profile",
+                              Icons.person_rounded,
                                 () {
-                                  CommonWidget.navigateToScreen(context, const BookmarkActivity());
+                                CommonWidget.navigateToScreen(context, const ProfileActivity());
                                 },
-                                iconColor: Colors.purple[600],
-                                backgroundColor: Colors.purple.withOpacity(0.1),
-                              ),
+                              Colors.purple,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 24),
-                        // Specialists Section
+                        const SizedBox(height: 20),
+                        // Outlets Section (Reference Style)
+                        Container(
+                          key: widget.nearbyVendorsKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                             Text(
-                              _searchQuery.isNotEmpty ? "Search Results" : "Nearby Specialists",
+                              _searchQuery.isNotEmpty ? "Search Results" : "Outlets near you",
                               style: TextStyle(
-                                fontSize: 20,
-                                fontFamily: "Pop600",
-                                color: Colors.black87,
+                                fontSize: 14,
+                                fontFamily: "Pop500",
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                             if (_searchQuery.isEmpty)
@@ -1029,63 +926,119 @@ class _HomeActivityState extends State<HomeActivity> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        // Show nearby specialists
-                        _buildVendorsSection(),
-                        const SizedBox(height: 24),
-                        // Offers Section
-                        const Text(
-                          "Special Offers",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontFamily: "Pop600",
-                            color: Colors.black87,
-                          ),
+                              // Show vendor cards (Vertical Layout) - Using MixedVendorsData to include Google Places vendors
+                              filteredMixedVendorsData.isEmpty
+                                  ? Container(
+                          height: 200,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[50],
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Center(
+                                  child: Text(
+                                          "No vendors available",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: "Pop400",
+                                      color: Colors.grey[500],
+                                          ),
+                                    ),
+                                  ),
+                                )
+                                  : GridView.builder(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 0.75,
+                                      ),
+                                      itemCount: filteredMixedVendorsData.length > 6 ? 6 : filteredMixedVendorsData.length,
+                                  itemBuilder: (context, index) {
+                                        return _buildVendorCard(filteredMixedVendorsData[index]);
+                                  },
+                                    ),
+                            ],
+                                ),
                         ),
-                        const SizedBox(height: 12),
-                  SizedBox(
-                    height: 150,
-                    child: offerListData.isEmpty
-                        ? Center(
-                            child: Text(
-                              "No offers available",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontFamily: "Pop400",
-                                color: Colors.grey[500],
-                              ),
+                        const SizedBox(height: 20),
+                        // Offers Section - Only show if offers exist within 50 miles
+                        if (offerListData.isNotEmpty) ...[
+                          Text(
+                            "Special Offers",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: "Pop500",
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
-                          )
-                        : ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            physics: const ClampingScrollPhysics(), // Prevent scroll conflicts
-                            cacheExtent: 500, // Cache more items for smoother scrolling
-                            addAutomaticKeepAlives: false, // Don't keep widgets alive when off-screen
-                            addRepaintBoundaries: true, // Add repaint boundaries automatically
-                            itemCount: offerListData.length,
-                            itemBuilder: (context, index) {
-                              final offer = offerListData[index];
-                              if (offer == null) {
-                                return const SizedBox.shrink();
-                              }
-                              return _buildOfferCard(offer);
-                            },
                           ),
+                          const SizedBox(height: 12),
+                          Column(
+                            children: [
+                              SizedBox(
+                                height: 200,
+                                child: PageView.builder(
+                                  controller: offerPageController,
+                                  onPageChanged: (index) {
+                                    setState(() {
+                                      currentOfferPage = index;
+                                    });
+                                  },
+                                  itemCount: offerListData.length,
+                                  itemBuilder: (context, index) {
+                                    final offer = offerListData[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                                      child: _buildFullWidthOfferCard(offer),
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (offerListData.length > 1)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: List.generate(
+                                      offerListData.length,
+                                      (index) => Container(
+                                        width: 8,
+                                        height: 8,
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: currentOfferPage == index
+                                              ? ColorClass.base_color
+                                              : Colors.grey[300],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                                  ),
+                                ),
+                              ),
+              ),
                         ),
                       ],
-                    ),
-                  ),
                 ),
               ),
             ],
           ),
-          // Floating minimized header
+            // Floating minimized header - overlay on top
           if (_scrollOffset > 100)
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: AnimatedContainer(
-                duration: Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 300),
                 height: 80,
                 padding: EdgeInsets.only(
                   top: statusBarHeight + 5, 
@@ -1098,82 +1051,47 @@ class _HomeActivityState extends State<HomeActivity> {
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LocationPickerScreen(
-                              currentLocation: sharedPreferences?.getString(Constant.location),
-                            ),
-                          ),
-                        );
-                        
-                        if (result != null && mounted) {
-                          // Refresh vendors with new location
-                          setState(() {
-                            _isLoading = true;
-                          });
-                          await getMixedVendors(context);
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.location_on_outlined,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              sharedPreferences?.getString(Constant.location) ?? "Select Location",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: "Pop500",
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                    Expanded(
+                      child: Text(
+                        _userFirstName.isNotEmpty || _userLastName.isNotEmpty
+                            ? "${_userFirstName.isNotEmpty ? _userFirstName : _userLastName}${_userLastName.isNotEmpty && _userFirstName.isNotEmpty ? " $_userLastName" : ""}"
+                            : "Cahrz",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontFamily: "Pop600",
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (_isUserLoggedIn)
                       GestureDetector(
                         onTap: () {
                           CommonWidget.navigateToScreen(
-                              context, NotificationActivity([]));
+                              context, NotificationActivity(const []));
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
                             Icons.notifications_active_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
+                                                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
                       ),
                   ],
                 ),
@@ -1182,88 +1100,661 @@ class _HomeActivityState extends State<HomeActivity> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _showBecomeVendorDialog();
-        },
-        backgroundColor: ColorClass.base_color,
-        icon: const Icon(Icons.business, color: Colors.white),
-        label: const Text(
-          "Become a Vendor",
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: "Pop500",
+          onPressed: () {
+            _showBecomeVendorDialog();
+          },
+          backgroundColor: ColorClass.base_color,
+          icon: const Icon(Icons.business, color: Colors.white),
+          label: const Text(
+            "Become a Vendor",
+            style: TextStyle(
+                                                    color: Colors.white,
+                              fontFamily: "Pop500",
+                            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCategoryCard(CategoryData category, int index) {
+  Widget _buildCategoryIcon(String categoryTitle) {
+    // Map category titles to colorful icons
+    final title = categoryTitle.toLowerCase();
+    
+    // Car Wash - Red car with water/foam (matching reference style)
+    if (title.contains('wash')) {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Red car (front-right view)
+            Positioned(
+              right: 2,
+              child: Container(
+                width: 28,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Stack(
+                  children: [
+                    // Car body
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade700,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    // Headlights
+                    Positioned(
+                      left: 2,
+                      top: 4,
+                      child: Container(
+                        width: 4,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade300,
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ),
+                    // Wheel
+                    Positioned(
+                      right: 2,
+                      bottom: 1,
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                          ),
+                        ],
+                ),
+              ),
+            ),
+            // Water spray (left side)
+            Positioned(
+              left: 2,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade200,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.water_drop,
+                  color: Colors.blue.shade600,
+                  size: 12,
+                ),
+              ),
+            ),
+            // Foam bubbles
+            Positioned(
+              top: 6,
+              left: 8,
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              left: 6,
+              child: Container(
+                width: 3,
+                height: 3,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              left: 12,
+              child: Container(
+                width: 4,
+                height: 4,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                      ),
+                    ),
+                  ],
+                ),
+      );
+    }
+    
+    // Car Detailing/Polish - Blue car with sparkles (matching reference style)
+    if (title.contains('detail') || title.contains('polish')) {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Blue car (front-left view)
+            Positioned(
+              left: 2,
+              child: Container(
+                width: 28,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade700,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Stack(
+                  children: [
+                    // Car body
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade700,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    // Headlights
+            Positioned(
+                      right: 2,
+                      top: 4,
+                      child: Container(
+                        width: 4,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade300,
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ),
+                    // Windshield
+                    Positioned(
+                      left: 6,
+                      top: 2,
+                      child: Container(
+                        width: 8,
+                        height: 6,
+                decoration: BoxDecoration(
+                          color: Colors.cyan.shade200,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    // Wheel
+                    Positioned(
+                      left: 2,
+                      bottom: 1,
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Sparkles (stars)
+            Positioned(
+              top: 4,
+              right: 8,
+              child: Icon(
+                Icons.star,
+                color: Colors.amber.shade600,
+                size: 10,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 4,
+              child: Icon(
+                Icons.star,
+                color: Colors.amber.shade600,
+                size: 8,
+              ),
+            ),
+            Positioned(
+              bottom: 6,
+              right: 6,
+              child: Icon(
+                Icons.star,
+                color: Colors.amber.shade600,
+                size: 9,
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 10,
+              child: Icon(
+                Icons.star,
+                color: Colors.amber.shade600,
+                size: 7,
+              ),
+            ),
+            // Cloth/sponge hand
+            Positioned(
+              bottom: 2,
+              left: 4,
+              child: Icon(
+                Icons.cleaning_services,
+                color: Colors.brown.shade400,
+                size: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Default colorful icon based on category
+    final colors = [
+      [Colors.orange.shade50, Colors.orange.shade400, Colors.orange.shade600],
+      [Colors.green.shade50, Colors.green.shade400, Colors.green.shade600],
+      [Colors.pink.shade50, Colors.pink.shade400, Colors.pink.shade600],
+      [Colors.teal.shade50, Colors.teal.shade400, Colors.teal.shade600],
+      [Colors.amber.shade50, Colors.amber.shade400, Colors.amber.shade600],
+      [Colors.purple.shade50, Colors.purple.shade400, Colors.purple.shade600],
+      [Colors.cyan.shade50, Colors.cyan.shade400, Colors.cyan.shade600],
+    ];
+    final colorIndex = categoryTitle.hashCode.abs() % colors.length;
+    final colorSet = colors[colorIndex];
+    
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [colorSet[0], colorSet[1]],
+        ),
+      ),
+      child: Icon(
+        Icons.local_car_wash,
+        color: colorSet[2],
+        size: 32,
+      ),
+    );
+  }
+
+  String? _getServiceImage(ServicesData service) {
+    // Try to get image from first service
+    if (service.services.isNotEmpty && service.services.first.coverImage != null && service.services.first.coverImage!.isNotEmpty) {
+      return service.services.first.coverImage;
+    }
+    // Fallback to vendor display picture
+    return service.displayPicture;
+  }
+
+  String _getServiceRating(ServicesData service) {
+    // Try to get rating from first service
+    if (service.services.isNotEmpty && service.services.first.averageRating != null && service.services.first.averageRating! > 0) {
+      // Rating is stored as integer (e.g., 49 for 4.9), so divide by 10
+      return (service.services.first.averageRating! / 10).toStringAsFixed(1);
+    }
+    return "4.9"; // Default rating
+  }
+
+  String _getServiceName(ServicesData service) {
+    // Try to get name from first service
+    if (service.services.isNotEmpty && service.services.first.serviceTitle != null && service.services.first.serviceTitle!.isNotEmpty) {
+      return service.services.first.serviceTitle!;
+    }
+    // Fallback to vendor display name
+    return service.displayName ?? "Service";
+  }
+
+  Widget _buildServiceCard(ServicesData service) {
     return GestureDetector(
       onTap: () {
-        CommonWidget.navigateToScreen(
+        // Navigate to vendor page - sId is the vendor ID
+        String? vendorId = service.sId;
+        if (vendorId == null || vendorId.isEmpty) {
+          // Fallback: try to get vendorId from first service if available
+          vendorId = service.services.isNotEmpty && service.services.first.vendorId != null
+              ? service.services.first.vendorId
+              : null;
+        }
+        
+        // Check if this is a Google Places vendor (ID starts with "ChIJ")
+        bool isGooglePlacesVendor = vendorId != null && vendorId.startsWith('ChIJ');
+        bool isAppVendor = service.isAppVendor ?? true; // Default to true if not set
+        
+        if (vendorId != null && vendorId.isNotEmpty && vendorId.trim().isNotEmpty) {
+          if (isGooglePlacesVendor || !isAppVendor) {
+            // Google Places vendor - show detail page with options
+            // Create a temporary MixedVendorData for the detail page
+            final googleVendor = MixedVendorData(
+              id: vendorId,
+              name: service.displayName ?? "Vendor",
+              address: service.location?.name ?? "",
+              rating: 4.5,
+              reviewCount: 0,
+              latitude: service.location?.lat ?? 0.0,
+              longitude: service.location?.lng ?? 0.0,
+              imageUrl: service.displayPicture,
+              phone: service.mobile,
+              isOpen: service.isShopOpen ?? true,
+              distance: service.distance ?? 0.0,
+              isAppVendor: false,
+            );
+            _handleGoogleVendorTap(googleVendor);
+          } else {
+            // App vendor - navigate to detail page
+            CommonWidget.navigateToScreen(
+              context,
+              SpecialistsActivity(vendorId),
+            );
+          }
+        } else {
+          CommonWidget.errorShowSnackBarFor(context, "Unable to load vendor details. Invalid vendor ID.");
+        }
+      },
+      child: Container(
+        width: 160,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+                  children: [
+              // Service Image
+              Container(
+                width: double.infinity,
+                height: 200,
+                color: Colors.grey[200],
+                child: _getServiceImage(service) != null && _getServiceImage(service)!.isNotEmpty
+                    ? Image.network(
+                        _getServiceImage(service)!,
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                        headers: const {
+                          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                                valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                            ),
+                          ),
+                        );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: Icon(
+                              Icons.local_car_wash,
+                              size: 48,
+                              color: Colors.grey[500],
+                            ),
+                          );
+                        },
+                        cacheWidth: 160,
+                        cacheHeight: 200,
+                      )
+                    : Container(
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.local_car_wash,
+                          size: 48,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+              ),
+              // Rating Badge (Top Left)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                      child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                        children: [
+                      Icon(
+                        Icons.star,
+                        size: 14,
+                        color: Colors.amber[300],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _getServiceRating(service),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontFamily: "Pop600",
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Bookmark Icon (Top Right)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () {
+                    // Toggle bookmark
+                    // TODO: Implement bookmark toggle
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                      Icons.bookmark_border,
+                      size: 18,
+                              color: Colors.white,
+                    ),
+                  ),
+                            ),
+                          ),
+              // Service Name Label (Bottom)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                  ),
+                            child: Text(
+                    _getServiceName(service),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                      fontFamily: "Pop600",
+                      fontWeight: FontWeight.bold,
+                              ),
+                    maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(CategoryData category, int index) {
+    final title = (category.categoryTitle ?? "").toLowerCase();
+    final isWash = title.contains('wash');
+    final isDetailing = title.contains('detail') || title.contains('polish');
+    
+    return GestureDetector(
+                        onTap: () {
+                          CommonWidget.navigateToScreen(
           context,
           CategoriesListActivity(category),
         );
-      },
-      child: AnimatedContainer(
-        duration: ModernDesignSystem.animationFast,
-        curve: ModernDesignSystem.animationCurve,
-        width: 110,
-        margin: EdgeInsets.only(
-          right: index == categoryData.length - 1 ? 0 : 16,
-        ),
-        decoration: ModernDesignSystem.modernCard(
-          borderRadius: ModernDesignSystem.radiusXL,
-          shadows: ModernDesignSystem.shadowSmall,
-        ),
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+          color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+                          ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Icon Container
               Container(
-                width: 60,
-                height: 60,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      ColorClass.base_color.withOpacity(0.15),
-                      ColorClass.base_color.withOpacity(0.08),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(ModernDesignSystem.radiusRound),
+                  color: isWash 
+                      ? Colors.blue.shade50 
+                      : isDetailing 
+                          ? Colors.purple.shade50 
+                          : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.car_repair,
-                  color: ColorClass.base_color,
-                  size: 30,
+                child: Center(
+                  child: isWash
+                      ? Icon(
+                          Icons.local_car_wash,
+                          color: Colors.blue.shade700,
+                          size: 26,
+                        )
+                      : isDetailing
+                          ? Icon(
+                              Icons.auto_awesome,
+                              color: Colors.purple.shade700,
+                              size: 26,
+                            )
+                          : Icon(
+                              Icons.category,
+                              color: Colors.grey.shade700,
+                              size: 26,
+                          ),
+                        ),
+                      ),
+              const SizedBox(width: 10),
+              // Category Name
+              Expanded(
+                child: Text(
+                  category.categoryTitle ?? "",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontFamily: "Pop600",
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                category.categoryTitle ?? "",
-                style: ModernDesignSystem.bodyMedium(
-                  color: Colors.black87,
-                ).copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  letterSpacing: 0.1,
-                  height: 1.2,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 4),
+              // Arrow Icon
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 12,
+                color: Colors.grey[400],
+            ),
+        ],
+      ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircularQuickAction(String title, IconData icon, VoidCallback onTap, Color color) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color.withOpacity(0.3),
+                width: 1,
               ),
-            ],
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+          style: const TextStyle(
+              fontSize: 12,
+            fontFamily: "Pop500",
+              color: Colors.black87,
           ),
         ),
+        ],
       ),
     );
   }
@@ -1318,48 +1809,41 @@ class _HomeActivityState extends State<HomeActivity> {
   }
 
   Widget _buildVendorCard(MixedVendorData vendor) {
-    // Use RepaintBoundary to isolate repaints and improve performance
     return RepaintBoundary(
       child: GestureDetector(
-        onTap: vendor.isOpen ? () {
+        onTap: () {
           if (vendor.isAppVendor) {
-            // Use async to prevent blocking the UI thread
-            Future.microtask(() {
-              if (mounted) {
+            if (vendor.id.isNotEmpty && vendor.id.trim().isNotEmpty) {
                 CommonWidget.navigateToScreen(
                   context,
                   SpecialistsActivity(vendor.id),
                 );
+            } else {
+              CommonWidget.errorShowSnackBarFor(context, "Unable to load vendor details. Invalid vendor ID.");
               }
-            });
           } else {
-            _openInMaps(vendor);
+            // Google Places vendor - show detail page with call and navigate options
+            _handleGoogleVendorTap(vendor);
           }
-        } : null,
+        },
         child: Container(
-          width: 280,
-          margin: const EdgeInsets.only(right: 16),
-          decoration: ModernDesignSystem.modernCard(
-            color: vendor.isOpen ? Colors.white : Colors.grey[50],
-            borderRadius: ModernDesignSystem.radiusL,
-            shadows: vendor.isOpen 
-                ? ModernDesignSystem.shadowMedium
-                : ModernDesignSystem.shadowSmall,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min, // Optimize layout
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(ModernDesignSystem.radiusL),
-                  topRight: Radius.circular(ModernDesignSystem.radiusL),
-                ),
-                child: Container(
-                  height: 110,
-                  width: double.infinity,
-                  color: Colors.grey[200],
-                  child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Full image background
+                vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
                       ? Image.network(
                           vendor.imageUrl!,
                           fit: BoxFit.cover,
@@ -1380,122 +1864,195 @@ class _HomeActivityState extends State<HomeActivity> {
                             );
                           },
                           errorBuilder: (context, error, stackTrace) {
-                            return Icon(
+                          return Container(
+                            color: Colors.grey[300],
+                            child: Icon(
                               vendor.isAppVendor ? Icons.local_car_wash : Icons.location_on,
-                              size: 48,
+                              size: 64,
                               color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
+                            ),
                             );
                           },
-                          headers: {
+                          headers: const {
                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                           },
-                          cacheWidth: 280, // Limit image width for memory efficiency
-                          cacheHeight: 110, // Limit image height for memory efficiency
                         )
-                      : Icon(
+                    : Container(
+                        color: Colors.grey[300],
+                        child: Icon(
                           vendor.isAppVendor ? Icons.local_car_wash : Icons.location_on,
-                          size: 48,
+                          size: 64,
                           color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
                         ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
+                // Gradient overlay at bottom for text readability
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.5),
+                          Colors.black.withOpacity(0.85),
+                          Colors.black.withOpacity(0.95),
+                        ],
+                        stops: const [0.0, 0.4, 0.7, 1.0],
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        vendor.name,
-                        style: TextStyle(
-                          fontSize: 14,
+                    Text(
+                      vendor.name ?? "Unknown Shop",
+                      style: const TextStyle(
+                        fontSize: 16,
                           fontFamily: "Pop600",
-                          color: vendor.isOpen ? Colors.black87 : Colors.grey[500],
+                        fontWeight: FontWeight.bold,
+                            color: Colors.white,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    if (!vendor.isOpen) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                              size: 12,
+                              color: Colors.white.withOpacity(0.9),
+                        ),
                       const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        Expanded(
                         child: Text(
-                          "OFFLINE",
+                            vendor.address ?? "Address not available",
                           style: TextStyle(
-                            fontSize: 8,
-                            fontFamily: "Pop600",
-                            color: Colors.red[600],
+                                  fontSize: 12,
+                              fontFamily: "Pop400",
+                                  color: Colors.white.withOpacity(0.9),
                           ),
-                        ),
-                      ),
-                    ],
-                  ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                        ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            if (vendor.rating != null && vendor.rating! > 0) ...[
+                              Icon(
+                                Icons.star,
+                                size: 13,
+                                color: Colors.amber[300],
+                              ),
+                              const SizedBox(width: 3),
                 Text(
-                  vendor.address ?? "Address not available",
+                                vendor.rating!.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: "Pop500",
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 11,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              "${(vendor.distance * 0.000621371).toStringAsFixed(1)} miles",
                   style: TextStyle(
-                    fontSize: 11,
+                                fontSize: 11,
                     fontFamily: "Pop400",
-                    color: vendor.isOpen ? Colors.grey[600] : Colors.grey[400],
+                                color: Colors.white.withOpacity(0.9),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                 ),
-                const SizedBox(height: 6),
-                Row(
+                    const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                      children: [
+                            if (vendor.isAppVendor)
+                        Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.star,
-                      size: 14,
-                      color: Colors.amber[600],
+                                    Icon(
+                                Icons.local_car_wash,
+                                      size: 11,
+                                      color: Colors.white,
                     ),
-                    const SizedBox(width: 2),
+                                    SizedBox(width: 3),
                     Text(
-                      "${vendor.rating?.toStringAsFixed(1) ?? "0.0"}",
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontFamily: "Pop500",
-                        color: Colors.black87,
+                                      "5 Cars",
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                  fontFamily: "Pop400",
+                                        color: Colors.white,
+                                ),
+                              ),
+                            ],
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      "${(vendor.distance * 0.000621371).toStringAsFixed(1)} miles",
+                        Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                                  Icon(
+                                Icons.eco,
+                                    size: 11,
+                                    color: Colors.white,
+                              ),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    "Eco",
                       style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: "Pop600",
-                        color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
+                                      fontSize: 9,
+                                  fontFamily: "Pop400",
+                                      color: Colors.white,
                       ),
                     ),
-                    // Only show bookmark icon for app vendors
-                    if (vendor.isAppVendor) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          _toggleBookmark(vendor);
-                        },
-                        child: Icon(
-                          vendor.isBookmarked == true ? Icons.bookmark : Icons.bookmark_border,
-                          size: 16,
-                          color: vendor.isBookmarked == true ? ColorClass.base_color : Colors.grey[600],
+                            ],
                         ),
                       ),
-                    ],
                   ],
                 ),
                   ],
+                    ),
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
@@ -1565,13 +2122,193 @@ class _HomeActivityState extends State<HomeActivity> {
                           );
   }
 
+  // Build Full Width Offer Card for Carousel
+  Widget _buildFullWidthOfferCard(OfferListModelData offer) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Background Image or Color
+            if (offer.image != null && offer.image!.isNotEmpty)
+              Image.network(
+                offer.image!,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          ColorClass.base_color,
+                          ColorClass.base_color.withOpacity(0.7),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              )
+            else
+              Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      ColorClass.base_color,
+                      ColorClass.base_color.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+            // Content Overlay
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_fire_department,
+                          color: Colors.orange[300],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            offer.title ?? "Offer",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: "Pop600",
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      offer.description ?? "",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (offer.discount != null && offer.discount! > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "${offer.discount}% OFF",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.all_inclusive,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Never expires",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: (offer.isActive ?? true) ? Colors.green : Colors.grey,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            (offer.isActive ?? true) ? "Active" : "Inactive",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build Offer Card (keeping for compatibility if needed elsewhere)
   Widget _buildOfferCard(OfferListModelData offer) {
     // Add null safety check
-    if (offer == null) {
-      return const SizedBox.shrink();
-    }
-    
-    // Use RepaintBoundary to isolate repaints and improve performance
     return RepaintBoundary(
       child: Container(
         width: 280,
@@ -1667,17 +2404,28 @@ class _HomeActivityState extends State<HomeActivity> {
               ),
             ),
               ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 CommonWidget.safePop(context);
-                // Open external link or show contact info
-                _launchUrl("https://cahrz.com/become-vendor");
+                // Open iOS App Store link for Cahrz Vendor app
+                // This will open the App Store app on iOS devices
+                final Uri url = Uri.parse('https://apps.apple.com/us/app/cahrz-vendor/id6749635800');
+                try {
+                  if (await canLaunchUrl(url)) {
+                    // Use externalApplication mode to open in App Store app on iOS
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    CommonWidget.errorShowSnackBarFor(context, "Could not open App Store");
+                  }
+                } catch (e) {
+                  CommonWidget.errorShowSnackBarFor(context, "Error opening App Store: $e");
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorClass.base_color,
                 foregroundColor: Colors.white,
               ),
               child: const Text(
-                "Learn More",
+                "Download Vendor App",
                 style: TextStyle(
                   fontFamily: "Pop500",
                 ),
@@ -1713,26 +2461,24 @@ class _HomeActivityState extends State<HomeActivity> {
         }
       }
     } catch (e) {
-      print('Error getting categories: $e');
     }
   }
 
   Future<void> getServices(BuildContext context) async {
     try {
-      var response = await dataManager!.getAllServices(context);
+    var response = await dataManager!.getAllServices(context);
       if (response != null) {
         var responseData = jsonDecode(response.body);
         if (responseData['status'] == 'success' && responseData['data'] != null) {
-          setState(() {
-            servicesData.clear();
+      setState(() {
+        servicesData.clear();
             final servicesList = responseData['data'] as List;
             servicesData.addAll(servicesList.map((item) => ServicesData.fromJson(item)).toList());
-            filteredServicesData = List.from(servicesData);
-          });
+          filteredServicesData = List.from(servicesData);
+        });
         }
       }
     } catch (e) {
-      print('Error getting services: $e');
       // Continue without services if API fails
     }
   }
@@ -1743,20 +2489,50 @@ class _HomeActivityState extends State<HomeActivity> {
       if (response != null) {
         var responseData = jsonDecode(response.body);
         if (responseData['status'] == 'success' && responseData['data'] != null) {
+          // Get user location for distance calculation
+          final userLocation = _getUserLocation();
+          final userLat = userLocation['lat']!;
+          final userLng = userLocation['lng']!;
+          
+          // 50 miles = 80,467 meters
+          const double maxDistanceMeters = 80467;
+          
           setState(() {
             offerListData.clear();
             // Parse the offers data properly
             List<dynamic> offersJson = responseData['data'] as List;
             for (var offerJson in offersJson) {
               if (offerJson != null) {
-                offerListData.add(OfferListModelData.fromJson(offerJson));
+                final offer = OfferListModelData.fromJson(offerJson);
+                
+                // Calculate distance if location is available
+                if (offer.location?.coordinates != null) {
+                  final offerLat = offer.location!.coordinates!.lat;
+                  final offerLng = offer.location!.coordinates!.long;
+                  
+                  if (offerLat != null && offerLng != null) {
+                    // Calculate distance in meters
+                    final distance = MixedVendorData.calculateDistanceBetween(
+                      userLat, userLng, offerLat, offerLng
+                    );
+                    
+                    // Only add offer if it's within 50 miles and is active
+                    if (distance <= maxDistanceMeters && (offer.isCurrentlyActive == true || offer.isActive == true)) {
+                      offer.distance = distance;
+                      offerListData.add(offer);
+                    }
+                  } else {
+                    // If no coordinates, don't add the offer
+                  }
+                } else {
+                  // If no location, don't add the offer
+                }
               }
             }
           });
         }
       }
     } catch (e) {
-      print('Error getting offers: $e');
       // Continue without offers if API fails
     }
   }
@@ -1784,9 +2560,7 @@ class _HomeActivityState extends State<HomeActivity> {
         filteredMixedVendorsData = List.from(mixedVendorsData);
       });
       
-      print('✅ Mixed vendors loaded successfully. Count: ${mixedVendorsData.length}');
     } catch (e) {
-      print('Error getting mixed vendors: $e');
       // Continue without vendors if API fails
     }
   }
@@ -1809,7 +2583,6 @@ class _HomeActivityState extends State<HomeActivity> {
         'lng': 76.7080831,
       };
     } catch (e) {
-      print('Error getting location: $e');
       // Return default location on error
       return {
         'lat': 30.7200094,
@@ -1819,126 +2592,41 @@ class _HomeActivityState extends State<HomeActivity> {
   }
 
   void _handleGoogleVendorTap(MixedVendorData vendor) {
-    // Show a dialog with options for Google vendors
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.location_on,
-                color: Colors.blue,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  vendor.name,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontFamily: "Pop600",
-                    color: Colors.black87,
-                  ),
+    // Navigate to a full-screen detail page for Google Places vendors
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _GooglePlacesDetailPage(vendor: vendor),
                 ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "This is a Google Places vendor. You can:",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontFamily: "Pop400",
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.location_on, color: Colors.blue, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      vendor.address ?? "Address not available",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: "Pop400",
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.star, color: Colors.amber[600], size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Rating: ${vendor.rating?.toStringAsFixed(1) ?? "N/A"}",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: "Pop400",
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => CommonWidget.safePop(context),
-              child: Text(
-                "Close",
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontFamily: "Pop500",
-                ),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                CommonWidget.safePop(context);
-                _openInMaps(vendor);
-              },
-              icon: const Icon(Icons.map, size: 16),
-              label: const Text("Open in Maps"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
         );
-      },
-    );
   }
 
-  void _openInMaps(MixedVendorData vendor) {
+  Future<void> _openInMaps(MixedVendorData vendor) async {
     // Open the vendor location in Google Maps
     final lat = vendor.latitude;
     final lng = vendor.longitude;
     final name = Uri.encodeComponent(vendor.name);
-    final address = Uri.encodeComponent(vendor.address ?? "");
     
-    final url = "https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name";
+    // Use Google Maps URL with place ID if available, otherwise use coordinates
+    String url;
+    if (vendor.id.startsWith('ChIJ')) {
+      // Google Places ID - use place_id parameter
+      url = "https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=${vendor.id}";
+    } else {
+      // Use coordinates and name
+      url = "https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name";
+    }
     
-    // You can use url_launcher here if available
-    // launchUrl(Uri.parse(url));
-    
-    // For now, show a message
-    CommonWidget.successShowSnackBarFor(context, "Opening in Maps...");
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, "Could not open Maps");
+      }
+    } catch (e) {
+      CommonWidget.errorShowSnackBarFor(context, "Could not open Maps");
+    }
   }
 
   Future<void> _toggleBookmark(MixedVendorData vendor) async {
@@ -1969,7 +2657,6 @@ class _HomeActivityState extends State<HomeActivity> {
         }
       }
     } catch (e) {
-      print('Error toggling bookmark: $e');
       CommonWidget.errorShowSnackBarFor(context, "Error updating bookmark");
     }
   }
@@ -2079,4 +2766,254 @@ class _HomeActivityState extends State<HomeActivity> {
     );
   }
 
+}
+
+// Google Places Detail Page Widget
+class _GooglePlacesDetailPage extends StatelessWidget {
+  final MixedVendorData vendor;
+
+  const _GooglePlacesDetailPage({required this.vendor});
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: CommonWidget.buildAppBarBackButton(
+            context,
+            iconColor: Colors.black87,
+          ),
+          title: Text(
+            vendor.name,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 18,
+              fontFamily: "Pop600",
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+            // Vendor Image
+            SizedBox(
+              width: double.infinity,
+              height: 250,
+              child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      vendor.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.location_on, size: 64, color: Colors.blue),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.location_on, size: 64, color: Colors.blue),
+                    ),
+            ),
+            
+            // Vendor Info
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vendor.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontFamily: "Pop600",
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Rating
+                  if (vendor.rating != null)
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber[600], size: 20),
+                        const SizedBox(width: 4),
+                        Text(
+                          vendor.rating!.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: "Pop500",
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Address
+                  if (vendor.address != null && vendor.address!.isNotEmpty)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.blue, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            vendor.address!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: "Pop400",
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Phone
+                  if (vendor.phone != null && vendor.phone!.isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          vendor.phone!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: "Pop400",
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            await _openInMapsFromDetailPage(context, vendor);
+                          },
+                          icon: const Icon(Icons.map, size: 18),
+                          label: const Text("Open in Maps"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorClass.base_color,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                            _callVendorFromDetailPage(context, vendor);
+                            },
+                            icon: const Icon(Icons.phone, size: 18),
+                            label: const Text("Call"),
+                            style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorClass.base_color,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // About Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "About this location",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: "Pop600",
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "This is a Google Places location. You can navigate to this location or call them directly for more information about their services.",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: "Pop400",
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+
+  static Future<void> _openInMapsFromDetailPage(BuildContext context, MixedVendorData vendor) async {
+    final lat = vendor.latitude;
+    final lng = vendor.longitude;
+    
+    String url;
+    if (vendor.id.startsWith('ChIJ')) {
+      url = "https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=${vendor.id}";
+    } else {
+      url = "https://www.google.com/maps/search/?api=1&query=$lat,$lng";
+    }
+    
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, "Could not open Maps");
+      }
+    } catch (e) {
+      CommonWidget.errorShowSnackBarFor(context, "Could not open Maps");
+    }
+  }
+
+  static void _callVendorFromDetailPage(BuildContext context, MixedVendorData vendor) {
+    if (vendor.phone != null && vendor.phone!.isNotEmpty) {
+      final uri = Uri.parse('tel:${vendor.phone}');
+      launchUrl(uri, mode: LaunchMode.externalApplication).catchError((e) {
+        CommonWidget.errorShowSnackBarFor(context, "Could not make phone call");
+        return false;
+      });
+    } else {
+      CommonWidget.errorShowSnackBarFor(context, "Phone number not available");
+    }
+  }
 }

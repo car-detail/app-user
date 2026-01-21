@@ -1,7 +1,7 @@
 class Constant {
-// static var baseurl = "http://localhost:7007/"; //dev
+// static var baseurl = "http://localhost:7007/api/"; //dev
   //  static var baseurl = "https://l3ww2hjs-7007.inc1.devtunnels.ms/"; //dev
-   static var baseurl = "http://13.234.217.235:3001/"; //dev
+   static var baseurl = "http://13.234.217.235:3001/api/"; //dev
   // static var baseurl service 07/"; //dev
   // static var baseurl = "https://cf5f40e34c76.ngro0-free.app/"; //ngrok tunnel
   static var versionNumber = "v1";
@@ -33,6 +33,7 @@ class Constant {
       "$versionNumber/bookings/cancel/";
   static var getNotifications = "$versionNumber/notification";
   static var getVendorPackages = "$versionNumber/packages/vendor/";
+  static var markTourShown = "$versionNumber/user/mark-tour-shown";
 
   static double textsise14 = 14;
 

@@ -67,21 +67,15 @@ class _HomeActivityState extends State<HomeActivity> {
       
       // Run all API calls in parallel with timeout
       await Future.wait<void>([
-        getCategory(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Category API timeout');
+        getCategory(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
-        getServices(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Services API timeout');
+        getServices(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
-        getOffer(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Offer API timeout');
+        getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
-        getMixedVendors(context).timeout(Duration(seconds: 10), onTimeout: () {
-          print('Mixed vendors API timeout');
+        getMixedVendors(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
       ]);
-    } catch (e) {
-      print('Error in start method: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -112,42 +106,32 @@ class _HomeActivityState extends State<HomeActivity> {
 
   Future<void> _loadAllServices() async {
     try {
-      print('Loading all services...');
       // Get user location for Google Places integration
       var location = await _getCurrentLocation();
       var response = await dataManager!.getAllServicesWithLocation(context, location);
       if (response != null) {
         var responseData = jsonDecode(response.body);
-        print('Services API response: $responseData');
         if (responseData['status'] == 'success' && responseData['data'] != null) {
           setState(() {
             servicesData.clear();
             final servicesList = responseData['data'] as List;
-            print('Services list length: ${servicesList.length}');
             servicesData.addAll(servicesList.map((item) => ServicesData.fromJson(item)).toList());
-            print('Loaded ${servicesData.length} vendors with services');
             for (var vendor in servicesData) {
-              print('Vendor: ${vendor.displayName}, Services count: ${vendor.services.length}');
             }
           });
         } else {
-          print('No services data found in API response');
         }
       } else {
-        print('No response from services API');
       }
     } catch (e) {
-      print('Error loading services: $e');
     }
   }
 
 
   List<dynamic> _extractAllServicesAndVendors() {
     List<dynamic> allItems = [];
-    print('Extracting services and vendors from ${servicesData.length} vendors');
     
     for (var vendor in servicesData) {
-      print('Vendor ${vendor.displayName} has ${vendor.services.length} services');
       
       if (vendor.sId != null && !vendor.sId!.startsWith('ChIJ')) {
         // App vendor - add their services
@@ -158,7 +142,6 @@ class _HomeActivityState extends State<HomeActivity> {
       }
     }
     
-    print('Total extracted items: ${allItems.length}');
     return allItems;
   }
 
@@ -181,7 +164,6 @@ class _HomeActivityState extends State<HomeActivity> {
         'lng': 76.7080831,
       };
     } catch (e) {
-      print('Error getting location: $e');
       // Return default location on error
       return {
         'lat': 30.7200094,
@@ -285,11 +267,11 @@ class _HomeActivityState extends State<HomeActivity> {
                           children: [
                             Row(
                               children: [
-                                Expanded(
+                                const Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         "Welcome to Cahrz!",
                                         style: TextStyle(
                                           color: Colors.white,
@@ -297,8 +279,8 @@ class _HomeActivityState extends State<HomeActivity> {
                                           fontFamily: "Pop600",
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      const Text(
+                                      SizedBox(height: 4),
+                                      Text(
                                         "Find the best car services near you",
                                         style: TextStyle(
                                           color: Colors.white70,
@@ -669,7 +651,7 @@ class _HomeActivityState extends State<HomeActivity> {
             ],
           ),
         ),
-    );
+    )
   }
 
   }
@@ -805,7 +787,7 @@ class _HomeActivityState extends State<HomeActivity> {
                     ),
                     const SizedBox(width: 2),
                     Text(
-                      "${vendor.rating?.toStringAsFixed(1) ?? "0.0"}",
+                      vendor.rating?.toStringAsFixed(1) ?? "0.0",
                       style: const TextStyle(
                         fontSize: 11,
                         fontFamily: "Pop500",
@@ -1055,7 +1037,6 @@ class _HomeActivityState extends State<HomeActivity> {
         }
       }
     } catch (e) {
-      print('Error getting categories: $e');
     }
   }
 
@@ -1070,7 +1051,6 @@ class _HomeActivityState extends State<HomeActivity> {
         });
       }
     } catch (e) {
-      print('Error getting services: $e');
       // Continue without services if API fails
     }
   }
@@ -1085,7 +1065,6 @@ class _HomeActivityState extends State<HomeActivity> {
         });
       }
     } catch (e) {
-      print('Error getting offers: $e');
       // Continue without offers if API fails
     }
   }
@@ -1113,9 +1092,7 @@ class _HomeActivityState extends State<HomeActivity> {
         filteredMixedVendorsData = List.from(mixedVendorsData);
       });
       
-      print('✅ Mixed vendors loaded successfully. Count: ${mixedVendorsData.length}');
     } catch (e) {
-      print('Error getting mixed vendors: $e');
       // Continue without vendors if API fails
     }
   }
@@ -1138,7 +1115,6 @@ class _HomeActivityState extends State<HomeActivity> {
         'lng': 76.7080831,
       };
     } catch (e) {
-      print('Error getting location: $e');
       // Return default location on error
       return {
         'lat': 30.7200094,
@@ -1158,7 +1134,7 @@ class _HomeActivityState extends State<HomeActivity> {
           ),
           title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.location_on,
                 color: Colors.blue,
                 size: 24,
@@ -1167,7 +1143,7 @@ class _HomeActivityState extends State<HomeActivity> {
               Expanded(
                 child: Text(
                   vendor.name,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontFamily: "Pop600",
                     color: Colors.black87,
@@ -1191,7 +1167,7 @@ class _HomeActivityState extends State<HomeActivity> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.location_on, color: Colors.blue, size: 16),
+                  const Icon(Icons.location_on, color: Colors.blue, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1298,7 +1274,6 @@ class _HomeActivityState extends State<HomeActivity> {
         }
       }
     } catch (e) {
-      print('Error toggling bookmark: $e');
       CommonWidget.errorShowSnackBarFor(context, "Error updating bookmark");
     }
   }

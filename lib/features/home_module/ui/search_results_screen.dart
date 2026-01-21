@@ -9,10 +9,10 @@ class SearchResultsScreen extends StatefulWidget {
   final List<MixedVendorData> searchResults;
 
   const SearchResultsScreen({
-    Key? key,
+    super.key,
     required this.searchQuery,
     required this.searchResults,
-  }) : super(key: key);
+  });
 
   @override
   _SearchResultsScreenState createState() => _SearchResultsScreenState();
@@ -26,13 +26,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       appBar: AppBar(
         backgroundColor: ColorClass.base_color,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        leading: CommonWidget.buildAppBarBackButton(
+          context,
+          backgroundColor: Colors.white.withOpacity(0.2),
+          iconColor: Colors.white,
         ),
-        title: Text(
+        title: const Text(
           "Search Results",
           style: TextStyle(
             color: Colors.white,
@@ -41,12 +40,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(60),
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Text(
               "Found ${widget.searchResults.length} results for \"${widget.searchQuery}\"",
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white70,
                 fontFamily: "Pop400",
                 fontSize: 14,
@@ -95,12 +94,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back),
-            label: Text("Go Back"),
+            icon: const Icon(Icons.arrow_back),
+            label: const Text("Go Back"),
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorClass.base_color,
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -113,7 +112,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildSearchResults() {
     return ListView.builder(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       itemCount: widget.searchResults.length,
       itemBuilder: (context, index) {
         final vendor = widget.searchResults[index];
@@ -127,7 +126,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final isOffline = vendor.isAppVendor && !vendor.isOpen;
     
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: isOffline ? Colors.grey[100] : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -193,8 +192,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     // OFFLINE badge
                     if (isOffline)
                       Container(
-                        margin: EdgeInsets.only(left: 8),
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -231,7 +230,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      "${vendor.rating?.toStringAsFixed(1) ?? "0.0"}",
+                      vendor.rating?.toStringAsFixed(1) ?? "0.0",
                       style: const TextStyle(
                         fontSize: 14,
                         fontFamily: "Pop500",
@@ -280,7 +279,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: ColorClass.base_color,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -313,21 +312,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Google Places Vendor"),
-        content: Text("This is a Google Places vendor. Would you like to open it in Maps?"),
+        title: const Text("Google Places Vendor"),
+        content: const Text("This is a Google Places vendor. Would you like to open it in Maps?"),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text("Cancel"),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _openInMaps(vendor);
             },
-            child: Text("Open in Maps"),
+            child: const Text("Open in Maps"),
           ),
         ],
       ),
