@@ -36,6 +36,7 @@ import '../../categories_module/data_manager/categories_list_data_manager.dart';
 import '../model/category_model_data.dart';
 import '../model/services_model_data.dart';
 import '../model/mixed_vendor_data.dart';
+import '../model/notification_data_bean.dart';
 import '../data_manager/home_data_manager.dart';
 
 class HomeActivity extends StatefulWidget {
@@ -63,6 +64,7 @@ class _HomeActivityState extends State<HomeActivity> {
   List<MixedVendorData> mixedVendorsData = [];
   List<MixedVendorData> filteredMixedVendorsData = [];
   List<OfferListModelData> offerListData = [];
+  List<Notifications> notificationsList = [];
   HomeDataManager? dataManager;
   CategoriesListDataManager? bookmarkDataManager;
   SharedPreferences? sharedPreferences;
@@ -345,13 +347,40 @@ class _HomeActivityState extends State<HomeActivity> {
         }),
         getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
+        getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {
+        }),
         getMixedVendors(context).timeout(const Duration(seconds: 10), onTimeout: () {
         }),
+        getNotifications(context),
       ]);
     } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  getNotifications(BuildContext context) async {
+    if (!mounted) return;
+    try {
+      var response = await dataManager!.getNotification(context);
+      debugPrint('🔔 Notifications API Response Status: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        var data = NotificationDataBean.fromJson(jsonDecode(response.body));
+        debugPrint('🔔 Parsed Notification Data - Status: ${data.status}');
+        debugPrint('🔔 Notifications Count: ${data.data?.notifications?.length ?? 0}');
+        if (data.status == "success" && data.data != null) {
+          if (mounted) {
+            setState(() {
+              notificationsList = data.data?.notifications ?? [];
+              debugPrint('🔔 Updated notificationsList in state: ${notificationsList.length} items');
+            });
+          }
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint("❌ Error getting notifications: $e");
+      debugPrint("Stack trace: $stackTrace");
     }
   }
 
@@ -593,8 +622,9 @@ class _HomeActivityState extends State<HomeActivity> {
                                   const SizedBox(width: 8),
                               GestureDetector(
                                 onTap: () {
+                                  debugPrint('🔔 Opening notifications with ${notificationsList.length} items');
                                   CommonWidget.navigateToScreen(
-                                      context, NotificationActivity(const []));
+                                      context, NotificationActivity(notificationsList));
                                 },
                                 child: Container(
                                       width: 36,

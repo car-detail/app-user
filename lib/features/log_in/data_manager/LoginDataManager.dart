@@ -123,11 +123,15 @@ class LoginDataManager {
       
       String? verificationId;
       bool codeSentSuccessfully = false;
-      
-      
+
+      // Use stored force-resend token so Firebase skips web/reCAPTCHA verification after first time per user
+      final resendTokenKey = '${Constant.firebasePhoneResendTokenPrefix}$digitsOnly';
+      final int? storedResendToken = sharedPreferences.getInt(resendTokenKey);
+
       await auth.verifyPhoneNumber(
         phoneNumber: formattedPhone,
         timeout: const Duration(seconds: 60),
+        forceResendingToken: storedResendToken,
         verificationCompleted: (PhoneAuthCredential credential) async {
           // Auto-verification completed (Android only)
         },
@@ -160,6 +164,9 @@ class LoginDataManager {
         codeSent: (String verId, int? resendToken) {
           verificationId = verId;
           codeSentSuccessfully = true;
+          if (resendToken != null) {
+            sharedPreferences.setInt(resendTokenKey, resendToken);
+          }
           onCodeSent(verId);
         },
         codeAutoRetrievalTimeout: (String verId) {
@@ -308,6 +315,25 @@ class LoginDataManager {
   }
   Future<http.Response> getUserDetails(BuildContext context) {
         return apiFuntions.getdatauser(context, Constant.getUserDetails);
+  }
+
+  Future<http.Response> syncFcmToken(BuildContext context) async {
+    try {
+      String? userId = sharedPreferences.getString(Constant.id);
+      String? fcmToken = sharedPreferences.getString(Constant.fbtoken);
+      
+      if (userId == null || userId.isEmpty || fcmToken == null || fcmToken.isEmpty) {
+        return http.Response('{"status":"error","message":"Insufficient data for sync"}', 400);
+      }
+      
+      final payload = {
+        "fcmToken": fcmToken
+      };
+      
+      return apiFuntions.putdatauser(context, "${Constant.updateUserDetails}$userId", payload);
+    } catch (e) {
+      return http.Response('{"status":"error","message":"$e"}', 500);
+    }
   }
 
   Future<http.Response> markTourShown(BuildContext context) async {

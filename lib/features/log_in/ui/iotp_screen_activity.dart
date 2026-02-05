@@ -184,7 +184,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                         // SMS verification message - Split into two lines as per design
                         RichText(
                           textAlign: TextAlign.center,
-                          text: const TextSpan(
+                          text: TextSpan(
                             text: "SMS verification code has been sent to your\n",
                             style: TextStyle(
                               fontSize: 15,
@@ -195,7 +195,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
                             ),
                             children: [
                               TextSpan(
-                                text: "Register Mobile No.",
+                                text: "${widget.mobileNo}",
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.black87,
@@ -396,6 +396,19 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
         return;
       }
       
+      // Ensure we have FCM token before submitting
+      String? fcmToken = sharedPreferences!.getString(Constant.fbtoken);
+      if (fcmToken == null || fcmToken.isEmpty) {
+        try {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await sharedPreferences!.setString(Constant.fbtoken, fcmToken);
+          }
+        } catch (e) {
+          debugPrint("Error getting FCM token: $e");
+        }
+      }
+
       var response = await loginDataManager!.postOTP(
           _fieldOne.text,
           verificationId, // Pass verificationId instead of sessionId

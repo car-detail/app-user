@@ -1414,14 +1414,26 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      final raw = servicesDetailsData.vendorId?.mobile?.trim();
+                      if (raw == null || raw.isEmpty) {
+                        if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
+                        return;
+                      }
+                      final phone = raw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                      if (phone.isEmpty) {
+                        if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
+                        return;
+                      }
                       try {
-                        final Uri phoneUri = Uri(
-                          scheme: 'tel',
-                          path: servicesDetailsData.vendorId?.mobile,
-                        );
-                        launchUrl(phoneUri);
+                        final Uri phoneUri = Uri.parse('tel:$phone');
+                        if (await canLaunchUrl(phoneUri)) {
+                          await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+                        } else {
+                          if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Cannot open phone dialer');
+                        }
                       } catch (e) {
+                        if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Could not start call');
                       }
                     },
                     child: Container(

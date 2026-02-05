@@ -91,10 +91,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
       appBar: AppBar(
         backgroundColor: ColorClass.base_color,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
-          child: CommonWidget.buildGreenHeaderBackButton(context),
-        ),
+        leading: CommonWidget.buildGreenHeaderBackButton(context),
         title: const Text(
           "All Vendors",
           style: TextStyle(

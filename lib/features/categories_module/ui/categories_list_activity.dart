@@ -8,6 +8,7 @@ import 'package:car_app/features/home_module/model/category_model_data.dart';
 import 'package:car_app/features/home_module/data_manager/home_data_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../Common/CommonWidget.dart';
 import '../../../Common/ShimmerLoader.dart';
@@ -1537,12 +1538,26 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
     CommonWidget.successShowSnackBarFor(context, 'Opening navigation to ${vendor.name}');
   }
 
-  void _callVendor(MixedVendorData vendor) {
-    if (vendor.phone != null) {
-      // You can use url_launcher here to make phone calls
-      CommonWidget.successShowSnackBarFor(context, 'Calling ${vendor.name} at ${vendor.phone}');
-    } else {
+  void _callVendor(MixedVendorData vendor) async {
+    final raw = vendor.phone?.trim();
+    if (raw == null || raw.isEmpty) {
       CommonWidget.errorShowSnackBarFor(context, 'Phone number not available for this vendor');
+      return;
+    }
+    final phone = raw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (phone.isEmpty) {
+      CommonWidget.errorShowSnackBarFor(context, 'Phone number not available for this vendor');
+      return;
+    }
+    try {
+      final Uri telUri = Uri.parse('tel:$phone');
+      if (await canLaunchUrl(telUri)) {
+        await launchUrl(telUri, mode: LaunchMode.externalApplication);
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, 'Cannot open phone dialer');
+      }
+    } catch (e) {
+      CommonWidget.errorShowSnackBarFor(context, 'Could not start call');
     }
   }
 

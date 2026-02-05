@@ -63,6 +63,11 @@ class HomeDataManager {
         "${Constant.getOffer}lat=${sharedPreferences.getString(Constant.lat) ?? "30.7200094"}&long=${sharedPreferences.getString(Constant.long) ?? "76.7080831"}&maxDistance=$maxDistanceMeters");
   }
 
+  getNotification(BuildContext context) {
+    return apiFuntions.getdatauser(context,
+        "${Constant.getNotifications}?limit=100&page=1&userId=${sharedPreferences.getString(Constant.id) ?? ""}");
+  }
+
   /// Get vendors from backend (app vendors + Google Places vendors combined)
   Future<List<MixedVendorData>> getMixedVendors(BuildContext context) async {
     try {

@@ -378,14 +378,26 @@ class _BookingListActivityState extends State<BookingListActivity> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
+                            final raw = data.serviceMobile?.trim();
+                            if (raw == null || raw.isEmpty) {
+                              if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
+                              return;
+                            }
+                            final phone = raw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                            if (phone.isEmpty) {
+                              if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
+                              return;
+                            }
                             try {
-                              final Uri emailLaunchUri = Uri(
-                                scheme: 'tel',
-                                path: data.serviceMobile,
-                              );
-                              launchUrl(emailLaunchUri);
+                              final Uri telUri = Uri.parse('tel:$phone');
+                              if (await canLaunchUrl(telUri)) {
+                                await launchUrl(telUri, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Cannot open phone dialer');
+                              }
                             } catch (e) {
+                              if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Could not start call');
                             }
                           },
                           style: ElevatedButton.styleFrom(

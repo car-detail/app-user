@@ -1411,9 +1411,43 @@ class _ExploreActivityState extends State<ExploreActivity> {
     }
   }
 
-  void _callVendor(MixedVendorData vendor) {
-    // You can implement phone calling functionality here
-    // For now, just show a message
+  void _callVendor(MixedVendorData vendor) async {
+    final raw = vendor.phone?.trim();
+    if (raw == null || raw.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Phone number not available for this vendor')),
+        );
+      }
+      return;
+    }
+    final phone = raw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (phone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Phone number not available for this vendor')),
+        );
+      }
+      return;
+    }
+    try {
+      final Uri telUri = Uri.parse('tel:$phone');
+      if (await canLaunchUrl(telUri)) {
+        await launchUrl(telUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cannot open phone dialer')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not start call')),
+        );
+      }
+    }
   }
 
   void _showOfflineMessage() {

@@ -4,6 +4,8 @@
 <dict>
 	<key>REVERSED_CLIENT_ID</key>
 	<string>com.googleusercontent.apps.282009131820-qujle6pkvdqqmev652inomof5pvrl5f5</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -64,6 +66,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>app-1-282009131820-ios-133403934ce10495e32a89</string>
+				<string>com.googleusercontent.apps.282009131820-qujle6pkvdqqmev652inomof5pvrl5f5</string>
 			</array>
 		</dict>
 	</array>

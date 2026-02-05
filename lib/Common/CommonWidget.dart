@@ -155,7 +155,6 @@ class CommonWidget {
     );
   }
 
-  // Back Button for Green Headers (standardized UI)
   static Widget buildGreenHeaderBackButton(BuildContext context, {
     VoidCallback? onPressed,
   }) {
@@ -174,7 +173,6 @@ class CommonWidget {
               navigator.pop();
             } else {
               // No route to pop - navigate to dashboard home as fallback
-              // This handles the case when screen is accessed from IndexedStack
               if (context.mounted) {
                 navigator.pushReplacement(
                   MaterialPageRoute(
@@ -199,15 +197,21 @@ class CommonWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(8),
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
+          shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.arrow_back,
-          color: Colors.white,
-          size: 24,
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.only(left: 6), // Offset for ios icon centering
+            child: Icon(
+              Icons.arrow_back_ios,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
         ),
       ),
     );
