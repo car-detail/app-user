@@ -18,79 +18,68 @@ class ApiFuntions {
     FocusManager.instance.primaryFocus?.unfocus();
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
+    try {
+      List<InternetAddress> result = [];
+      if (!kIsWeb) {
+        result = await InternetAddress.lookup('google.com');
+      }
+      if ((result.isNotEmpty && result[0].rawAddress.isNotEmpty) || kIsWeb) {
         final url = '${Constant.baseurl}$endpoint';
         debugPrint('🔵 GET Request: $url');
-        
-        final response = await http.get(
-            Uri.parse(url),
-            headers: {
-              "Authorization": "Bearer $token",
-              "ngrok-skip-browser-warning": "true"
-            });
-            
+
+        final response = await http.get(Uri.parse(url), headers: {
+          "Authorization": "Bearer $token",
+          "ngrok-skip-browser-warning": "true"
+        });
+
         debugPrint('🟢 GET Response ($url)');
         debugPrint('📊 Status Code: ${response.statusCode}');
         debugPrint('📄 Body: ${response.body}');
         if (response.statusCode == 200) {
-          // Check if response is JSON before parsing
           try {
-            Map<String, dynamic> message = (jsonDecode(response.body));
+            jsonDecode(response.body);
             return response;
           } catch (e) {
             debugPrint("Error parsing JSON: $e");
-            debugPrint("Response body: ${response.body}");
-            // Return the response even if it's not JSON (like HTML error pages)
             return response;
           }
-          /*if (message['status'] == true) {
-            debugPrint(response);
-            return response;
-          } else {
-            var error = message['message'];
-            debugPrint(response.body);
-            debugPrint(error);
-            showSnackBar(context,error);
-            return error;
-          }*/
-        } else if(response.statusCode == 401){
+        } else if (response.statusCode == 401) {
           debugPrint(response.body);
           sharedPreferences.clear();
           if (context.mounted) {
-            CommonWidget.navigateToKillAllScreen(context, const NewLoginActivity());
+            CommonWidget.navigateToKillAllScreen(
+                context, const NewLoginActivity());
           }
           return response;
         } else {
-          Map<String, dynamic> message = (jsonDecode(response.body));
-          if (message['message'].length > 0) {
-            var mes = message['message'][0];
-            CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+          try {
+            Map<String, dynamic> message = (jsonDecode(response.body));
+            if (message['message'] != null && message['message'] is List && (message['message'] as List).isNotEmpty) {
+              var mes = message['message'][0];
+              CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+            }
+          } catch (e) {
+            debugPrint("Error parsing error response: $e");
           }
           debugPrint(response.body);
-          var mes = message['message'];
-          debugPrint(mes);
-          return response; // Return the response object instead of mes
-          //Common.showToast(mes);
+          return response;
         }
       } else {
-        Map<String, dynamic> message = {
-          'status_message': "Please Check Network Connection"
-        };
-        var mes = message['status_message'];
-        debugPrint(mes);
+        debugPrint("Check Network Connection");
         showSnackBar(context, "Please Check Network Connection");
-        return Response('{"status":"error","message":"Please Check Network Connection"}', 500);
+        return Response(
+            '{"status":"error","message":"Please Check Network Connection"}',
+            500);
       }
     } on SocketException catch (_) {
       if (context.mounted && Navigator.canPop(context)) {
         CommonWidget.safePop(context);
       }
-      Map<String, dynamic> message = {
-        'status_message': "Please Check Network Connection"
-      };
-      var mes = message['status_message'];
-      debugPrint(mes);
+      debugPrint("SocketException: Please Check Network Connection");
       showSnackBar(context, "Please Check Network Connection");
-      return Response('{"status":"error","message":"Please Check Network Connection"}', 500);
+      return Response(
+          '{"status":"error","message":"Please Check Network Connection"}',
+          500);
     }
   }
 
