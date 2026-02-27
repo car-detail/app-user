@@ -207,7 +207,7 @@ class LoginDataManager {
     }
   }
   
-  Future<http.Response> postOTP(String otpNo, String verificationId, String mobileNo, BuildContext context) async {
+  Future<http.Response> postOTP(String otpNo, String verificationId, String mobileNo, BuildContext context, {String? firebaseIdToken}) async {
     try {
       // Bypass numbers - skip Firebase verification
       final bypassNumbers = <String>[];
@@ -216,30 +216,32 @@ class LoginDataManager {
                        bypassNumbers.any((bypass) => normalizedPhone.endsWith(bypass.replaceAll('+', ''))) ||
                        verificationId.startsWith('BYPASS_');
       
-      String? idToken;
+      String? idToken = firebaseIdToken;
       
-      if (isBypass) {
-        idToken = 'BYPASS_TOKEN_${mobileNo.replaceAll(RegExp(r'[^0-9]'), '')}';
-      } else {
-        // Verify OTP with Firebase
-        FirebaseAuth auth = FirebaseAuth.instance;
-        
-        // Create credential from verification ID and OTP
-        PhoneAuthCredential credential = PhoneAuthProvider.credential(
-          verificationId: verificationId,
-          smsCode: otpNo,
-        );
-        
-        // Sign in with credential to verify OTP
-        UserCredential userCredential = await auth.signInWithCredential(credential);
-        
-        // Get Firebase ID token
-        idToken = await userCredential.user?.getIdToken();
-        
-        if (idToken == null) {
-          throw Exception('Failed to get Firebase ID token');
+      if (idToken == null) {
+        if (isBypass) {
+          idToken = 'BYPASS_TOKEN_${mobileNo.replaceAll(RegExp(r'[^0-9]'), '')}';
+        } else {
+          // Verify OTP with Firebase
+          FirebaseAuth auth = FirebaseAuth.instance;
+          
+          // Create credential from verification ID and OTP
+          PhoneAuthCredential credential = PhoneAuthProvider.credential(
+            verificationId: verificationId,
+            smsCode: otpNo,
+          );
+          
+          // Sign in with credential to verify OTP
+          UserCredential userCredential = await auth.signInWithCredential(credential);
+          
+          // Get Firebase ID token
+          idToken = await userCredential.user?.getIdToken();
+          
+          if (idToken == null) {
+            throw Exception('Failed to get Firebase ID token');
+          }
+          
         }
-        
       }
       
       // Format phone number with country code for backend
@@ -253,22 +255,17 @@ class LoginDataManager {
       
       // Ensure it starts with + (E.164 format)
       if (!formattedPhone.startsWith('+')) {
-        // If no +, try to determine country code
-        // For US numbers (10 digits), add +1
+        // For 10 digit numbers, default to India (+91)
         if (formattedPhone.length == 10 && RegExp(r'^\d+$').hasMatch(formattedPhone)) {
-          formattedPhone = '+1$formattedPhone';
+          formattedPhone = '+91$formattedPhone';
         } 
-        // If 11 digits starting with 1, add +
+        // If 11 digits starting with 1, add + (likely US)
         else if (formattedPhone.length == 11 && formattedPhone.startsWith('1') && RegExp(r'^\d+$').hasMatch(formattedPhone)) {
           formattedPhone = '+$formattedPhone';
         }
-        // For other formats, preserve as-is but log a warning
-        // The backend will extract the actual phone from Firebase token anyway
+        // For other formats, default to +91 as per existing patterns
         else {
-          // Don't add +1 as default - this would break non-US numbers
-          // If it doesn't start with +, it's likely already missing country code
-          // But we'll let the backend handle validation via Firebase token
-          formattedPhone = '+$formattedPhone'; // Add + prefix
+          formattedPhone = '+91$formattedPhone';
         }
       }
       
@@ -279,7 +276,7 @@ class LoginDataManager {
         "mobile": formattedPhone, // Send with country code
         "fcmToken": sharedPreferences.getString(Constant.fbtoken) ?? "",
         "deviceId": imei
-      });
+      }, skipAutoNavigation: true);
     } catch (e) {
       // Return error response
       return http.Response(

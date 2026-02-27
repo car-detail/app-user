@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Common/CommonWidget.dart';
 import '../Common/Constant.dart';
-import '../features/log_in/ui/modern_login_activity.dart';
+import '../features/log_in/ui/new_login_activity.dart';
 
 class ApiFuntions {
   Future<http.Response> getdatauser(BuildContext context, String endpoint,
@@ -18,22 +18,19 @@ class ApiFuntions {
     FocusManager.instance.primaryFocus?.unfocus();
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
-    debugPrint(token);
-    debugPrint("${Constant.baseurl}$endpoint");
-    try {
-      List<InternetAddress> result = [];
-      if (!kIsWeb) {
-        result = await InternetAddress.lookup('google.com');
-      }
-      if ((result.isNotEmpty && result[0].rawAddress.isNotEmpty) || kIsWeb) {
+        final url = '${Constant.baseurl}$endpoint';
+        debugPrint('🔵 GET Request: $url');
+        
         final response = await http.get(
-            Uri.parse('${Constant.baseurl}$endpoint'),
+            Uri.parse(url),
             headers: {
               "Authorization": "Bearer $token",
               "ngrok-skip-browser-warning": "true"
             });
-        debugPrint(response.statusCode.toString());
-        debugPrint(response.body);
+            
+        debugPrint('🟢 GET Response ($url)');
+        debugPrint('📊 Status Code: ${response.statusCode}');
+        debugPrint('📄 Body: ${response.body}');
         if (response.statusCode == 200) {
           // Check if response is JSON before parsing
           try {
@@ -59,7 +56,7 @@ class ApiFuntions {
           debugPrint(response.body);
           sharedPreferences.clear();
           if (context.mounted) {
-            CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
+            CommonWidget.navigateToKillAllScreen(context, const NewLoginActivity());
           }
           return response;
         } else {
@@ -99,7 +96,7 @@ class ApiFuntions {
 
   Future<http.Response> postdatauser(
       BuildContext context, String endpoint, dynamic data,
-      {String token = ""}) async {
+      {String token = "", bool skipAutoNavigation = false}) async {
     FocusManager.instance.primaryFocus?.unfocus();
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
@@ -110,35 +107,31 @@ class ApiFuntions {
         result = await InternetAddress.lookup('google.com');
       }
       if ((result.isNotEmpty && result[0].rawAddress.isNotEmpty) || kIsWeb) {
+        final url = '${Constant.baseurl}$endpoint';
+        debugPrint('🟡 POST Request: $url');
+        debugPrint('📦 Body: ${jsonEncode(data)}');
+        
         final response = await http.post(
-            Uri.parse('${Constant.baseurl}$endpoint'),
+            Uri.parse(url),
             body: jsonEncode(data),
             headers: {
               "Content-Type": "application/json",
               "Authorization": "Bearer $token",
               "ngrok-skip-browser-warning": "true"
             });
-        debugPrint("${Constant.baseurl}$endpoint");
-        debugPrint(response.statusCode.toString());
-        debugPrint(response.body);
-        if (response.statusCode == 200) {
+            
+        debugPrint('🟢 POST Response ($url)');
+        debugPrint('📊 Status Code: ${response.statusCode}');
+        debugPrint('📄 Body: ${response.body}');
+        if (response.statusCode == 200 || response.statusCode == 201) {
           return response;
-          /*Map<String, dynamic> message = (jsonDecode(response.body));
-          if (message['status'] == true) {
-            debugPrint(response);
-            return response;
-          } else {
-            var error = message['message'];
-            debugPrint(response.body);
-            debugPrint(error);
-            showSnackBar(context,error);
-            return error;
-          }*/
         } else if(response.statusCode == 401){
-          debugPrint(response.body);
-          sharedPreferences.clear();
-          if (context.mounted) {
-            CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
+          if (!skipAutoNavigation) {
+            debugPrint(response.body);
+            sharedPreferences.clear();
+            if (context.mounted) {
+              CommonWidget.navigateToKillAllScreen(context, const NewLoginActivity());
+            }
           }
           return response;
         } else {
@@ -197,16 +190,21 @@ class ApiFuntions {
         result = await InternetAddress.lookup('google.com');
       }
       if ((result.isNotEmpty && result[0].rawAddress.isNotEmpty) || kIsWeb) {
+        final url = '${Constant.baseurl}$endpoint';
+        debugPrint('🟣 PATCH Request: $url');
+        debugPrint('📦 Body: ${jsonEncode(data)}');
+        
         final response = await http.patch(
-            Uri.parse('${Constant.baseurl}$endpoint'),
+            Uri.parse(url),
             body: jsonEncode(data),
             headers: {
               "Content-Type": "application/json",
               "Authorization": "Bearer $token"
             });
-        debugPrint("${Constant.baseurl}$endpoint");
-        debugPrint(response.statusCode.toString());
-        debugPrint(response.body);
+            
+        debugPrint('🟢 PATCH Response ($url)');
+        debugPrint('📊 Status Code: ${response.statusCode}');
+        debugPrint('📄 Body: ${response.body}');
         if (response.statusCode == 200) {
           if (context.mounted && Navigator.canPop(context)) {
         CommonWidget.safePop(context);
@@ -229,7 +227,7 @@ class ApiFuntions {
       }
           debugPrint(response.body);
           sharedPreferences.clear();
-          CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
+          CommonWidget.navigateToKillAllScreen(context, const NewLoginActivity());
           return response;
         } else {
           if (context.mounted && Navigator.canPop(context)) {
@@ -281,17 +279,22 @@ class ApiFuntions {
         result = await InternetAddress.lookup('google.com');
       }
       if ((result.isNotEmpty && result[0].rawAddress.isNotEmpty) || kIsWeb) {
+        final url = '${Constant.baseurl}$endpoint';
+        debugPrint('🟠 PUT Request: $url');
+        debugPrint('📦 Body: ${jsonEncode(data)}');
+        
         final response = await http.put(
-            Uri.parse('${Constant.baseurl}$endpoint'),
+            Uri.parse(url),
             body: jsonEncode(data),
             headers: {
               "Content-Type": "application/json",
               "Authorization": "Bearer $token",
               "ngrok-skip-browser-warning": "true"
             });
-        debugPrint("${Constant.baseurl}$endpoint");
-        debugPrint(response.statusCode.toString());
-        debugPrint(response.body);
+            
+        debugPrint('🟢 PUT Response ($url)');
+        debugPrint('📊 Status Code: ${response.statusCode}');
+        debugPrint('📄 Body: ${response.body}');
         if (response.statusCode == 200) {
           if (context.mounted && Navigator.canPop(context)) {
         CommonWidget.safePop(context);
@@ -314,7 +317,7 @@ class ApiFuntions {
       }
           debugPrint(response.body);
           sharedPreferences.clear();
-          CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
+          CommonWidget.navigateToKillAllScreen(context, const NewLoginActivity());
           return response;
         } else {
           if (context.mounted && Navigator.canPop(context)) {
@@ -592,23 +595,16 @@ class ApiFuntions {
       data.forEach((key, value) {
         request.fields[key] = value.toString();
       });
-      debugPrint('Request Body:');
-      debugPrint('URL: $url');
-      debugPrint('Headers: ${request.headers}');
-      debugPrint('Files:');
-      for (var file in request.files) {
-        debugPrint('  - ${file.filename}');
-      }
-      debugPrint('Fields:');
-      request.fields.forEach((key, value) {
-        debugPrint('  $key: $value');
-      });
+      debugPrint('🟣 MULTIPART Request: ${Constant.baseurl}$url');
+      debugPrint('Fields: ${request.fields}');
+      debugPrint('Files: ${request.files.map((f) => f.filename).toList()}');
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
-      debugPrint('responseBody ${streamedResponse.request}');
-      debugPrint('responseBody ${response.body}');
-      debugPrint('responseBody $response');
+      
+      debugPrint('🟢 MULTIPART Response (${Constant.baseurl}$url)');
+      debugPrint('📊 Status Code: ${response.statusCode}');
+      debugPrint('📄 Body: ${response.body}');
 
       // Handle the response
       if (response.statusCode == 200) {
@@ -617,7 +613,7 @@ class ApiFuntions {
       } else if(response.statusCode == 401){
         debugPrint(response.body);
         sharedPreferences.clear();
-        CommonWidget.navigateToKillAllScreen(context, const ModernLoginActivity());
+        CommonWidget.navigateToKillAllScreen(context, const NewLoginActivity());
         return response;
       } else {
         Map<String, dynamic> message = (jsonDecode(response.body));

@@ -20,7 +20,7 @@ import '../../../Models/image_module_data.dart';
 import '../../dashboard_module/ui/dashboard_activity.dart';
 import '../data_manager/LoginDataManager.dart';
 import '../model/user_detail_model_bean.dart';
-import 'modern_login_activity.dart';
+import 'new_login_activity.dart';
 import '../../home_module/data_manager/home_data_manager.dart';
 import '../../home_module/model/services_model_data.dart';
 import '../../home_module/model/offer_list_model.dart';
@@ -138,6 +138,8 @@ class _ProfileActivityState extends State<ProfileActivity> {
               .setString(Constant.roleName, data.data!.roleName ?? "");
           sharedPreferences!
               .setString(Constant.id, data.data!.sId.toString() ?? "");
+          sharedPreferences!
+              .setString(Constant.UserID, data.data!.sId.toString() ?? "");
           
           if (mounted) {
             setState(() {
@@ -212,6 +214,8 @@ class _ProfileActivityState extends State<ProfileActivity> {
           .setString(Constant.roleName, data.data!.roleName ?? "");
       sharedPreferences!
           .setString(Constant.id, data.data!.sId.toString() ?? "");
+      sharedPreferences!
+          .setString(Constant.UserID, data.data!.sId.toString() ?? "");
       
       // Update location in SharedPreferences if location was updated
       if (locationName.isNotEmpty) {
@@ -666,7 +670,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                 CommonWidget.safePop(context);
                 sharedPreferences!.clear();
                 CommonWidget.navigateToKillAllScreen(
-                    context, const ModernLoginActivity());
+                    context, const NewLoginActivity());
               },
               child: const Text("Logout"),
             ),

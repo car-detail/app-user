@@ -44,6 +44,21 @@ post_install do |installer|
       if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
       end
+      config.build_settings.each do |key, value|
+        if value.to_s.include? 'DT_TOOLCHAIN_DIR'
+          config.build_settings[key] = value.to_s.gsub('DT_TOOLCHAIN_DIR', 'TOOLCHAIN_DIR')
+        end
+      end
     end
   end
+  installer.aggregate_targets.each do |target|
+    target.user_project.native_targets.each do |native_target|
+      native_target.build_configurations.each do |config|
+        config.build_settings['LIBRARY_SEARCH_PATHS'] = '$(inherited) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)'
+      end
+    end
+  end
+  
+  # Persistent DT_TOOLCHAIN_DIR fix for Xcode 15+
+  system('find . -name "*.xcconfig" -type f -exec sed -i "" "s/DT_TOOLCHAIN_DIR/TOOLCHAIN_DIR/g" {} +')
 end

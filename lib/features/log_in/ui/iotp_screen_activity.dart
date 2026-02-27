@@ -14,6 +14,7 @@ import 'package:http/http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' as fcm;
 import '../../../Common/Color.dart';
 import '../../../Common/Constant.dart';
 import '../data_manager/LoginDataManager.dart';
@@ -400,7 +401,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
       String? fcmToken = sharedPreferences!.getString(Constant.fbtoken);
       if (fcmToken == null || fcmToken.isEmpty) {
         try {
-          fcmToken = await FirebaseMessaging.instance.getToken();
+          fcmToken = await fcm.FirebaseMessaging.instance.getToken();
           if (fcmToken != null) {
             await sharedPreferences!.setString(Constant.fbtoken, fcmToken);
           }
@@ -478,6 +479,8 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
           .setString(Constant.roleName, data.data!.roleName ?? "");
       sharedPreferences!
           .setString(Constant.id, data.data!.sId.toString() ?? "");
+      sharedPreferences!
+          .setString(Constant.UserID, data.data!.sId.toString() ?? "");
       if (data.data!.isNewUser == true) {
         CommonWidget.navigateToScreen(context, const EditUserDetailsActivity());
       } else {

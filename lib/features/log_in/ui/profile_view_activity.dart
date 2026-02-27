@@ -10,7 +10,7 @@ import '../../../Common/Constant.dart';
 import '../data_manager/LoginDataManager.dart';
 import '../model/user_detail_model_bean.dart';
 import 'profile_activity.dart';
-import 'modern_login_activity.dart';
+import 'new_login_activity.dart';
 
 class ProfileViewActivity extends StatefulWidget {
   const ProfileViewActivity({super.key});
@@ -404,7 +404,7 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
                 CommonWidget.safePop(context);
                 sharedPreferences?.clear();
                 CommonWidget.navigateToKillAllScreen(
-                    context, const ModernLoginActivity());
+                    context, const NewLoginActivity());
               },
               child: const Text("Logout"),
             ),

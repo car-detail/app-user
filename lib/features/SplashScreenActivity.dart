@@ -6,8 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../Common/CommonWidget.dart';
 import '../Common/Constant.dart';
 import 'dashboard_module/ui/dashboard_activity.dart';
-import 'log_in/ui/modern_login_activity.dart';
+
 import 'log_in/data_manager/LoginDataManager.dart';
+import 'log_in/ui/new_login_activity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SplashScreenActivity extends StatefulWidget {
@@ -138,7 +139,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (BuildContext context) => const ModernLoginActivity(),
+                        builder: (BuildContext context) => NewLoginActivity(),
                       ),
                           (route) => false,
                     );

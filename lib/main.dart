@@ -1,5 +1,6 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:car_app/features/SplashScreenActivity.dart';
+import 'package:car_app/features/log_in/ui/new_login_activity.dart';
 import 'package:car_app/Common/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,6 +77,9 @@ class MyApp extends StatelessWidget {
           ),
       ),
       debugShowCheckedModeBanner: false,
+      routes: {
+        '/login': (context) => const SafeArea(child: NewLoginActivity()),
+      },
       home: const SafeArea(
         child: SplashScreenActivity(),
         ),
