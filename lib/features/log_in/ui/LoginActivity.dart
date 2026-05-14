@@ -44,7 +44,9 @@ class _LoginActivityState extends State<LoginActivity> {
     loginDataManager = LoginDataManager(sharedPreferences!);
     try{
       var possition = await _determinePosition();
+      if (!mounted) return;
       List<Placemark> placemarks = await placemarkFromCoordinates(possition.latitude, possition.longitude);
+      if (!mounted) return;
       sharedPreferences!.setString(Constant.location, placemarks[0].locality??"");
       sharedPreferences!.setString(Constant.lat, possition.latitude.toString());
       sharedPreferences!.setString(Constant.long, possition.longitude.toString());
@@ -217,6 +219,7 @@ class _LoginActivityState extends State<LoginActivity> {
         fullPhoneNumber,
         (String verificationId) {
           // OTP sent successfully
+          if (!mounted) return;
           // Create a mock GenerateOTPModelBean with verificationId
           var mockData = GenerateOTPModelBean(
             status: "success",
@@ -226,16 +229,22 @@ class _LoginActivityState extends State<LoginActivity> {
             ),
           );
           
-          CommonWidget.navigateToScreen(
-              context, OTPScreenActivity(mockData, fullPhoneNumber));
+          if (context.mounted) {
+            CommonWidget.navigateToScreen(
+                context, OTPScreenActivity(mockData, fullPhoneNumber));
+          }
         },
         (String error) {
           // Error sending OTP
-          CommonWidget.errorShowSnackBarFor(context, error);
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, error);
+          }
         },
       );
     } catch (e) {
-      CommonWidget.errorShowSnackBarFor(context, "Something went wrong. Please try again.");
+      if (mounted) {
+        CommonWidget.errorShowSnackBarFor(context, "Something went wrong. Please try again.");
+      }
     }
   }
 }

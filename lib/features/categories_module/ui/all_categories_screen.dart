@@ -27,36 +27,46 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
 
   Future<void> _initializeDataManager() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     dataManager = CategoriesListDataManager(prefs);
     await _loadCategories();
   }
 
   Future<void> _loadCategories() async {
     try {
-      setState(() {
-        isLoading = true;
-      });
-
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+        });
+      }
+      
       final response = await dataManager!.getcategory(context);
+      if (!mounted) return;
       final responseData = response.data;
 
       if (responseData['status'] == 'success' && responseData['data'] != null) {
         final categoriesData = responseData['data'] as List;
-        setState(() {
-          categories = categoriesData
-              .map((category) => CategoryData.fromJson(category))
-              .toList();
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            categories = categoriesData
+                .map((category) => CategoryData.fromJson(category))
+                .toList();
+            isLoading = false;
+          });
+        }
       } else {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 

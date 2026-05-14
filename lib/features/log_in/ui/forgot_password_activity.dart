@@ -117,6 +117,7 @@ class _ForgotPasswordActivityState extends State<ForgotPasswordActivity> {
 
   ForgotPasswordAPP() async {
     var responce = await forgotPasswordDataManager!.ForgotPasswordAPP(context, schoolController.text, userController.text);
+    if (!mounted) return;
     var data = CommonBean.fromJson(jsonDecode(responce.body));
     if (data.status == "OK") {
       CommonPopUp.showalertDialog(

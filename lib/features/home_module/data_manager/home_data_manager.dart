@@ -16,16 +16,29 @@ class HomeDataManager {
   getcategory(BuildContext context) {
     return apiFuntions.getdatauser(context, Constant.category);
   }
+
+  Future<void> syncLocationToApi(BuildContext context, String locationName, double lat, double lng) async {
+    final userId = sharedPreferences.getString(Constant.id);
+    if (userId == null || userId.isEmpty) return;
+    try {
+      await apiFuntions.putdatauser(context, "${Constant.updateUserDetails}$userId", {
+        "location": {
+          "name": locationName,
+          "coordinates": {"lat": lat, "long": lng}
+        }
+      });
+    } catch (_) {}
+  }
   postPlaceId(BuildContext context, String id) {
     return apiFuntions.postdatauser(context, Constant.postPlaceId,
         <String, dynamic>{"placeId": id});
   }
 
-  getAllServices(BuildContext context) {
+  getAllServices(BuildContext context, {int pageNumber = 1, int count = 12}) {
     String? lat = sharedPreferences.getString(Constant.lat);
     String? long = sharedPreferences.getString(Constant.long);
     
-    String url = "${Constant.getAllService}pageNumber=1&count=12";
+    String url = "${Constant.getAllService}pageNumber=$pageNumber&count=$count";
     
     if (lat != null && long != null && lat != "null" && long != "null") {
       url += "&lat=$lat&long=$long&maxDistance=30000";
@@ -36,8 +49,8 @@ class HomeDataManager {
     return apiFuntions.getdatauser(context, url);
   }
 
-  getAllServicesWithLocation(BuildContext context, Map<String, double>? location) {
-    String url = "${Constant.getAllService}pageNumber=1&count=12";
+  getAllServicesWithLocation(BuildContext context, Map<String, double>? location, {int pageNumber = 1, int count = 12}) {
+    String url = "${Constant.getAllService}pageNumber=$pageNumber&count=$count";
     
     if (location != null && location['lat'] != null && location['lng'] != null) {
       url += "&lat=${location['lat']}&long=${location['lng']}&maxDistance=30000&includeGooglePlaces=true";
@@ -57,10 +70,17 @@ class HomeDataManager {
   }
 
   getOffer(BuildContext context) {
-    // 50 miles = 80,467 meters
     const int maxDistanceMeters = 80467;
+    final lat = sharedPreferences.getString(Constant.lat);
+    final lng = sharedPreferences.getString(Constant.long);
+    if (lat == null || lng == null || lat == "null" || lng == "null" || lat == "0.0") {
+      // Backend expects lat and long for $geoNear aggregation.
+      // Pass a very large max distance (e.g. 40,000 km, approx Earth's circumference)
+      // to retrieve all offers when user location is unknown.
+      return apiFuntions.getdatauser(context, "${Constant.getOffer}lat=0&long=0&maxDistance=40000000");
+    }
     return apiFuntions.getdatauser(context,
-        "${Constant.getOffer}lat=${sharedPreferences.getString(Constant.lat) ?? "30.7200094"}&long=${sharedPreferences.getString(Constant.long) ?? "76.7080831"}&maxDistance=$maxDistanceMeters");
+        "${Constant.getOffer}lat=$lat&long=$lng&maxDistance=$maxDistanceMeters");
   }
 
   getNotification(BuildContext context) {
@@ -69,15 +89,22 @@ class HomeDataManager {
   }
 
   /// Get vendors from backend (app vendors + Google Places vendors combined)
-  Future<List<MixedVendorData>> getMixedVendors(BuildContext context) async {
+  Future<List<MixedVendorData>> getMixedVendors(BuildContext context, {int pageNumber = 1, int count = 12, int? maxDistance}) async {
     try {
-      // Add includeGooglePlaces parameter to get Google Places vendors
-      final lat = sharedPreferences.getString(Constant.lat) ?? "30.7200094";
-      final lng = sharedPreferences.getString(Constant.long) ?? "76.7080831";
-      
+      final lat = sharedPreferences.getString(Constant.lat);
+      final lng = sharedPreferences.getString(Constant.long);
+      final distance = maxDistance ?? 30000;
+
+      String url;
+      if (lat != null && lng != null && lat != "null" && lng != "null" && lat != "0.0") {
+        url = "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=$pageNumber&count=$count&sortBy=createdAt&includeGooglePlaces=true&maxDistance=$distance";
+      } else {
+        url = "${Constant.getAllService}pageNumber=$pageNumber&count=$count&sortBy=createdAt&includeGooglePlaces=false";
+      }
+
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=12&sortBy=createdAt&includeGooglePlaces=true",
+        url,
       );
       
       final responseData = jsonDecode(response.body);
@@ -111,12 +138,13 @@ class HomeDataManager {
     BuildContext context, 
     double lat, 
     double lng, 
-    double radius
+    double radius,
+    {int pageNumber = 1, int count = 50}
   ) async {
     try {
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&maxDistance=${radius.toInt()}",
+        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=$pageNumber&count=$count&sortBy=createdAt&includeGooglePlaces=true&maxDistance=${radius.toInt()}",
       );
       
       final responseData = jsonDecode(response.body);
@@ -144,16 +172,24 @@ class HomeDataManager {
 
   /// Get vendors filtered by category
   Future<List<MixedVendorData>> getMixedVendorsByCategory(
-    BuildContext context, 
-    String category
+    BuildContext context,
+    String category,
+    {int pageNumber = 1, int count = 50}
   ) async {
     try {
-      final lat = sharedPreferences.getString(Constant.lat) ?? "30.7200094";
-      final lng = sharedPreferences.getString(Constant.long) ?? "76.7080831";
-      
+      final lat = sharedPreferences.getString(Constant.lat);
+      final lng = sharedPreferences.getString(Constant.long);
+
+      String url;
+      if (lat != null && lng != null && lat != "null" && lng != "null" && lat != "0.0") {
+        url = "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=$pageNumber&count=$count&sortBy=createdAt&includeGooglePlaces=true&filterBycategory=${Uri.encodeComponent(category)}";
+      } else {
+        url = "${Constant.getAllService}pageNumber=$pageNumber&count=$count&sortBy=createdAt&filterBycategory=${Uri.encodeComponent(category)}";
+      }
+
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&filterBycategory=${Uri.encodeComponent(category)}",
+        url,
       );
       
       final responseData = jsonDecode(response.body);
@@ -185,12 +221,13 @@ class HomeDataManager {
     String category,
     double lat, 
     double lng, 
-    double radius
+    double radius,
+    {int pageNumber = 1, int count = 50}
   ) async {
     try {
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&maxDistance=${radius.toInt()}&filterBycategory=${Uri.encodeComponent(category)}",
+        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=$pageNumber&count=$count&sortBy=createdAt&includeGooglePlaces=true&maxDistance=${radius.toInt()}&filterBycategory=${Uri.encodeComponent(category)}",
       );
       
       final responseData = jsonDecode(response.body);
@@ -218,16 +255,25 @@ class HomeDataManager {
 
   /// Search vendors by name using backend search
   Future<List<MixedVendorData>> searchVendors(
-    BuildContext context, 
-    String searchQuery
+    BuildContext context,
+    String searchQuery,
+    {int pageNumber = 1, int count = 50, int? maxDistance}
   ) async {
     try {
-      final lat = sharedPreferences.getString(Constant.lat) ?? "30.7200094";
-      final lng = sharedPreferences.getString(Constant.long) ?? "76.7080831";
-      
+      final lat = sharedPreferences.getString(Constant.lat);
+      final lng = sharedPreferences.getString(Constant.long);
+      final distance = maxDistance ?? 30000;
+
+      String url;
+      if (lat != null && lng != null && lat != "null" && lng != "null" && lat != "0.0") {
+        url = "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=$pageNumber&count=$count&sortBy=createdAt&includeGooglePlaces=true&searchByName=${Uri.encodeComponent(searchQuery)}&maxDistance=$distance";
+      } else {
+        url = "${Constant.getAllService}pageNumber=$pageNumber&count=$count&sortBy=createdAt&searchByName=${Uri.encodeComponent(searchQuery)}";
+      }
+
       final response = await apiFuntions.getdatauser(
         context,
-        "${Constant.getAllService}lat=$lat&long=$lng&pageNumber=1&count=50&sortBy=createdAt&includeGooglePlaces=true&searchByName=${Uri.encodeComponent(searchQuery)}",
+        url,
       );
       
       final responseData = jsonDecode(response.body);

@@ -192,12 +192,15 @@ class _ProfileActivityState extends State<ProfileActivity> {
         firstNameController.text,
         lastNameController.text,
         emailController.text,
-        imageURl,
+        imageURl.isNotEmpty ? imageURl : profileurl,
         sharedPreferences!.getString(Constant.id) ?? "",
         context,
         locationName: locationName.isNotEmpty ? locationName : null,
         lat: lat != 0.0 ? lat : null,
         lng: lng != 0.0 ? lng : null);
+    
+    if (!mounted) return;
+
     var data = UserDetailsModelBean.fromJson(jsonDecode(response.body));
     if (data.status == "success") {
       sharedPreferences!
@@ -224,13 +227,17 @@ class _ProfileActivityState extends State<ProfileActivity> {
         sharedPreferences!.setString(Constant.long, lng.toString());
       }
       
-      CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-      // Navigate back to profile view after successful save
-      if (mounted && context.mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
+      if (mounted) {
+        CommonWidget.successShowSnackBarFor(context, data.message ?? "");
+        // Navigate back to profile view after successful save
+        if (context.mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
       }
     } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      if (mounted) {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
     }
   }
   
@@ -281,10 +288,12 @@ class _ProfileActivityState extends State<ProfileActivity> {
         timeLimit: const Duration(seconds: 10),
       );
 
-      setState(() {
-        currentLat = position.latitude;
-        currentLng = position.longitude;
-      });
+      if (mounted) {
+        setState(() {
+          currentLat = position.latitude;
+          currentLng = position.longitude;
+        });
+      }
 
       List<Placemark> placemarks = await placemarkFromCoordinates(
           position.latitude, position.longitude);
@@ -369,7 +378,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
     
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: ColorClass.base_color,
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
               ),
       child: Scaffold(
@@ -441,60 +450,55 @@ class _ProfileActivityState extends State<ProfileActivity> {
                         Center(
                           child: Stack(
                             children: [
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundColor: ColorClass.base_color.withOpacity(0.1),
-                                child: ClipOval(
-                                  child: profileurl != "" && selectedFiles.isEmpty
-                                      ? Image.network(
-                                          profileurl,
-                                  height: 120,
-                                  width: 120,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Image.asset(
-                                              CommonWidget.getImagePath("chat_profile.png"),
-                                              fit: BoxFit.cover,
-                                            );
-                                          },
-                                        )
-                                      : selectedFiles.isNotEmpty
-                                          ? CommonWidget.determineImageAsset(
-                                              selectedFiles[0].path ?? "")
-                                          : Image.asset(
-                                              CommonWidget.getImagePath("chat_profile.png"),
-                                              fit: BoxFit.cover,
+                              GestureDetector(
+                                onTap: () {
+                                  CommonPopUp.imagePick(context, (List<File> files) {
+                                    if (files.isNotEmpty) {
+                                      setState(() {
+                                        selectedFiles = files;
+                                      });
+                                      postImage(context);
+                                    }
+                                  });
+                                },
+                                child: CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: ColorClass.base_color.withOpacity(0.1),
+                                  child: ClipOval(
+                                    child: (imageURl.isNotEmpty || profileurl.isNotEmpty)
+                                        ? Image.network(
+                                            imageURl.isNotEmpty ? imageURl : profileurl,
+                                            width: 120,
+                                            height: 120,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Icon(
+                                              Icons.person,
+                                              size: 64,
+                                              color: Colors.grey[400],
                                             ),
+                                          )
+                                        : Icon(
+                                            Icons.person,
+                                            size: 64,
+                                            color: Colors.grey[400],
+                                          ),
+                                  ),
                                 ),
                               ),
                               Positioned(
                                 bottom: 0,
                                 right: 0,
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    var data = await BaseActivity.pickmedia(false);
-                                    if (data != null) {
-                                      if (mounted) {
-                                        setState(() {
-                                          selectedFiles.clear();
-                                          selectedFiles.addAll(data);
-                                        });
-                                      }
-                                      postImage(context);
-                                    }
-                                  },
-                                  child: Container(
-                            padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: ColorClass.base_color,
-                                      shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                                    ),
-                                    child: const Icon(
-                                      Icons.camera_alt,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: ColorClass.base_color,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
                                   ),
                                 ),
                               ),
@@ -511,8 +515,8 @@ class _ProfileActivityState extends State<ProfileActivity> {
                 _buildDetailRow("Last Name", lastNameController),
                 const SizedBox(height: 20),
                 
-                // Email Field
-                _buildDetailRow("Email", emailController, keyboardType: TextInputType.emailAddress),
+                // Email Field (Optional)
+                _buildDetailRow("Email (Optional)", emailController, keyboardType: TextInputType.emailAddress),
                 const SizedBox(height: 20),
                 
                 // Location Field
@@ -603,15 +607,6 @@ class _ProfileActivityState extends State<ProfileActivity> {
                                 message: "Please Enter Last Name.",
                                 context: context)) {
                               return;
-                            } else if (BaseActivity.checkEmptyField(
-                                editingController: emailController,
-                                message: "Please Enter Email Address.",
-                                context: context)) {
-                              return;
-                            } else if (imageURl == "" && selectedFiles.isEmpty && profileurl == "") {
-                              CommonWidget.successShowSnackBarFor(
-                                  context, "Please Select Profile Image");
-                              return;
                             } else {
                               postUserDetails(context);
                             }
@@ -669,8 +664,10 @@ class _ProfileActivityState extends State<ProfileActivity> {
               onPressed: () {
                 CommonWidget.safePop(context);
                 sharedPreferences!.clear();
-                CommonWidget.navigateToKillAllScreen(
-                    context, const NewLoginActivity());
+                if (context.mounted) {
+                  CommonWidget.navigateToKillAllScreen(
+                      context, const NewLoginActivity());
+                }
               },
               child: const Text("Logout"),
             ),
@@ -749,7 +746,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
     
     try {
       var response = await homeDataManager!.getOffer(context);
-      if (response != null && response.statusCode == 200) {
+      if (response != null && response.statusCode == 200 && mounted) {
         var responseData = jsonDecode(response.body);
         if (responseData['status'] == 'success' && responseData['data'] != null) {
           setState(() {
@@ -769,16 +766,20 @@ class _ProfileActivityState extends State<ProfileActivity> {
           });
         }
       } else {
+        if (mounted) {
+          setState(() {
+            offers = [];
+            isLoadingOffers = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
           offers = [];
           isLoadingOffers = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        offers = [];
-        isLoadingOffers = false;
-      });
     }
   }
 

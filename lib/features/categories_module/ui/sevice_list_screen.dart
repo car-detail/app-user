@@ -315,12 +315,6 @@ class _SeviceListScreenState extends State<SeviceListScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // Prevent navigation for offline vendors
-            if (isOffline) {
-              _showOfflineMessage(context);
-              return;
-            }
-            
             CommonWidget.navigateToScreen(
               context,
               SpecialistsActivity(vendor.sId ?? ''),

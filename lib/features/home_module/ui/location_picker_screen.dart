@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomplete_textfield.dart';
+import 'package:geocoding/geocoding.dart' as geo;
+import 'package:google_maps_places_autocomplete_widgets/address_autocomplete_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Common/Color.dart';
 import '../../../Common/CommonWidget.dart';
@@ -84,13 +84,19 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         timeLimit: const Duration(seconds: 10),
       );
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(
           position.latitude, position.longitude);
 
       String address = placemarks[0].locality ??
           placemarks[0].subAdministrativeArea ??
           placemarks[0].administrativeArea ??
+          placemarks[0].name ??
           "Current Location";
+      
+      // If we have both locality and administrativeArea, format it nicely
+      if (placemarks[0].locality != null && placemarks[0].administrativeArea != null) {
+        address = "${placemarks[0].locality}, ${placemarks[0].administrativeArea}";
+      }
 
       setState(() {
         _locationController.text = address;
@@ -115,29 +121,82 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
   }
 
-  void _saveLocation() {
-    if (_selectedAddress == null || _selectedAddress!.isEmpty) {
-      CommonWidget.errorShowSnackBarFor(
-          context, 'Please select a location');
+  Future<void> _saveLocation() async {
+    String typedAddress = _locationController.text.trim();
+    
+    if (typedAddress.isEmpty) {
+      CommonWidget.errorShowSnackBarFor(context, 'Please enter or select a location');
       return;
     }
 
-    if (_selectedLat == null || _selectedLng == null) {
-      CommonWidget.errorShowSnackBarFor(
-          context, 'Location coordinates are missing');
-      return;
-    }
+    setState(() {
+      _isLoading = true;
+    });
 
-    _sharedPreferences?.setString(Constant.location, _selectedAddress!);
-    _sharedPreferences?.setString(Constant.lat, _selectedLat!.toString());
-    _sharedPreferences?.setString(Constant.long, _selectedLng!.toString());
+    try {
+      double? lat = _selectedLat;
+      double? lng = _selectedLng;
+      String address = typedAddress;
 
-    if (context.mounted) {
-      Navigator.of(context).pop({
-        'location': _selectedAddress,
-        'lat': _selectedLat,
-        'lng': _selectedLng,
+      // If user didn't select from suggestion but typed something, try to geocode it
+      if (lat == null || lng == null || _selectedAddress != typedAddress) {
+        try {
+          List<geo.Location> locations = await geo.locationFromAddress(typedAddress);
+          if (locations.isNotEmpty) {
+            lat = locations[0].latitude;
+            lng = locations[0].longitude;
+            
+            // Try to get a cleaner name for the typed address
+            try {
+              List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(lat, lng);
+              if (placemarks.isNotEmpty) {
+                address = placemarks[0].locality ?? 
+                         placemarks[0].subAdministrativeArea ?? 
+                         typedAddress;
+              }
+            } catch (_) {}
+          }
+        } catch (e) {
+          // If geocoding fails, we can't save because we need coordinates for distance calc
+          if (mounted) {
+            CommonWidget.errorShowSnackBarFor(context, 'Could not find coordinates for this location. Please try a more specific area or select from the list.');
+            setState(() { _isLoading = false; });
+            return;
+          }
+        }
+      }
+
+      if (lat == null || lng == null) {
+        if (mounted) {
+          CommonWidget.errorShowSnackBarFor(context, 'Location coordinates are missing');
+          setState(() { _isLoading = false; });
+          return;
+        }
+        return;
+      }
+
+      _sharedPreferences?.setString(Constant.location, address);
+      _sharedPreferences?.setString(Constant.lat, lat.toString());
+      _sharedPreferences?.setString(Constant.long, lng.toString());
+
+      setState(() {
+        _isLoading = false;
       });
+
+      if (context.mounted) {
+        Navigator.of(context).pop({
+          'location': address,
+          'lat': lat,
+          'lng': lng,
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        CommonWidget.errorShowSnackBarFor(context, 'An error occurred while saving location');
+      }
     }
   }
 
@@ -158,15 +217,34 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             fontSize: 18,
           ),
         ),
-        backgroundColor: ColorClass.base_color,
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            color: ColorClass.base_color,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF166534),
+                  Color(0xFF1CB273),
+                  Color(0xFF00E676),
+                ],
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -233,6 +311,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                       });
                     },
                     language: 'en-US',
+                    types: const [
+                      AutoCompleteType.locality,
+                      AutoCompleteType.sublocality,
+                      AutoCompleteType.neighborhood,
+                      AutoCompleteType.postalCode
+                    ],
                   ),
                   const SizedBox(height: 20),
                   // Divider with "OR"

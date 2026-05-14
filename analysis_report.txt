@@ -1,0 +1,831 @@
+Resolving dependencies...
+Downloading packages...
+  _flutterfire_internals 1.3.54 (1.3.69 available)
+  args 2.6.0 (2.7.0 available)
+  async 2.12.0 (2.13.1 available)
+  calendar_view 1.1.0 (2.0.0 available)
+  carousel_slider 5.0.0 (5.1.2 available)
+  cross_file 0.3.4+2 (0.3.5+2 available)
+  crypto 3.0.6 (3.0.7 available)
+  csslib 0.17.3 (1.0.2 available)
+  cupertino_icons 1.0.8 (1.0.9 available)
+  dbus 0.7.10 (0.7.12 available)
+  device_info_plus 10.1.2 (13.0.0 available)
+  device_info_plus_platform_interface 7.0.1 (8.0.0 available)
+  equatable 2.0.5 (2.0.8 available)
+  ffi 2.1.3 (2.2.0 available)
+  file_picker 8.1.4 (11.0.2 available)
+  file_selector_linux 0.9.3+1 (0.9.4 available)
+  file_selector_macos 0.9.4+2 (0.9.5 available)
+  file_selector_platform_interface 2.6.2 (2.7.0 available)
+  file_selector_windows 0.9.3+3 (0.9.3+5 available)
+  firebase_auth 5.5.3 (6.4.0 available)
+  firebase_auth_platform_interface 7.6.2 (8.1.9 available)
+  firebase_auth_web 5.14.2 (6.1.5 available)
+  firebase_core 3.13.0 (4.7.0 available)
+  firebase_core_platform_interface 5.4.0 (6.0.3 available)
+  firebase_core_web 2.22.0 (3.6.0 available)
+  firebase_crashlytics 4.3.5 (5.2.0 available)
+  firebase_crashlytics_platform_interface 3.8.5 (3.8.20 available)
+  firebase_messaging 15.2.5 (16.2.0 available)
+  firebase_messaging_platform_interface 4.6.5 (4.7.9 available)
+  firebase_messaging_web 3.10.5 (4.1.5 available)
+  fl_chart 0.68.0 (1.2.0 available)
+  flex_color_picker 3.6.0 (3.8.0 available)
+  flex_seed_scheme 3.4.1 (4.0.1 available)
+  flutter_html 3.0.0-beta.2 (3.0.0 available)
+  flutter_inappwebview_internal_annotations 1.1.1 (1.3.0 available)
+  flutter_lints 4.0.0 (6.0.0 available)
+  flutter_local_notifications 17.2.4 (21.0.0 available)
+  flutter_local_notifications_linux 4.0.1 (8.0.0 available)
+  flutter_local_notifications_platform_interface 7.2.0 (11.0.0 available)
+  flutter_plugin_android_lifecycle 2.0.23 (2.0.34 available)
+  flutter_timezone 4.0.0 (5.0.2 available)
+  geocoding 3.0.0 (4.0.0 available)
+  geocoding_android 3.3.1 (5.0.1 available)
+  geocoding_ios 3.0.1 (3.1.0 available)
+  geocoding_platform_interface 3.2.0 (5.0.0 available)
+  geolocator 13.0.2 (14.0.2 available)
+  geolocator_android 4.6.1 (5.0.2 available)
+  geolocator_apple 2.3.8+1 (2.3.13 available)
+  geolocator_platform_interface 4.2.4 (4.2.6 available)
+  geolocator_web 4.1.1 (4.1.3 available)
+  geolocator_windows 0.2.3 (0.2.5 available)
+  google_maps 8.1.1 (8.2.0 available)
+  google_maps_flutter 2.10.1 (2.17.0 available)
+  google_maps_flutter_android 2.14.13 (2.19.8 available)
+  google_maps_flutter_ios 2.13.2 (2.18.1 available)
+  google_maps_flutter_platform_interface 2.11.1 (2.15.0 available)
+  google_maps_flutter_web 0.5.10+1 (0.6.2 available)
+  html 0.15.4 (0.15.6 available)
+  html_editor_enhanced 2.6.0 (2.7.1 available)
+  http 1.2.2 (1.6.0 available)
+  http_parser 4.0.2 (4.1.2 available)
+  image_picker 1.1.2 (1.2.1 available)
+  image_picker_android 0.8.12+17 (0.8.13+16 available)
+  image_picker_for_web 3.0.6 (3.1.1 available)
+  image_picker_ios 0.8.12+1 (0.8.13+6 available)
+  image_picker_linux 0.2.1+1 (0.2.2 available)
+  image_picker_macos 0.2.1+1 (0.2.2+1 available)
+  image_picker_platform_interface 2.10.0 (2.11.1 available)
+  image_picker_windows 0.2.1+1 (0.2.2 available)
+  intl 0.18.1 (0.20.2 available)
+  js 0.7.1 (0.7.2 available)
+  lints 4.0.0 (6.1.0 available)
+  matcher 0.12.18 (0.12.19 available)
+  meta 1.17.0 (1.18.2 available)
+  package_info_plus 4.2.0 (10.0.0 available)
+  package_info_plus_platform_interface 2.0.1 (4.0.0 available)
+  path_provider_android 2.2.12 (2.3.1 available)
+  path_provider_foundation 2.4.0 (2.6.0 available)
+  permission_handler 11.3.1 (12.0.1 available)
+  permission_handler_android 12.0.13 (13.0.1 available)
+  permission_handler_apple 9.4.5 (9.4.7 available)
+  permission_handler_html 0.1.3+2 (0.1.3+5 available)
+  permission_handler_platform_interface 4.2.3 (4.3.0 available)
+  petitparser 6.0.2 (7.0.2 available)
+  pinput 5.0.0 (6.0.2 available)
+  pointer_interceptor_ios 0.10.1 (0.10.1+1 available)
+  pointer_interceptor_web 0.10.2+1 (0.10.3 available)
+  share_plus 10.1.2 (13.0.0 available)
+  share_plus_platform_interface 5.0.1 (7.0.0 available)
+  shared_preferences 2.3.3 (2.5.5 available)
+  shared_preferences_android 2.3.3 (affected by advisory: [^0], 2.4.23 available)
+  shared_preferences_foundation 2.5.3 (2.5.6 available)
+  shared_preferences_platform_interface 2.4.1 (2.4.2 available)
+  shared_preferences_web 2.4.2 (2.4.3 available)
+  source_span 1.10.1 (1.10.2 available)
+  syncfusion_flutter_core 27.2.2 (33.1.49 available)
+  syncfusion_flutter_pdf 27.1.58 (33.1.49 available)
+  syncfusion_flutter_pdfviewer 27.1.58 (33.1.49 available)
+  syncfusion_flutter_signaturepad 27.1.58 (33.1.49 available)
+  syncfusion_pdfviewer_macos 27.1.58 (33.1.49 available)
+  syncfusion_pdfviewer_platform_interface 27.1.58 (33.1.49 available)
+  syncfusion_pdfviewer_web 27.1.58 (33.1.49 available)
+  syncfusion_pdfviewer_windows 27.1.58 (33.1.49 available)
+  test_api 0.7.9 (0.7.11 available)
+  timezone 0.9.4 (0.11.0 available)
+  url_launcher 6.3.1 (6.3.2 available)
+  url_launcher_android 6.3.14 (6.3.29 available)
+  url_launcher_ios 6.3.1 (6.4.1 available)
+  url_launcher_linux 3.2.1 (3.2.2 available)
+  url_launcher_macos 3.2.1 (3.2.5 available)
+  url_launcher_web 2.3.3 (2.4.2 available)
+  url_launcher_windows 3.1.3 (3.1.5 available)
+  uuid 4.5.1 (4.5.3 available)
+  vector_math 2.2.0 (2.3.0 available)
+  vm_service 14.3.1 (15.1.0 available)
+  web 1.1.0 (1.1.1 available)
+  win32 5.8.0 (6.0.1 available)
+  win32_registry 1.1.5 (3.0.3 available)
+  xml 6.5.0 (6.6.1 available)
+Got dependencies!
+Dependencies are affected by security advisories:
+  [^0]: https://github.com/advisories/GHSA-3hpf-ff72-j67p
+119 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing app-user...                                           
+
+   info • The file name 'ApiFuntion.dart' isn't a lower_case_with_underscores identifier • lib/Api/ApiFuntion.dart:1:1 • file_names
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:59:49 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:69:22 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:79:20 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:142:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:146:24 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:156:22 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:165:20 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:219:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:229:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:234:24 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:244:22 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:253:20 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:309:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:318:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:323:24 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:333:22 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:342:20 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:429:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:448:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:460:49 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:467:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:477:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:489:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:505:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:514:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:522:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:573:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:580:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:605:46 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:611:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/Api/ApiFuntion.dart:637:41 • use_build_context_synchronously
+   info • Unnecessary instance of 'Container' • lib/Api/ApiFuntion.dart:645:18 • avoid_unnecessary_containers
+   info • The file name 'BaseActivity.dart' isn't a lower_case_with_underscores identifier • lib/Common/BaseActivity.dart:1:1 • file_names
+   info • Empty catch block • lib/Common/BaseActivity.dart:34:21 • empty_catches
+   info • Empty catch block • lib/Common/BaseActivity.dart:65:17 • empty_catches
+   info • Empty catch block • lib/Common/BaseActivity.dart:92:17 • empty_catches
+   info • Empty catch block • lib/Common/BaseActivity.dart:129:17 • empty_catches
+   info • The file name 'Color.dart' isn't a lower_case_with_underscores identifier • lib/Common/Color.dart:1:1 • file_names
+   info • The variable name 'base_color' isn't a lowerCamelCase identifier • lib/Common/Color.dart:4:14 • non_constant_identifier_names
+   info • The variable name 'base_light_color' isn't a lowerCamelCase identifier • lib/Common/Color.dart:5:14 • non_constant_identifier_names
+   info • The variable name 'start_color' isn't a lowerCamelCase identifier • lib/Common/Color.dart:6:14 • non_constant_identifier_names
+   info • The variable name 'base_color_int' isn't a lowerCamelCase identifier • lib/Common/Color.dart:7:14 • non_constant_identifier_names
+   info • The variable name 'start_color_int' isn't a lowerCamelCase identifier • lib/Common/Color.dart:8:14 • non_constant_identifier_names
+   info • The variable name 'list_fee' isn't a lowerCamelCase identifier • lib/Common/Color.dart:23:14 • non_constant_identifier_names
+   info • The variable name 'student_list' isn't a lowerCamelCase identifier • lib/Common/Color.dart:24:14 • non_constant_identifier_names
+   info • The variable name 'red_base' isn't a lowerCamelCase identifier • lib/Common/Color.dart:26:14 • non_constant_identifier_names
+   info • The variable name 'light_gray_base' isn't a lowerCamelCase identifier • lib/Common/Color.dart:28:14 • non_constant_identifier_names
+   info • The variable name 'light_gray_base_bg' isn't a lowerCamelCase identifier • lib/Common/Color.dart:29:14 • non_constant_identifier_names
+   info • The variable name 'middel_gray_base' isn't a lowerCamelCase identifier • lib/Common/Color.dart:30:14 • non_constant_identifier_names
+   info • The variable name 'dark_gray_base' isn't a lowerCamelCase identifier • lib/Common/Color.dart:31:14 • non_constant_identifier_names
+   info • The variable name 'light_browne' isn't a lowerCamelCase identifier • lib/Common/Color.dart:32:14 • non_constant_identifier_names
+   info • The file name 'CommonBean.dart' isn't a lower_case_with_underscores identifier • lib/Common/CommonBean.dart:1:1 • file_names
+   info • The file name 'CommonPopUp.dart' isn't a lower_case_with_underscores identifier • lib/Common/CommonPopUp.dart:1:1 • file_names
+warning • The value of the local variable 'formattedDate' isn't used • lib/Common/CommonPopUp.dart:187:14 • unused_local_variable
+warning • The value of the local variable 'formattedDate' isn't used • lib/Common/CommonPopUp.dart:229:14 • unused_local_variable
+   info • The file name 'CommonWidget.dart' isn't a lower_case_with_underscores identifier • lib/Common/CommonWidget.dart:1:1 • file_names
+   info • The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/cupertino.dart' • lib/Common/CommonWidget.dart:2:8 • unnecessary_import
+   info • The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart' • lib/Common/CommonWidget.dart:3:8 • unnecessary_import
+   info • The import of 'package:flutter/cupertino.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/Common/CommonWidget.dart:5:8 • unnecessary_import
+   info • The imported package 'html' isn't a dependency of the importing package • lib/Common/CommonWidget.dart:11:8 • depend_on_referenced_packages
+   info • The import of 'package:image_picker/image_picker.dart' is unnecessary because all of the used elements are also provided by the import of 'package:share_plus/share_plus.dart' • lib/Common/CommonWidget.dart:12:8 • unnecessary_import
+   info • Empty catch block • lib/Common/CommonWidget.dart:107:17 • empty_catches
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/CommonWidget.dart:124:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/CommonWidget.dart:128:35 • deprecated_member_use
+   info • Empty catch block • lib/Common/CommonWidget.dart:194:28 • empty_catches
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/CommonWidget.dart:204:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/CommonWidget.dart:234:59 • deprecated_member_use
+   info • Empty catch block • lib/Common/CommonWidget.dart:262:17 • empty_catches
+   info • Empty catch block • lib/Common/CommonWidget.dart:273:17 • empty_catches
+   info • Empty catch block • lib/Common/CommonWidget.dart:282:17 • empty_catches
+   info • The variable name 'getTextRich_value_bold' isn't a lowerCamelCase identifier • lib/Common/CommonWidget.dart:366:17 • non_constant_identifier_names
+   info • Don't use 'BuildContext's across async gaps • lib/Common/CommonWidget.dart:1327:17 • use_build_context_synchronously
+   info • Empty catch block • lib/Common/CommonWidget.dart:1435:20 • empty_catches
+   info • The file name 'Constant.dart' isn't a lower_case_with_underscores identifier • lib/Common/Constant.dart:1:1 • file_names
+   info • The variable name 'UserID' isn't a lowerCamelCase identifier • lib/Common/Constant.dart:48:17 • non_constant_identifier_names
+   info • The file name 'Constants.dart' isn't a lower_case_with_underscores identifier • lib/Common/Constants.dart:1:1 • file_names
+   info • The file name 'ContainerDecoration.dart' isn't a lower_case_with_underscores identifier • lib/Common/ContainerDecoration.dart:1:1 • file_names
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ContainerDecoration.dart:14:42 • deprecated_member_use
+   info • The file name 'ModernDesignSystem.dart' isn't a lower_case_with_underscores identifier • lib/Common/ModernDesignSystem.dart:1:1 • file_names
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:25:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:33:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:38:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:46:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:51:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:59:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:64:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:73:24 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:78:24 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:108:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:111:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ModernDesignSystem.dart:116:31 • deprecated_member_use
+   info • The file name 'ShimmerLoader.dart' isn't a lower_case_with_underscores identifier • lib/Common/ShimmerLoader.dart:1:1 • file_names
+warning • Unused import: 'Color.dart' • lib/Common/ShimmerLoader.dart:3:8 • unused_import
+warning • The value of the field '_carAccentColor' isn't used • lib/Common/ShimmerLoader.dart:9:22 • unused_field
+warning • The value of the field '_carNeutralColor' isn't used • lib/Common/ShimmerLoader.dart:10:22 • unused_field
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:61:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:143:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:144:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:203:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:313:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:391:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:392:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:400:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:401:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:407:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/ShimmerLoader.dart:415:37 • deprecated_member_use
+   info • The file name 'SimpleDesignSystem.dart' isn't a lower_case_with_underscores identifier • lib/Common/SimpleDesignSystem.dart:1:1 • file_names
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/SimpleDesignSystem.dart:35:31 • deprecated_member_use
+   info • The file name 'TourGuide.dart' isn't a lower_case_with_underscores identifier • lib/Common/TourGuide.dart:1:1 • file_names
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/TourGuide.dart:263:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/TourGuide.dart:299:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/Common/TourGuide.dart:396:30 • deprecated_member_use
+   info • The file name 'DilogBoxInterface.dart' isn't a lower_case_with_underscores identifier • lib/Interface/DilogBoxInterface.dart:1:1 • file_names
+   info • The file name 'ZoomImageList.dart' isn't a lower_case_with_underscores identifier • lib/ZoomImageList.dart:1:1 • file_names
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: ZoomableImageList.currentIndex, ZoomableImageList.funtion • lib/ZoomImageList.dart:8:7 • must_be_immutable
+   info • Invalid use of a private type in a public API • lib/ZoomImageList.dart:20:3 • library_private_types_in_public_api
+warning • The declaration '_shareImage' isn't referenced • lib/ZoomImageList.dart:131:8 • unused_element
+warning • The value of the local variable 'currentImageUrl' isn't used • lib/ZoomImageList.dart:133:11 • unused_local_variable
+   info • The file name 'SplashScreenActivity.dart' isn't a lower_case_with_underscores identifier • lib/features/SplashScreenActivity.dart:1:1 • file_names
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:49:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:53:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:63:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:68:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:69:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:72:11 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/features/SplashScreenActivity.dart:75:49 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:81:7 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/features/SplashScreenActivity.dart:95:45 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/features/SplashScreenActivity.dart:97:9 • avoid_print
+   info • Use 'const' with the constructor to improve performance • lib/features/SplashScreenActivity.dart:142:60 • prefer_const_constructors
+warning • Unused import: '../../../Common/CommonWidget.dart' • lib/features/booking/ui/booking_activity.dart:3:8 • unused_import
+warning • Unused import: '../../home_module/model/services_model_data.dart' • lib/features/booking/ui/booking_activity.dart:4:8 • unused_import
+warning • Unused import: '../../home_module/data_manager/home_data_manager.dart' • lib/features/booking/ui/booking_activity.dart:6:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking/ui/booking_activity.dart:78:47 • deprecated_member_use
+warning • The '!' will have no effect because the receiver can't be null • lib/features/booking/ui/booking_activity.dart:153:67 • unnecessary_non_null_assertion
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking/ui/booking_activity.dart:248:47 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/booking_model/data_model/booking_data_manager.dart:27:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/booking_model/data_model/booking_data_manager.dart:30:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/booking_model/data_model/booking_data_manager.dart:34:46 • use_build_context_synchronously
+warning • Unused import: 'package:url_launcher/url_launcher.dart' • lib/features/booking_model/ui/booking_activity.dart:10:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: BookingActivity.servicesData • lib/features/booking_model/ui/booking_activity.dart:21:7 • must_be_immutable
+   info • Don't use 'BuildContext's across async gaps • lib/features/booking_model/ui/booking_activity.dart:68:24 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:101:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:108:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:162:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:188:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:203:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:210:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:243:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:408:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:465:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:527:69 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/booking_model/ui/booking_activity.dart:986:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/booking_model/ui/booking_activity.dart:989:41 • use_build_context_synchronously
+warning • The left operand can't be null, so the right operand is never executed • lib/features/booking_model/ui/booking_activity.dart:1175:41 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/booking_model/ui/booking_activity.dart:1176:43 • dead_null_aware_expression
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:1262:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:1326:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:1329:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:1430:78 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_activity.dart:1437:69 • deprecated_member_use
+warning • The declaration '_getUnavailableReason' isn't referenced • lib/features/booking_model/ui/booking_activity.dart:1761:10 • unused_element
+warning • Unused import: '../../../Common/ContainerDecoration.dart' • lib/features/booking_model/ui/booking_list_activity.dart:13:8 • unused_import
+warning • Unused import: '../../rating_model/ui/rating_review_screen.dart' • lib/features/booking_model/ui/booking_list_activity.dart:14:8 • unused_import
+warning • The value of the local variable 'dateTime' isn't used • lib/features/booking_model/ui/booking_list_activity.dart:45:14 • unused_local_variable
+warning • The value of the local variable 'currentTimeZone' isn't used • lib/features/booking_model/ui/booking_list_activity.dart:46:18 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_list_activity.dart:191:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_list_activity.dart:284:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/booking_model/ui/booking_list_activity.dart:336:58 • deprecated_member_use
+warning • Unused import: '../../home_module/model/services_model_data.dart' • lib/features/bookmark_model/ui/bookmark_activity.dart:11:8 • unused_import
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:39:17 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:54:41 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:82:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:104:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:152:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:158:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:200:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:269:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:288:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:349:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/bookmark_model/ui/bookmark_activity.dart:370:38 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:442:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:443:19 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:445:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:453:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:454:19 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/bookmark_model/ui/bookmark_activity.dart:456:41 • use_build_context_synchronously
+warning • The declaration '_showOfflineMessage' isn't referenced • lib/features/bookmark_model/ui/bookmark_activity.dart:460:8 • unused_element
+   info • Invalid use of a private type in a public API • lib/features/categories_module/ui/all_categories_screen.dart:14:3 • library_private_types_in_public_api
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/all_categories_screen.dart:72:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/all_categories_screen.dart:180:35 • deprecated_member_use
+warning • Unused import: 'dart:math' • lib/features/categories_module/ui/categories_list_activity.dart:2:8 • unused_import
+warning • Unused import: 'package:car_app/features/categories_module/ui/sevice_list_screen.dart' • lib/features/categories_module/ui/categories_list_activity.dart:6:8 • unused_import
+warning • Unused import: '../../../Common/ShimmerLoader.dart' • lib/features/categories_module/ui/categories_list_activity.dart:14:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: CategoriesListActivity.categoryData • lib/features/categories_module/ui/categories_list_activity.dart:22:7 • must_be_immutable
+warning • The value of the local variable 'vendor' isn't used • lib/features/categories_module/ui/categories_list_activity.dart:103:16 • unused_local_variable
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/categories_module/ui/categories_list_activity.dart:130:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/categories_module/ui/categories_list_activity.dart:132:45 • use_build_context_synchronously
+warning • The value of the local variable 'beforeDistanceFilter' isn't used • lib/features/categories_module/ui/categories_list_activity.dart:185:11 • unused_local_variable
+warning • The value of the local variable 'beforeRatingFilter' isn't used • lib/features/categories_module/ui/categories_list_activity.dart:195:11 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/categories_list_activity.dart:433:51 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:660:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:661:19 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:663:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:671:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:672:19 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:674:41 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/categories_list_activity.dart:705:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/categories_list_activity.dart:796:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/categories_list_activity.dart:817:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/categories_list_activity.dart:834:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/categories_list_activity.dart:850:48 • deprecated_member_use
+warning • The declaration '_isCarRelatedCategory' isn't referenced • lib/features/categories_module/ui/categories_list_activity.dart:945:8 • unused_element
+warning • The declaration '_isServiceRelatedToCategory' isn't referenced • lib/features/categories_module/ui/categories_list_activity.dart:953:8 • unused_element
+warning • The declaration '_showVendorInfoBottomSheet' isn't referenced • lib/features/categories_module/ui/categories_list_activity.dart:975:8 • unused_element
+warning • The value of the local variable 'googleMapsUrl' isn't used • lib/features/categories_module/ui/categories_list_activity.dart:1529:11 • unused_local_variable
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:1551:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/categories_module/ui/categories_list_activity.dart:1554:41 • use_build_context_synchronously
+warning • The declaration '_showOfflineMessage' isn't referenced • lib/features/categories_module/ui/categories_list_activity.dart:1558:8 • unused_element
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: SeviceListScreen.items • lib/features/categories_module/ui/sevice_list_screen.dart:8:7 • must_be_immutable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/sevice_list_screen.dart:141:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/sevice_list_screen.dart:261:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/sevice_list_screen.dart:307:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/sevice_list_screen.dart:387:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/sevice_list_screen.dart:478:26 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/categories_module/ui/sevice_list_screen.dart:492:38 • deprecated_member_use
+warning • The declaration '_showGoogleVendorBottomSheet' isn't referenced • lib/features/categories_module/ui/sevice_list_screen.dart:503:8 • unused_element
+warning • The value of the local variable 'url' isn't used • lib/features/categories_module/ui/sevice_list_screen.dart:711:13 • unused_local_variable
+warning • The declaration '_showOfflineMessage' isn't referenced • lib/features/categories_module/ui/sevice_list_screen.dart:721:8 • unused_element
+warning • Unused import: 'package:car_app/features/log_in/ui/edit_user_details_activity.dart' • lib/features/dashboard_module/ui/dashboard_activity.dart:3:8 • unused_import
+warning • Unused import: 'package:convex_bottom_bar/convex_bottom_bar.dart' • lib/features/dashboard_module/ui/dashboard_activity.dart:7:8 • unused_import
+warning • Unused import: '../../../Common/ModernDesignSystem.dart' • lib/features/dashboard_module/ui/dashboard_activity.dart:14:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: DashboardActivity.currentIndex • lib/features/dashboard_module/ui/dashboard_activity.dart:18:7 • must_be_immutable
+   info • Don't use 'BuildContext's across async gaps • lib/features/dashboard_module/ui/dashboard_activity.dart:56:63 • use_build_context_synchronously
+   info • Empty catch block • lib/features/dashboard_module/ui/dashboard_activity.dart:117:17 • empty_catches
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/dashboard_module/ui/dashboard_activity.dart:174:33 • deprecated_member_use
+   info • Empty catch block • lib/features/dashboard_module/ui/dashboard_activity.dart:345:17 • empty_catches
+warning • Unused import: '../../home_module/model/services_model_data.dart' • lib/features/explore_module/ui/explore_activity.dart:15:8 • unused_import
+warning • Unused import: '../../booking/ui/booking_activity.dart' • lib/features/explore_module/ui/explore_activity.dart:18:8 • unused_import
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_activity.dart:297:17 • use_build_context_synchronously
+warning • The declaration '_isVendorMatchingFilter' isn't referenced • lib/features/explore_module/ui/explore_activity.dart:460:8 • unused_element
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/explore_module/ui/explore_activity.dart:531:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/explore_module/ui/explore_activity.dart:532:9 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_activity.dart:537:38 • use_build_context_synchronously
+warning • The value of the local variable 'isOffline' isn't used • lib/features/explore_module/ui/explore_activity.dart:548:12 • unused_local_variable
+   info • Empty catch block • lib/features/explore_module/ui/explore_activity.dart:623:17 • empty_catches
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:676:45 • deprecated_member_use
+   info • Unnecessary instance of 'Container' • lib/features/explore_module/ui/explore_activity.dart:1064:9 • avoid_unnecessary_containers
+warning • Dead code • lib/features/explore_module/ui/explore_activity.dart:1100:11 • dead_code
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:1190:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:1292:33 • deprecated_member_use
+warning • The '!' will have no effect because the receiver can't be null • lib/features/explore_module/ui/explore_activity.dart:1406:48 • unnecessary_non_null_assertion
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:1420:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:1422:63 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:1423:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_activity.dart:1473:68 • deprecated_member_use
+warning • The '!' will have no effect because the receiver can't be null • lib/features/explore_module/ui/explore_activity.dart:1582:50 • unnecessary_non_null_assertion
+   info • 'canLaunch' is deprecated and shouldn't be used. Use canLaunchUrl instead • lib/features/explore_module/ui/explore_activity.dart:1693:19 • deprecated_member_use
+   info • 'launch' is deprecated and shouldn't be used. Use launchUrl instead • lib/features/explore_module/ui/explore_activity.dart:1694:17 • deprecated_member_use
+   info • Empty catch block • lib/features/explore_module/ui/explore_activity.dart:1697:19 • empty_catches
+warning • The declaration '_showOfflineMessage' isn't referenced • lib/features/explore_module/ui/explore_activity.dart:1741:8 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:71:16 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:160:23 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:164:43 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_list_activity.dart:350:63 • deprecated_member_use
+  error • The getter 'averageRating' isn't defined for the type 'ServicesData' • lib/features/explore_module/ui/explore_list_activity.dart:414:60 • undefined_getter
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:454:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:455:18 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:457:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:465:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:466:18 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_activity.dart:468:41 • use_build_context_synchronously
+warning • The declaration '_showOfflineMessage' isn't referenced • lib/features/explore_module/ui/explore_list_activity.dart:472:8 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_list_activity.dart:520:69 • deprecated_member_use
+warning • Unused import: 'package:car_app/Api/ApiFuntion.dart' • lib/features/explore_module/ui/explore_list_map_activity.dart:3:8 • unused_import
+warning • Unused import: 'package:car_app/Common/CommonBean.dart' • lib/features/explore_module/ui/explore_list_map_activity.dart:4:8 • unused_import
+warning • Unused import: 'package:http/http.dart' • lib/features/explore_module/ui/explore_list_map_activity.dart:7:8 • unused_import
+warning • Unused import: 'package:url_launcher/url_launcher.dart' • lib/features/explore_module/ui/explore_list_map_activity.dart:13:8 • unused_import
+warning • Unused import: '../../categories_module/ui/sevice_list_screen.dart' • lib/features/explore_module/ui/explore_list_map_activity.dart:16:8 • unused_import
+warning • Unused import: '../model/location_list_model_bean.dart' • lib/features/explore_module/ui/explore_list_map_activity.dart:20:8 • unused_import
+warning • The value of the local variable 'storedLng' isn't used • lib/features/explore_module/ui/explore_list_map_activity.dart:98:11 • unused_local_variable
+warning • The '!' will have no effect because the receiver can't be null • lib/features/explore_module/ui/explore_list_map_activity.dart:103:41 • unnecessary_non_null_assertion
+warning • The value of the local variable 'isOffline' isn't used • lib/features/explore_module/ui/explore_list_map_activity.dart:235:20 • unused_local_variable
+   info • Statements in an if should be enclosed in a block • lib/features/explore_module/ui/explore_list_map_activity.dart:237:35 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/explore_module/ui/explore_list_map_activity.dart:237:61 • curly_braces_in_flow_control_structures
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_map_activity.dart:275:43 • use_build_context_synchronously
+warning • The value of the local variable 'serviceEnabled' isn't used • lib/features/explore_module/ui/explore_list_map_activity.dart:284:10 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/explore_module/ui/explore_list_map_activity.dart:550:77 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_map_activity.dart:628:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_map_activity.dart:635:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/explore_module/ui/explore_list_map_activity.dart:640:41 • use_build_context_synchronously
+   info • Empty catch block • lib/features/home_module/data_manager/home_data_manager.dart:291:23 • empty_catches
+warning • The declaration '_getCategoryFromTypes' isn't referenced • lib/features/home_module/model/mixed_vendor_data.dart:127:17 • unused_element
+warning • Unused import: 'dart:convert' • lib/features/home_module/ui/all_vendors_screen.dart:2:8 • unused_import
+   info • Invalid use of a private type in a public API • lib/features/home_module/ui/all_vendors_screen.dart:18:3 • library_private_types_in_public_api
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/all_vendors_screen.dart:91:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/all_vendors_screen.dart:92:9 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/all_vendors_screen.dart:398:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/all_vendors_screen.dart:399:33 • deprecated_member_use
+warning • The value of the local variable 'url' isn't used • lib/features/home_module/ui/all_vendors_screen.dart:599:11 • unused_local_variable
+warning • Unused import: 'package:car_app/features/categories_module/ui/sevice_list_screen.dart' • lib/features/home_module/ui/home_activity.dart:10:8 • unused_import
+warning • Unused import: 'package:car_app/features/booking/ui/booking_activity.dart' • lib/features/home_module/ui/home_activity.dart:15:8 • unused_import
+warning • Unused import: 'package:car_app/features/explore_module/ui/explore_list_map_activity.dart' • lib/features/home_module/ui/home_activity.dart:17:8 • unused_import
+warning • Unused import: 'package:car_app/features/categories_module/ui/all_categories_screen.dart' • lib/features/home_module/ui/home_activity.dart:23:8 • unused_import
+warning • Unused import: 'package:car_app/features/home_module/ui/location_picker_screen.dart' • lib/features/home_module/ui/home_activity.dart:24:8 • unused_import
+   info • The import of 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomplete_textfield.dart' is unnecessary because all of the used elements are also provided by the import of 'package:google_maps_places_autocomplete_widgets/address_autocomplete_widgets.dart' • lib/features/home_module/ui/home_activity.dart:31:8 • unnecessary_import
+warning • Unused import: '../../../Common/CommonBean.dart' • lib/features/home_module/ui/home_activity.dart:33:8 • unused_import
+warning • Duplicate import • lib/features/home_module/ui/home_activity.dart:34:8 • duplicate_import
+warning • Unused import: '../../categories_module/ui/sevice_list_screen.dart' • lib/features/home_module/ui/home_activity.dart:34:8 • unused_import
+warning • Duplicate import • lib/features/home_module/ui/home_activity.dart:41:8 • duplicate_import
+warning • The value of the field '_isSearching' isn't used • lib/features/home_module/ui/home_activity.dart:88:8 • unused_field
+warning • The value of the field '_isGettingLocation' isn't used • lib/features/home_module/ui/home_activity.dart:93:8 • unused_field
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:180:44 • use_build_context_synchronously
+warning • The declaration '_getCurrentLocation' isn't referenced • lib/features/home_module/ui/home_activity.dart:198:16 • unused_element
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/home_activity.dart:243:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/home_activity.dart:244:9 • deprecated_member_use
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/home_activity.dart:349:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/home_activity.dart:350:9 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:365:40 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:393:21 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:395:21 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:397:18 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:399:18 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:401:25 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:403:26 • use_build_context_synchronously
+warning • The declaration '_filterServices' isn't referenced • lib/features/home_module/ui/home_activity.dart:436:8 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:475:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:486:41 • use_build_context_synchronously
+warning • The declaration '_loadAllServices' isn't referenced • lib/features/home_module/ui/home_activity.dart:491:16 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:495:68 • use_build_context_synchronously
+warning • The value of the local variable 'vendor' isn't used • lib/features/home_module/ui/home_activity.dart:503:22 • unused_local_variable
+   info • Empty catch block • lib/features/home_module/ui/home_activity.dart:510:17 • empty_catches
+warning • The declaration '_extractAllServicesAndVendors' isn't referenced • lib/features/home_module/ui/home_activity.dart:515:17 • unused_element
+warning • The value of the local variable 'welcomeOpacity' isn't used • lib/features/home_module/ui/home_activity.dart:567:12 • unused_local_variable
+warning • The value of the local variable 'welcomeScale' isn't used • lib/features/home_module/ui/home_activity.dart:568:12 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:667:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1129:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1162:45 • deprecated_member_use
+warning • The declaration '_buildCategoryIcon' isn't referenced • lib/features/home_module/ui/home_activity.dart:1196:10 • unused_element
+warning • The declaration '_buildServiceCard' isn't referenced • lib/features/home_module/ui/home_activity.dart:1506:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1559:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1628:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1665:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1684:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1728:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1811:28 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1814:30 • deprecated_member_use
+warning • The declaration '_buildQuickActionCard' isn't referenced • lib/features/home_module/ui/home_activity.dart:1838:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1840:77 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1910:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1971:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1971:89 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:1975:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2019:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2020:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2021:40 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/home_module/ui/home_activity.dart:2032:38 • dead_null_aware_expression
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2048:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2057:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2088:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2096:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2110:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2113:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2140:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2143:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2252:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2279:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2296:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2311:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2349:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2377:51 • deprecated_member_use
+warning • The declaration '_buildOfferCard' isn't referenced • lib/features/home_module/ui/home_activity.dart:2429:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/home_activity.dart:2451:46 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2536:55 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2539:53 • use_build_context_synchronously
+warning • The declaration '_launchUrl' isn't referenced • lib/features/home_module/ui/home_activity.dart:2559:16 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2564:43 • use_build_context_synchronously
+   info • Empty catch block • lib/features/home_module/ui/home_activity.dart:2582:17 • empty_catches
+warning • The declaration '_openInMaps' isn't referenced • lib/features/home_module/ui/home_activity.dart:2719:16 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2740:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2743:41 • use_build_context_synchronously
+warning • The declaration '_toggleBookmark' isn't referenced • lib/features/home_module/ui/home_activity.dart:2747:16 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2757:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2759:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2769:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2771:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:2775:41 • use_build_context_synchronously
+warning • The declaration '_buildSearchingState' isn't referenced • lib/features/home_module/ui/home_activity.dart:2779:10 • unused_element
+warning • The declaration '_buildNoSearchResultsState' isn't referenced • lib/features/home_module/ui/home_activity.dart:2819:10 • unused_element
+warning • The declaration '_buildVendorsSection' isn't referenced • lib/features/home_module/ui/home_activity.dart:2861:10 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:3116:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:3119:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/home_module/ui/home_activity.dart:3127:43 • use_build_context_synchronously
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/location_picker_screen.dart:83:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/home_module/ui/location_picker_screen.dart:84:9 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/home_module/ui/location_picker_screen.dart:187:22 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/location_picker_screen.dart:244:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/location_picker_screen.dart:361:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/location_picker_screen.dart:364:56 • deprecated_member_use
+   info • Invalid use of a private type in a public API • lib/features/home_module/ui/search_results_screen.dart:18:3 • library_private_types_in_public_api
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/search_results_screen.dart:32:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/home_module/ui/search_results_screen.dart:139:33 • deprecated_member_use
+warning • The value of the local variable 'url' isn't used • lib/features/home_module/ui/search_results_screen.dart:337:11 • unused_local_variable
+warning • The declaration '_showOfflineMessage' isn't referenced • lib/features/home_module/ui/search_results_screen.dart:358:8 • unused_element
+   info • The file name 'LoginDataManager.dart' isn't a lower_case_with_underscores identifier • lib/features/log_in/data_manager/LoginDataManager.dart:1:1 • file_names
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/data_manager/LoginDataManager.dart:55:39 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/data_manager/LoginDataManager.dart:56:52 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/data_manager/LoginDataManager.dart:58:50 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/data_manager/LoginDataManager.dart:140:40 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/data_manager/LoginDataManager.dart:274:39 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/data_manager/LoginDataManager.dart:357:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/data_manager/LoginDataManager.dart:378:38 • use_build_context_synchronously
+   info • The variable name 'ForgotPasswordAPP' isn't a lowerCamelCase identifier • lib/features/log_in/data_manager/forgot_password_manager.dart:10:3 • non_constant_identifier_names
+   info • The variable name 'Schoolcode' isn't a lowerCamelCase identifier • lib/features/log_in/data_manager/forgot_password_manager.dart:10:50 • non_constant_identifier_names
+   info • The file name 'GenerateOTPModelBean.dart' isn't a lower_case_with_underscores identifier • lib/features/log_in/model/GenerateOTPModelBean.dart:1:1 • file_names
+   info • The file name 'VerifyOtpModelBean.dart' isn't a lower_case_with_underscores identifier • lib/features/log_in/model/VerifyOtpModelBean.dart:1:1 • file_names
+   info • The variable name 'tour_shown' isn't a lowerCamelCase identifier • lib/features/log_in/model/user_detail_model_bean.dart:49:9 • non_constant_identifier_names
+   info • The variable name 'tour_shown' isn't a lowerCamelCase identifier • lib/features/log_in/model/user_detail_model_bean.dart:72:14 • non_constant_identifier_names
+   info • The file name 'LoginActivity.dart' isn't a lower_case_with_underscores identifier • lib/features/log_in/ui/LoginActivity.dart:1:1 • file_names
+warning • Unused import: 'dart:convert' • lib/features/log_in/ui/LoginActivity.dart:2:8 • unused_import
+   info • The import of 'package:flutter/cupertino.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/features/log_in/ui/LoginActivity.dart:4:8 • unnecessary_import
+   info • The import of 'package:flutter/widgets.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/features/log_in/ui/LoginActivity.dart:6:8 • unnecessary_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: LoginActivity.title • lib/features/log_in/ui/LoginActivity.dart:19:7 • must_be_immutable
+   info • Empty catch block • lib/features/log_in/ui/LoginActivity.dart:51:14 • empty_catches
+warning • The value of the local variable 'serviceEnabled' isn't used • lib/features/log_in/ui/LoginActivity.dart:156:10 • unused_local_variable
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/LoginActivity.dart:238:41 • use_build_context_synchronously
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/edit_user_details_activity.dart:91:52 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/edit_user_details_activity.dart:94:77 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/edit_user_details_activity.dart:98:64 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:107:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:108:44 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:110:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:156:49 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:157:32 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:161:15 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:170:51 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:171:34 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:175:17 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:182:49 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:183:32 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:187:15 • use_build_context_synchronously
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/log_in/ui/edit_user_details_activity.dart:193:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/log_in/ui/edit_user_details_activity.dart:194:9 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:224:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:225:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:229:13 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:232:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:233:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/edit_user_details_activity.dart:237:13 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:252:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:265:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:268:25 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:272:23 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/edit_user_details_activity.dart:290:41 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/edit_user_details_activity.dart:361:62 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/edit_user_details_activity.dart:378:43 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/edit_user_details_activity.dart:393:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/edit_user_details_activity.dart:553:68 • deprecated_member_use
+   info • Statements in an if should be enclosed in a block • lib/features/log_in/ui/forgot_password_activity.dart:103:25 • curly_braces_in_flow_control_structures
+   info • The variable name 'ForgotPasswordAPP' isn't a lowerCamelCase identifier • lib/features/log_in/ui/forgot_password_activity.dart:118:3 • non_constant_identifier_names
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/forgot_password_activity.dart:123:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/forgot_password_activity.dart:137:11 • use_build_context_synchronously
+warning • Unused import: 'dart:io' • lib/features/log_in/ui/iotp_screen_activity.dart:3:8 • unused_import
+warning • Unused import: 'package:car_app/Common/Constants.dart' • lib/features/log_in/ui/iotp_screen_activity.dart:7:8 • unused_import
+   info • The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/features/log_in/ui/iotp_screen_activity.dart:11:8 • unnecessary_import
+warning • Unused import: 'package:http/http.dart' • lib/features/log_in/ui/iotp_screen_activity.dart:13:8 • unused_import
+warning • Unused import: 'package:package_info_plus/package_info_plus.dart' • lib/features/log_in/ui/iotp_screen_activity.dart:14:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: OTPScreenActivity.data, OTPScreenActivity.mobileNo • lib/features/log_in/ui/iotp_screen_activity.dart:24:7 • must_be_immutable
+warning • The value of the field '_fieldTwo' isn't used • lib/features/log_in/ui/iotp_screen_activity.dart:36:31 • unused_field
+warning • The value of the field '_fieldThree' isn't used • lib/features/log_in/ui/iotp_screen_activity.dart:37:31 • unused_field
+warning • The value of the field '_fieldFour' isn't used • lib/features/log_in/ui/iotp_screen_activity.dart:38:31 • unused_field
+warning • The value of the field '_fieldFive' isn't used • lib/features/log_in/ui/iotp_screen_activity.dart:39:31 • unused_field
+warning • The value of the field '_fieldSix' isn't used • lib/features/log_in/ui/iotp_screen_activity.dart:40:31 • unused_field
+warning • The value of the field '_isPasswordVisible' isn't used • lib/features/log_in/ui/iotp_screen_activity.dart:45:14 • unused_field
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:128:41 • use_build_context_synchronously
+   info • 'WillPopScope' is deprecated and shouldn't be used. Use PopScope instead. The Android predictive back feature will not work with WillPopScope. This feature was deprecated after v3.12.0-1.0.pre • lib/features/log_in/ui/iotp_screen_activity.dart:134:12 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/features/log_in/ui/iotp_screen_activity.dart:190:36 • prefer_const_constructors
+   info • Unnecessary use of string interpolation • lib/features/log_in/ui/iotp_screen_activity.dart:199:39 • unnecessary_string_interpolations
+   info • Use 'const' with the constructor to improve performance • lib/features/log_in/ui/iotp_screen_activity.dart:200:40 • prefer_const_constructors
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:417:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:422:43 • use_build_context_synchronously
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/iotp_screen_activity.dart:434:59 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:435:15 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:444:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:446:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:448:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:452:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:461:41 • use_build_context_synchronously
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/iotp_screen_activity.dart:474:52 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/iotp_screen_activity.dart:477:77 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/iotp_screen_activity.dart:481:64 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/iotp_screen_activity.dart:483:68 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:498:39 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:500:46 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:504:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/iotp_screen_activity.dart:507:41 • use_build_context_synchronously
+warning • Unused import: '../model/GenerateOTPModelBean.dart' • lib/features/log_in/ui/new_login_activity.dart:14:8 • unused_import
+   info • The private field _auth could be 'final' • lib/features/log_in/ui/new_login_activity.dart:36:16 • prefer_final_fields
+   info • 'WillPopScope' is deprecated and shouldn't be used. Use PopScope instead. The Android predictive back feature will not work with WillPopScope. This feature was deprecated after v3.12.0-1.0.pre • lib/features/log_in/ui/new_login_activity.dart:82:12 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/new_login_activity.dart:114:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/new_login_activity.dart:130:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/new_login_activity.dart:142:49 • deprecated_member_use
+   info • Unnecessary braces in a string interpolation • lib/features/log_in/ui/new_login_activity.dart:441:45 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/features/log_in/ui/new_login_activity.dart:441:58 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/features/log_in/ui/new_login_activity.dart:441:82 • unnecessary_brace_in_string_interps
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/new_login_activity.dart:506:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/new_login_activity.dart:556:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/new_login_activity.dart:591:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/new_login_activity.dart:607:80 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/new_login_activity.dart:641:52 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/new_login_activity.dart:662:41 • use_build_context_synchronously
+   info • The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/features/log_in/ui/profile_activity.dart:4:8 • unnecessary_import
+warning • Unused import: '../../../Common/CommonPopUp.dart' • lib/features/log_in/ui/profile_activity.dart:14:8 • unused_import
+warning • Unused import: '../../../Common/ContainerDecoration.dart' • lib/features/log_in/ui/profile_activity.dart:17:8 • unused_import
+warning • Unused import: '../../home_module/model/services_model_data.dart' • lib/features/log_in/ui/profile_activity.dart:25:8 • unused_import
+warning • Unused import: '../../specialists_module/ui/all_packages_screen.dart' • lib/features/log_in/ui/profile_activity.dart:27:8 • unused_import
+warning • Unused import: '../../specialists_module/ui/all_offers_screen.dart' • lib/features/log_in/ui/profile_activity.dart:28:8 • unused_import
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/profile_activity.dart:91:13 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/profile_activity.dart:92:15 • use_build_context_synchronously
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:133:56 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:136:81 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:140:68 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:142:72 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:209:52 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:212:77 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:216:64 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:218:68 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/profile_activity.dart:227:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/profile_activity.dart:233:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:250:32 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:252:15 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:262:34 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:264:17 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:272:32 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:274:15 • use_build_context_synchronously
+   info • 'desiredAccuracy' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/log_in/ui/profile_activity.dart:280:9 • deprecated_member_use
+   info • 'timeLimit' is deprecated and shouldn't be used. use settings parameter with AndroidSettings, AppleSettings, WebSettings, or LocationSettings • lib/features/log_in/ui/profile_activity.dart:281:9 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:308:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:310:13 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:314:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:315:32 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:318:13 • use_build_context_synchronously
+warning • The value of the local variable 'screenHeight' isn't used • lib/features/log_in/ui/profile_activity.dart:367:11 • unused_local_variable
+warning • The value of the local variable 'statusBarHeight' isn't used • lib/features/log_in/ui/profile_activity.dart:368:11 • unused_local_variable
+   info • Empty catch block • lib/features/log_in/ui/profile_activity.dart:401:30 • empty_catches
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:430:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:446:64 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:463:72 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/log_in/ui/profile_activity.dart:483:49 • use_build_context_synchronously
+warning • The declaration '_buildModernTextField' isn't referenced • lib/features/log_in/ui/profile_activity.dart:683:10 • unused_element
+warning • The declaration '_buildPackagesSection' isn't referenced • lib/features/log_in/ui/profile_activity.dart:786:10 • unused_element
+warning • The value of the local variable 'safeAreaPadding' isn't used • lib/features/log_in/ui/profile_activity.dart:789:11 • unused_local_variable
+   info • Use 'const' for final variables initialized to a constant value • lib/features/log_in/ui/profile_activity.dart:792:5 • prefer_const_declarations
+warning • The declaration '_buildPersonalDetailsCard' isn't referenced • lib/features/log_in/ui/profile_activity.dart:881:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:888:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:902:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:903:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:946:64 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/log_in/ui/profile_activity.dart:963:64 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/profile_activity.dart:983:41 • use_build_context_synchronously
+warning • The declaration '_buildOffersSection' isn't referenced • lib/features/log_in/ui/profile_activity.dart:1063:10 • unused_element
+warning • The value of the local variable 'safeAreaPadding' isn't used • lib/features/log_in/ui/profile_activity.dart:1066:11 • unused_local_variable
+   info • Use 'const' for final variables initialized to a constant value • lib/features/log_in/ui/profile_activity.dart:1069:5 • prefer_const_declarations
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:1205:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:1232:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:1249:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:1264:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:1302:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_activity.dart:1330:51 • deprecated_member_use
+warning • The declaration '_buildOfferCard' isn't referenced • lib/features/log_in/ui/profile_activity.dart:1382:10 • unused_element
+   info • Empty catch block • lib/features/log_in/ui/profile_view_activity.dart:41:17 • empty_catches
+   info • Don't use 'BuildContext's across async gaps • lib/features/log_in/ui/profile_view_activity.dart:54:61 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_view_activity.dart:133:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_view_activity.dart:165:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/log_in/ui/profile_view_activity.dart:179:70 • deprecated_member_use
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: NotificationActivity.notificationsList • lib/features/notification_model/ui/notification_activity.dart:6:7 • must_be_immutable
+   info • The file name 'RatingReviewDataManager.dart' isn't a lower_case_with_underscores identifier • lib/features/rating_model/data_manager/RatingReviewDataManager.dart:1:1 • file_names
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: RatingReviewScreen.servicesDetailsData • lib/features/rating_model/ui/rating_review_screen.dart:17:7 • must_be_immutable
+warning • The left operand can't be null, so the right operand is never executed • lib/features/rating_model/ui/rating_review_screen.dart:173:71 • dead_null_aware_expression
+   info • Don't use 'BuildContext's across async gaps • lib/features/rating_model/ui/rating_review_screen.dart:202:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/rating_model/ui/rating_review_screen.dart:205:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/rating_model/ui/rating_review_screen.dart:213:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/rating_model/ui/rating_review_screen.dart:217:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/rating_model/ui/rating_review_screen.dart:242:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/data_manager/specialists_data_manager.dart:38:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/data_manager/specialists_data_manager.dart:41:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/data_manager/specialists_data_manager.dart:45:46 • use_build_context_synchronously
+   info • Invalid use of a private type in a public API • lib/features/specialists_module/ui/all_offers_screen.dart:20:3 • library_private_types_in_public_api
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:136:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:176:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:189:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:193:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:229:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:269:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:283:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_offers_screen.dart:289:55 • deprecated_member_use
+   info • Empty catch block • lib/features/specialists_module/ui/all_offers_screen.dart:384:20 • empty_catches
+warning • The declaration '_claimOffer' isn't referenced • lib/features/specialists_module/ui/all_offers_screen.dart:390:8 • unused_element
+   info • Invalid use of a private type in a public API • lib/features/specialists_module/ui/all_packages_screen.dart:27:3 • library_private_types_in_public_api
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/all_packages_screen.dart:261:33 • deprecated_member_use
+warning • Unused import: 'package:car_app/Common/Color.dart' • lib/features/specialists_module/ui/offer_list_widget.dart:2:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: OfferListWidget.offers • lib/features/specialists_module/ui/offer_list_widget.dart:6:7 • must_be_immutable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:92:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:132:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:145:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:149:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:185:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:225:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:239:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/offer_list_widget.dart:245:55 • deprecated_member_use
+warning • Unused import: 'offer_list_widget.dart' • lib/features/specialists_module/ui/specialists_activity.dart:18:8 • unused_import
+warning • Unused import: 'all_packages_screen.dart' • lib/features/specialists_module/ui/specialists_activity.dart:19:8 • unused_import
+warning • Unused import: 'all_offers_screen.dart' • lib/features/specialists_module/ui/specialists_activity.dart:20:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: SpecialistsActivity.servicesData • lib/features/specialists_module/ui/specialists_activity.dart:23:7 • must_be_immutable
+warning • The value of the field '_packagesError' isn't used • lib/features/specialists_module/ui/specialists_activity.dart:42:11 • unused_field
+warning • The declaration '_buildEnhancedHeader' isn't referenced • lib/features/specialists_module/ui/specialists_activity.dart:231:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:276:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:278:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:294:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:302:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:357:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:466:65 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:490:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:491:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:559:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:561:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:608:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:645:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:649:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:669:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:673:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:702:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:723:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:748:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:782:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:838:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:844:54 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/specialists_module/ui/specialists_activity.dart:1006:57 • dead_null_aware_expression
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1030:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1071:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1089:36 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/specialists_module/ui/specialists_activity.dart:1168:61 • dead_null_aware_expression
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1264:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1336:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1339:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1375:48 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:1474:74 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:1477:72 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1522:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1613:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1616:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1647:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:1972:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2064:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2089:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2109:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2118:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2135:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2156:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2186:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2242:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2306:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2335:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2386:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2389:40 • deprecated_member_use
+warning • The declaration '_buildPackageCard' isn't referenced • lib/features/specialists_module/ui/specialists_activity.dart:2412:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2423:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2426:24 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2438:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2551:48 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/features/specialists_module/ui/specialists_activity.dart:2619:57 • dead_null_aware_expression
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2652:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2739:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2784:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2793:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2810:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2827:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2878:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2921:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:2978:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3039:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3105:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3187:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3209:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3210:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3216:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3222:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/specialists_module/ui/specialists_activity.dart:3235:43 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:3301:45 • use_build_context_synchronously
+warning • The '!' will have no effect because the receiver can't be null • lib/features/specialists_module/ui/specialists_activity.dart:3325:69 • unnecessary_non_null_assertion
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:3336:49 • use_build_context_synchronously
+warning • The '!' will have no effect because the receiver can't be null • lib/features/specialists_module/ui/specialists_activity.dart:3348:67 • unnecessary_non_null_assertion
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:3365:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:3382:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/specialists_module/ui/specialists_activity.dart:3384:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/ui/specialists_activity.dart:3462:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/ui/specialists_activity.dart:3464:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/ui/specialists_activity.dart:3474:47 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/ui/specialists_activity.dart:3476:45 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/specialists_module/ui/specialists_activity.dart:3480:41 • use_build_context_synchronously
+
+701 issues found. (ran in 2.2s)

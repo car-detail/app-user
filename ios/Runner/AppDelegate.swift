@@ -3,6 +3,7 @@ import UIKit
 import GoogleMaps
 import FirebaseCore
 import FirebaseAuth
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -12,12 +13,10 @@ import FirebaseAuth
   ) -> Bool {
     FirebaseApp.configure()
     GMSServices.provideAPIKey("AIzaSyBFtrosISezP-8z2NwTWKhD_5pNHoi0wRw")
-    
-    // Set notification delegate to handle foreground notifications
     if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+      UNUserNotificationCenter.current().delegate = self
     }
-    
+    application.registerForRemoteNotifications()
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart';
@@ -21,16 +23,20 @@ class BookingDataManager {
       try {
         var response = await apiFuntions.getdatauser(context, "v1/services/vendor/$id");
         if (response.statusCode == 200) {
+          // If data is an empty list, $id is a service ID not a vendor ID — fall back
+          try {
+            final body = jsonDecode(response.body);
+            if (body['data'] is List && (body['data'] as List).isEmpty) {
+              return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id");
+            }
+          } catch (_) {}
           return response;
         } else if (response.statusCode == 400) {
-          // If vendor services returns 400, try service-details
           return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id");
         } else {
-          // For other errors, try service-details as fallback
           return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id");
         }
       } catch (e) {
-        // If vendor services fails, try service-details
         return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id");
       }
     } catch (e) {
@@ -42,7 +48,7 @@ class BookingDataManager {
   postBooking(
       BuildContext context,
       String vendorId,
-      String serviceId,
+      List<String> serviceIds,
       String price,
       String date,
       String time,
@@ -50,7 +56,7 @@ class BookingDataManager {
       {String? packageId, String? packageName, int? packagePrice}) {
     Map<String, dynamic> bookingData = {
       "vendorId": vendorId,
-      "serviceId": serviceId,
+      "serviceIds": serviceIds,
       "price": price,
       "date": date,
       "timeSlot": time,

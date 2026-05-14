@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'Color.dart';
+import 'Constant.dart';
 import '../features/dashboard_module/ui/dashboard_activity.dart';
 
 class CommonWidget {
@@ -47,7 +48,8 @@ class CommonWidget {
     return formattedTime;
   }
   static String convertToLocalTime(String timeRange, {String sourceTimeZone = "UTC"}) {
-    List<String> times = timeRange.split(" - ");
+    if (timeRange.isEmpty) return "";
+    List<String> times = timeRange.split("-").map((e) => e.trim()).toList();
     if (times.length != 2) {
       return "Invalid time range format";
     }
@@ -69,7 +71,8 @@ class CommonWidget {
   }
 
   static String convertToLocalTime24(String timeRange, {String sourceTimeZone = "UTC"}) {
-    List<String> times = timeRange.split(" - ");
+    if (timeRange.isEmpty) return "";
+    List<String> times = timeRange.split("-").map((e) => e.trim()).toList();
     if (times.length != 2) {
       return "Invalid time range format";
     }
@@ -84,6 +87,52 @@ class CommonWidget {
     String formattedEnd = DateFormat('HH:mm').format(localEnd);
 
     return "$formattedStart-$formattedEnd";
+  }
+
+  static String formatTimeSlot(String timeRange) {
+    if (timeRange.isEmpty) return "";
+    List<String> times = timeRange.split("-").map((e) => e.trim()).toList();
+    if (times.length != 2) {
+      return timeRange; // Return as is if format is unexpected
+    }
+    try {
+      // Parse HH:mm without timezone shifting
+      final now = DateTime.now();
+      final datePart = now.toIso8601String().split('T')[0];
+      
+      // Parse as UTC and convert to device local time for display
+      DateTime start = DateTime.parse("${datePart}T${times[0]}:00Z").toLocal();
+      DateTime end = DateTime.parse("${datePart}T${times[1]}:00Z").toLocal();
+      
+      String formattedStart = DateFormat('hh:mm a').format(start);
+      String formattedEnd = DateFormat('hh:mm a').format(end);
+
+      return "$formattedStart-$formattedEnd";
+    } catch (e) {
+      return timeRange;
+    }
+  }
+  static String formatTimeAgo(String? dateTimeString) {
+    if (dateTimeString == null || dateTimeString.isEmpty) return "";
+    try {
+      DateTime dateTime = DateTime.parse(dateTimeString).toLocal();
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inSeconds < 60) {
+        return "Just now";
+      } else if (difference.inMinutes < 60) {
+        return "${difference.inMinutes}m ago";
+      } else if (difference.inHours < 24) {
+        return "${difference.inHours}h ago";
+      } else if (difference.inDays < 7) {
+        return "${difference.inDays}d ago";
+      } else {
+        return DateFormat('dd MMM yyyy').format(dateTime);
+      }
+    } catch (e) {
+      return "";
+    }
   }
   static String getImagePath(String imageName) {
     return "assets/images/$imageName";
@@ -588,7 +637,17 @@ class CommonWidget {
         Container(
           height: 90,
           width: double.infinity,
-          color: ColorClass.base_color,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF166534),
+                Color(0xFF1CB273),
+                Color(0xFF00E676),
+              ],
+            ),
+          ),
         ),
         Container(
           margin: const EdgeInsets.only(top: 45, left: 10),
@@ -1413,7 +1472,7 @@ class CommonWidget {
     }
     try {
     DateTime dateTime = DateTime.parse(date);
-    String formattedDate = DateFormat("dd MMM yyyy").format(dateTime);
+    String formattedDate = DateFormat(Constant.dateFormatDigits).format(dateTime);
     return formattedDate;
     } catch (e) {
       // Try to handle common date formats
@@ -1421,14 +1480,14 @@ class CommonWidget {
         // Try ISO 8601 format
         if (date.contains('T')) {
           DateTime dateTime = DateTime.parse(date.split('T')[0]);
-          return DateFormat("dd MMM yyyy").format(dateTime);
+          return DateFormat(Constant.dateFormatDigits).format(dateTime);
         }
         // Try timestamp format
         if (date.contains(RegExp(r'^\d+$'))) {
           int timestamp = int.tryParse(date) ?? 0;
           if (timestamp > 0) {
             DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-            return DateFormat("dd MMM yyyy").format(dateTime);
+            return DateFormat(Constant.dateFormatDigits).format(dateTime);
           }
         }
       } catch (e2) {

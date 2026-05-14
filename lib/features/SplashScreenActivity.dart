@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 
 import 'package:flutter/material.dart';
@@ -35,7 +36,12 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
     // Initialize Firebase Messaging and get token
     try {
       FirebaseMessaging messaging = FirebaseMessaging.instance;
-      
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       // Request permission
       NotificationSettings settings = await messaging.requestPermission(
         alert: true,
@@ -49,13 +55,24 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
       print('User granted permission: ${settings.authorizationStatus}');
 
       // Get Token
+      if (Platform.isIOS) {
+        String? apnsToken = await messaging.getAPNSToken();
+        print("🔔 iOS APNS Token: $apnsToken");
+        // If APNS token is null, FCM getToken() will fail on iOS
+        if (apnsToken == null) {
+          print("⚠️ APNS token is null. FCM registration might fail. Ensure Push Notifications capability is added in Xcode.");
+        }
+      }
+
       String? token = await messaging.getToken();
-      print("FCM Token: $token");
-      
+      print("🔔 FCM Token: $token");
+
       if (token != null) {
         sharedPreferences!.setString(Constant.fbtoken, token);
+      } else {
+        print("❌ FCM Token is null!");
       }
-      
+
       // Listen to token refresh
       messaging.onTokenRefresh.listen((fcmToken) {
         sharedPreferences!.setString(Constant.fbtoken, fcmToken);

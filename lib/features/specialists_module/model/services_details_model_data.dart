@@ -107,9 +107,14 @@ class ServicesDetailsData {
           ? Location.fromJson(json['location'])
           : null;
       createdBy = json['createdBy']?.toString();
-      vendorId = json['vendorId'] != null
-          ? VendorId.fromJson(json['vendorId'])
-          : null;
+      if (json['vendorId'] != null) {
+        if (json['vendorId'] is Map) {
+          vendorId = VendorId.fromJson(json['vendorId']);
+        } else {
+          // vendorId is a plain String ID — populate only sId
+          vendorId = VendorId()..sId = json['vendorId'].toString();
+        }
+      }
       promotionPlanPrice = json['promotionPlanPrice'] is int ? json['promotionPlanPrice'] : int.tryParse(json['promotionPlanPrice']?.toString() ?? '0');
       promotionSerialNumber = json['promotionSerialNumber'] is int ? json['promotionSerialNumber'] : int.tryParse(json['promotionSerialNumber']?.toString() ?? '0');
       isActive = json['isActive'] is bool ? json['isActive'] : json['isActive']?.toString().toLowerCase() == 'true';
@@ -152,21 +157,33 @@ class ServicesDetailsData {
       }
       id = json['id']?.toString();
     } catch (e) {
-      // Set default values to prevent crashes
+      // Recover key fields from raw json; only fall back to defaults for unknowns
       sId = json['_id']?.toString();
-      serviceTitle = "Service";
-      about = "";
-      timeSlotCapacity = "1";
-      price = 0;
-      serviceDuration = "1 hour";
-      categoryName = "Car Service";
-      categoryId = "";
-      detailImages = [];
-      coverImage = "";
-      mobile = "";
+      serviceTitle = json['serviceTitle']?.toString() ?? "Service";
+      about = json['about']?.toString() ?? "";
+      timeSlotCapacity = json['timeSlotCapacity']?.toString() ?? "1";
+      price = json['price'] is int ? json['price'] : int.tryParse(json['price']?.toString() ?? '0') ?? 0;
+      serviceDuration = json['serviceDuration']?.toString() ?? "1 hour";
+      categoryName = json['categoryName']?.toString() ?? "Car Service";
+      categoryId = json['categoryId']?.toString() ?? "";
+      detailImages = json['detailImages'] != null
+          ? List<String>.from(json['detailImages'].whereType<String>())
+          : [];
+      coverImage = json['coverImage']?.toString() ?? json['serviceImage']?.toString() ?? "";
+      mobile = json['mobile']?.toString() ?? "";
       location = null;
-      createdBy = "";
-      vendorId = null;
+      createdBy = json['createdBy']?.toString() ?? "";
+      try {
+        if (json['vendorId'] != null) {
+          if (json['vendorId'] is Map) {
+            vendorId = VendorId.fromJson(json['vendorId']);
+          } else {
+            vendorId = VendorId()..sId = json['vendorId'].toString();
+          }
+        }
+      } catch (_) {
+        vendorId = null;
+      }
       promotionPlanPrice = 0;
       promotionSerialNumber = 0;
       isActive = true;

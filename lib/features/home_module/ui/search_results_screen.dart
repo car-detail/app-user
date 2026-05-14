@@ -24,8 +24,18 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: ColorClass.base_color,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        toolbarHeight: 48,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+            ),
+          ),
+        ),
         leading: CommonWidget.buildAppBarBackButton(
           context,
           backgroundColor: Colors.white.withOpacity(0.2),
@@ -39,10 +49,23 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             fontSize: 18,
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            padding: const EdgeInsets.all(16),
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF166534),
+                  Color(0xFF1CB273),
+                  Color(0xFF00E676),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
             child: Text(
               "Found ${widget.searchResults.length} results for \"${widget.searchQuery}\"",
               style: const TextStyle(
@@ -52,11 +75,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               ),
             ),
           ),
-        ),
+          Expanded(
+            child: widget.searchResults.isEmpty
+                ? _buildNoResultsState()
+                : _buildSearchResults(),
+          ),
+        ],
       ),
-      body: widget.searchResults.isEmpty
-          ? _buildNoResultsState()
-          : _buildSearchResults(),
     );
   }
 
@@ -122,15 +147,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Widget _buildVendorCard(MixedVendorData vendor) {
-    // Check if vendor is offline (only for app vendors)
-    final isOffline = vendor.isAppVendor && !vendor.isOpen;
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isOffline ? Colors.grey[100] : Colors.white,
+        color: vendor.isOpen ? Colors.white : Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
-        border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
+        border: vendor.isOpen ? null : Border.all(color: Colors.grey[300]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -183,30 +205,28 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontFamily: "Pop600",
-                          color: isOffline ? Colors.grey[600] : Colors.black87,
+                          color: vendor.isOpen ? Colors.black87 : Colors.grey[600],
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // OFFLINE badge
-                    if (isOffline)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'OFFLINE',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.red[700],
-                            fontWeight: FontWeight.w600,
-                          ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: vendor.isOpen ? Colors.green[100] : Colors.red[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        vendor.isOpen ? "OPEN NOW" : "CLOSED",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontFamily: "Pop600",
+                          color: vendor.isOpen ? Colors.green[700] : Colors.red[700],
                         ),
                       ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -254,12 +274,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // Prevent navigation for offline vendors
-                          if (isOffline) {
-                            _showOfflineMessage(context);
-                            return;
-                          }
-                          
                           if (vendor.isAppVendor) {
                             CommonWidget.navigateToScreen(
                               context,

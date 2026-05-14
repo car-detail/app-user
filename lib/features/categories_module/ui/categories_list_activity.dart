@@ -415,7 +415,17 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
             duration: const Duration(milliseconds: 100),
             height: toolbarHeight,
             child: Container(
-            color: ColorClass.base_color,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF166534),
+                    Color(0xFF1CB273),
+                    Color(0xFF00E676),
+                  ],
+                ),
+              ),
               padding: const EdgeInsets.only(top: 45, bottom: 10),
             child: Stack(
               children: [
@@ -426,11 +436,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       height: 200,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                           colors: [
-                            ColorClass.base_color,
-                            ColorClass.base_color.withOpacity(0.8),
+                            const Color(0xFF166534),
+                            const Color(0xFF1CB273).withOpacity(0.8),
                           ],
                         ),
                       ),
@@ -681,12 +691,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
     
     return GestureDetector(
       onTap: () {
-        
-        // Prevent navigation for offline vendors
-        if (isOffline) {
-          _showOfflineMessage();
-          return;
-        }
         
         if (vendor.isAppVendor) {
           // For app vendors, navigate directly to vendor details page

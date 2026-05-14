@@ -46,6 +46,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
 
   Future<void> _initialize() async {
     _sharedPreferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
     _dataManager = SpecialistsDataManager(_sharedPreferences!);
     await _loadPackages(showLoader: packages.isEmpty);
   }
@@ -72,6 +73,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
       }
 
       final response = await _dataManager!.getVendorPackages(context, widget.vendorId);
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         if (jsonData['status'] == "success") {
@@ -96,29 +98,40 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
         });
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-        packages = [];
-        errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          packages = [];
+          errorMessage = e.toString();
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: ColorClass.base_color,
-        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: ColorClass.base_color,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+            ),
+          ),
+        ),
         leading: CommonWidget.buildGreenHeaderBackButton(context),
         title: Text(
           "Packages - ${widget.vendorName}",

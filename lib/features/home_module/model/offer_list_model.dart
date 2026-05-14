@@ -93,7 +93,7 @@ class OfferListModelData {
     validUntil = json['validUntil'];
     updatedAt = json['updatedAt'];
     iV = json['__v'];
-    distance = json['distance'];
+    distance = json['distance']?.toDouble();
   }
 
   Map<String, dynamic> toJson() {

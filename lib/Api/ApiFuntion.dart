@@ -15,7 +15,7 @@ import '../features/log_in/ui/new_login_activity.dart';
 class ApiFuntions {
   Future<http.Response> getdatauser(BuildContext context, String endpoint,
       {/*String token = ""*/ bool cycle = true}) async {
-    FocusManager.instance.primaryFocus?.unfocus();
+    
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
     try {
@@ -54,9 +54,19 @@ class ApiFuntions {
         } else {
           try {
             Map<String, dynamic> message = (jsonDecode(response.body));
-            if (message['message'] != null && message['message'] is List && (message['message'] as List).isNotEmpty) {
-              var mes = message['message'][0];
-              CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+            String errorMessage = "";
+            if (message['message'] != null) {
+              if (message['message'] is List && (message['message'] as List).isNotEmpty) {
+                errorMessage = (message['message'] as List)[0].toString();
+              } else if (message['message'] is List && (message['message'] as List).isEmpty) {
+                errorMessage = "An error occurred";
+              } else {
+                errorMessage = message['message'].toString();
+              }
+            }
+            
+            if (context.mounted && errorMessage.isNotEmpty) {
+              CommonWidget.errorShowSnackBarFor(context, "$errorMessage Error Code");
             }
           } catch (e) {
             debugPrint("Error parsing error response: $e");
@@ -66,7 +76,7 @@ class ApiFuntions {
         }
       } else {
         debugPrint("Check Network Connection");
-        showSnackBar(context, "Please Check Network Connection");
+        if (context.mounted) showSnackBar(context, "Please Check Network Connection");
         return Response(
             '{"status":"error","message":"Please Check Network Connection"}',
             500);
@@ -76,7 +86,7 @@ class ApiFuntions {
         CommonWidget.safePop(context);
       }
       debugPrint("SocketException: Please Check Network Connection");
-      showSnackBar(context, "Please Check Network Connection");
+      if (context.mounted) showSnackBar(context, "Please Check Network Connection");
       return Response(
           '{"status":"error","message":"Please Check Network Connection"}',
           500);
@@ -86,7 +96,7 @@ class ApiFuntions {
   Future<http.Response> postdatauser(
       BuildContext context, String endpoint, dynamic data,
       {String token = "", bool skipAutoNavigation = false}) async {
-    FocusManager.instance.primaryFocus?.unfocus();
+    
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
     debugPrint("=========datainjsonEncode${jsonEncode(data)} ");
@@ -138,12 +148,12 @@ class ApiFuntions {
             }
           }
           
-          if (errorMessage.isNotEmpty) {
+          if (context.mounted && errorMessage.isNotEmpty) {
             CommonWidget.errorShowSnackBarFor(context, "$errorMessage Error Code");
           }
           debugPrint(response.body);
           debugPrint(errorMessage);
-          showSnackBar(context, errorMessage);
+          if (context.mounted) showSnackBar(context, errorMessage);
           return response;
           //Common.showToast(mes);
         }
@@ -153,7 +163,7 @@ class ApiFuntions {
         };
         var mes = message['status_message'];
         debugPrint(mes);
-        showSnackBar(context, "Please Check Network Connection");
+        if (context.mounted) showSnackBar(context, "Please Check Network Connection");
         return mes;
       }
     } on SocketException catch (_) {
@@ -162,14 +172,14 @@ class ApiFuntions {
       };
       var mes = message['status_message'];
       debugPrint(mes);
-      showSnackBar(context, "Please Check Network Connection");
+      if (context.mounted) showSnackBar(context, "Please Check Network Connection");
       return mes;
     }
   }
   Future<http.Response> patchdatauser(
       BuildContext context, String endpoint, dynamic data,
       {String token = ""}) async {
-    FocusManager.instance.primaryFocus?.unfocus();
+    
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
     debugPrint("=========datainjsonEncode${jsonEncode(data)} ");
@@ -231,7 +241,7 @@ class ApiFuntions {
           var mes = message['message'];
           debugPrint(response.body);
           debugPrint(mes);
-          showSnackBar(context, mes);
+          if (context.mounted) showSnackBar(context, mes);
           return response;
           //Common.showToast(mes);
         }
@@ -241,7 +251,7 @@ class ApiFuntions {
         };
         var mes = message['status_message'];
         debugPrint(mes);
-        showSnackBar(context, "Please Check Network Connection");
+        if (context.mounted) showSnackBar(context, "Please Check Network Connection");
         return mes;
       }
     } on SocketException catch (_) {
@@ -250,7 +260,7 @@ class ApiFuntions {
       };
       var mes = message['status_message'];
       debugPrint(mes);
-      showSnackBar(context, "Please Check Network Connection");
+      if (context.mounted) showSnackBar(context, "Please Check Network Connection");
       return mes;
     }
   }
@@ -258,7 +268,7 @@ class ApiFuntions {
   Future<http.Response> putdatauser(
       BuildContext context, String endpoint, dynamic data,
       {String token = ""}) async {
-    FocusManager.instance.primaryFocus?.unfocus();
+    
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
     debugPrint("=========datainjsonEncode${jsonEncode(data)} ");
@@ -320,7 +330,7 @@ class ApiFuntions {
           var mes = message['message'];
           debugPrint(response.body);
           debugPrint(mes);
-          showSnackBar(context, mes);
+          if (context.mounted) showSnackBar(context, mes);
           return response;
           //Common.showToast(mes);
         }
@@ -330,7 +340,7 @@ class ApiFuntions {
         };
         var mes = message['status_message'];
         debugPrint(mes);
-        showSnackBar(context, "Please Check Network Connection");
+        if (context.mounted) showSnackBar(context, "Please Check Network Connection");
         return mes;
       }
     } on SocketException catch (_) {
@@ -339,7 +349,7 @@ class ApiFuntions {
       };
       var mes = message['status_message'];
       debugPrint(mes);
-      showSnackBar(context, "Please Check Network Connection");
+      if (context.mounted) showSnackBar(context, "Please Check Network Connection");
       return mes;
     }
   }
@@ -349,7 +359,7 @@ class ApiFuntions {
       {String filekey = "file"}) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
-    FocusManager.instance.primaryFocus?.unfocus();
+    
     try {
       var request = http.MultipartRequest(
         'POST',
@@ -606,7 +616,7 @@ class ApiFuntions {
         return response;
       } else {
         Map<String, dynamic> message = (jsonDecode(response.body));
-        if (message['message'].length > 0) {
+        if (context.mounted && message['message'].length > 0) {
           var mes = message['message'][0];
           CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
         }
@@ -634,7 +644,7 @@ class ApiFuntions {
         errorMessage = 'Failed to upload files. Please check your internet connection and try again.';
       }
       
-      CommonWidget.errorShowSnackBarFor(context, errorMessage);
+      if (context.mounted) CommonWidget.errorShowSnackBarFor(context, errorMessage);
       throw Exception(errorMessage);
     }
   }

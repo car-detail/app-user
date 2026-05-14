@@ -231,20 +231,24 @@ class Services {
       createdAt = json['createdAt']?.toString();
       updatedAt = json['updatedAt']?.toString();
       iV = json['__v'] is int ? json['__v'] : int.tryParse(json['__v']?.toString() ?? '0');
-      if (json['category'] != null) {
-        category = <Category>[];
-        json['category'].forEach((v) {
-          category!.add(Category.fromJson(v));
-        });
+      try {
+        if (json['category'] != null) {
+          category = <Category>[];
+          json['category'].forEach((v) {
+            category!.add(Category.fromJson(v));
+          });
+        }
+      } catch (_) {
+        category = [];
       }
     } catch (e) {
-      // Set default values to prevent crashes
+      // Set default values to prevent crashes, but recover title/category from raw json
       sId = json['_id']?.toString();
-      serviceTitle = "Service";
-      timeSlotCapacity = "1";
-      price = 0;
-      categoryName = "Car Service";
-      categoryId = "";
+      serviceTitle = json['serviceTitle']?.toString() ?? "Service";
+      timeSlotCapacity = json['timeSlotCapacity']?.toString() ?? "1";
+      price = json['price'] is int ? json['price'] : int.tryParse(json['price']?.toString() ?? '0') ?? 0;
+      categoryName = json['categoryName']?.toString() ?? "Car Service";
+      categoryId = json['categoryId']?.toString() ?? "";
       detailImages = [];
       coverImage = "";
       mobile = "";

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:car_app/Common/Color.dart';
@@ -8,6 +9,7 @@ import 'package:car_app/features/home_module/model/mixed_vendor_data.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:car_app/Common/Constant.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AllVendorsScreen extends StatefulWidget {
   const AllVendorsScreen({super.key});
@@ -22,41 +24,152 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
   bool isLoading = true;
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  
+  // Pagination & Distance states
+  int _pageNumber = 1;
+  bool _isLoadingMore = false;
+  bool _isLastPage = false;
+  final int _pageSize = 20;
+  int _currentDistance = 30000;
+  final int _maxDistanceLimit = 150000;
+
+  // Debounce search so shimmer is visible and we don't fire an API per keystroke
+  Timer? _searchDebounce;
+
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _initializeDataManager();
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.95 &&
+        !isLoading &&
+        !_isLoadingMore &&
+        searchQuery.isEmpty) {
+      if (!_isLastPage) {
+        _loadVendors(isLoadMore: true);
+      } else if (_currentDistance < _maxDistanceLimit) {
+        debugPrint("🔄 Auto-expanding distance on All Vendors...");
+        _loadVendors(isLoadMore: true, isExpandingDistance: true);
+      }
+    }
+  }
+
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
+
 
   Future<void> _initializeDataManager() async {
     final prefs = await SharedPreferences.getInstance();
     dataManager = HomeDataManager(prefs);
+    await _ensureLocationAvailable(prefs);
     await _loadVendors();
   }
 
-  Future<void> _loadVendors() async {
+  Future<void> _ensureLocationAvailable(SharedPreferences prefs) async {
+    final lat = prefs.getString(Constant.lat);
+    if (lat != null && lat != "null" && lat != "0.0" && lat.isNotEmpty) return;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      await prefs.setString(Constant.lat, position.latitude.toString());
+      await prefs.setString(Constant.long, position.longitude.toString());
+    } catch (_) {}
+  }
+
+  Future<void> _loadVendors({bool isLoadMore = false, bool isExpandingDistance = false}) async {
+    if (!isLoadMore && isLoading && vendors.isNotEmpty) return; // Prevent double load on init/refresh
+
     try {
       setState(() {
-        isLoading = true;
+        if (isLoadMore) {
+          _isLoadingMore = true;
+          if (isExpandingDistance) {
+            _currentDistance += 20000;
+            _isLastPage = false;
+            _pageNumber = 1;
+          }
+        } else {
+          isLoading = true;
+          _pageNumber = 1;
+          _isLastPage = false;
+          _currentDistance = 30000;
+          vendors.clear();
+        }
       });
 
-      // Use getMixedVendors method which properly handles both Google Places and app vendors
-      final vendorsList = await dataManager!.getMixedVendors(context);
+      debugPrint("🔵 Fetching all vendors page $_pageNumber at ${_currentDistance/1000}km");
+      final vendorsList = await dataManager!.getMixedVendors(
+        context, 
+        pageNumber: _pageNumber, 
+        count: _pageSize,
+        maxDistance: _currentDistance,
+      );
       
+      debugPrint("🟢 Received ${vendorsList.length} vendors for page $_pageNumber");
+
       setState(() {
-        vendors = vendorsList;
+        if (vendorsList.isNotEmpty) {
+          for (final v in vendorsList) {
+            if (!vendors.any((existing) => existing.id == v.id)) {
+              vendors.add(v);
+            }
+          }
+          _pageNumber++;
+          if (vendorsList.length < _pageSize) {
+            _isLastPage = true;
+            debugPrint("🛑 AllVendors: Last page reached at ${_currentDistance/1000}km");
+            
+            // Proactively expand if few results found
+            if (vendors.length < 5 && _currentDistance < _maxDistanceLimit) {
+              _isLoadingMore = false;
+              _loadVendors(isLoadMore: true, isExpandingDistance: true);
+              return;
+            }
+          }
+        } else {
+          _isLastPage = true;
+          debugPrint("🛑 AllVendors: No more items at ${_currentDistance/1000}km");
+          
+          // Trigger immediate expansion if empty page reached
+          if (_currentDistance < _maxDistanceLimit) {
+            _isLoadingMore = false;
+            _loadVendors(isLoadMore: true, isExpandingDistance: true);
+            return;
+          }
+        }
         isLoading = false;
+        _isLoadingMore = false;
       });
+
+      // Auto-expand if empty on first load
+      if (vendors.isEmpty && !isLoadMore && _currentDistance < _maxDistanceLimit) {
+        _loadVendors(isLoadMore: true, isExpandingDistance: true);
+      }
     } catch (e) {
+      debugPrint("🔴 Error loading vendors: $e");
       setState(() {
         isLoading = false;
+        _isLoadingMore = false;
       });
     }
   }
@@ -89,8 +202,17 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: ColorClass.base_color,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+            ),
+          ),
+        ),
         leading: CommonWidget.buildGreenHeaderBackButton(context),
         title: const Text(
           "All Vendors",
@@ -107,10 +229,15 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
+                _searchDebounce?.cancel();
                 setState(() {
                   searchQuery = value;
+                  // Show shimmer immediately so the user sees feedback
+                  isLoading = true;
                 });
-                _searchVendors(value);
+                _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+                  _searchVendors(value);
+                });
               },
               decoration: InputDecoration(
                 hintText: "Search vendors...",
@@ -199,7 +326,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
           Text(
             searchQuery.isNotEmpty
                 ? "Try a different search term"
-                : "Vendors will appear here when available",
+                : "Searching within ${_currentDistance/1000}km...",
             style: TextStyle(
               fontSize: 16,
               fontFamily: "Pop400",
@@ -214,20 +341,52 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
   Widget _buildVendorsList() {
     return RefreshIndicator(
       onRefresh: _loadVendors,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: vendors.length,
-        itemBuilder: (context, index) {
-          final vendor = vendors[index];
-          return _buildVendorCard(vendor);
-        },
+      child: Column(
+        children: [
+          if (_currentDistance > 30000 && searchQuery.isEmpty)
+             Padding(
+               padding: const EdgeInsets.symmetric(vertical: 8.0),
+               child: Text("Showing results up to ${_currentDistance / 1000}km", 
+               style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+             ),
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: vendors.length + (_isLoadingMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == vendors.length) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        children: [
+                          const CircularProgressIndicator(),
+                          if (_isLastPage && _currentDistance < _maxDistanceLimit)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text("Expanding search radius...", 
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                final vendor = vendors[index];
+                return _buildVendorCard(vendor);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
+
   Widget _buildVendorCard(MixedVendorData vendor) {
     return GestureDetector(
-      onTap: vendor.isOpen ? () {
+      onTap: () {
         if (vendor.isAppVendor) {
           CommonWidget.navigateToScreen(
             context,
@@ -236,7 +395,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
         } else {
           _handleGoogleVendorTap(vendor);
         }
-      } : null,
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
@@ -302,24 +461,22 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (!vendor.isOpen) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          "OFFLINE",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontFamily: "Pop600",
-                            color: Colors.red[600],
-                          ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: vendor.isOpen ? Colors.green[100] : Colors.red[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        vendor.isOpen ? "OPEN NOW" : "CLOSED",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontFamily: "Pop600",
+                          color: vendor.isOpen ? Colors.green[700] : Colors.red[700],
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -445,26 +602,17 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
   }
 
   void _openInMaps(MixedVendorData vendor) {
-    // Open the vendor location in Google Maps
     final lat = vendor.latitude;
     final lng = vendor.longitude;
     final name = Uri.encodeComponent(vendor.name);
-    
     final url = "https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name";
-    
-    // You can use url_launcher here if available
-    // launchUrl(Uri.parse(url));
-    
-    // For now, show a message
     CommonWidget.successShowSnackBarFor(context, "Opening in Maps...");
   }
 
   Future<void> _toggleBookmark(MixedVendorData vendor) async {
-    // Implement bookmark functionality here
     setState(() {
       vendor.isBookmarked = !vendor.isBookmarked;
     });
-    
     CommonWidget.successShowSnackBarFor(
       context, 
       vendor.isBookmarked ? "Added to bookmarks" : "Removed from bookmarks"

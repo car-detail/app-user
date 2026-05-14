@@ -7,12 +7,13 @@ import 'package:car_app/features/log_in/model/user_detail_model_bean.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomplete_textfield.dart';
+import 'package:geocoding/geocoding.dart' as geo;
+import 'package:google_maps_places_autocomplete_widgets/address_autocomplete_widgets.dart';
 
 import '../../../Api/ApiFuntion.dart';
 import '../../../Common/BaseActivity.dart';
 import '../../../Common/Color.dart';
+import '../../../Common/CommonPopUp.dart';
 import '../../../Common/CommonWidget.dart';
 import '../../../Models/image_module_data.dart';
 import '../data_manager/LoginDataManager.dart';
@@ -54,8 +55,12 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
     sharedPreferences = await SharedPreferences.getInstance();
     loginDataManager = LoginDataManager(sharedPreferences!);
     
-    // Load location from SharedPreferences (captured on login)
+    // Load all user details from SharedPreferences
     setState(() {
+      firstNameController.text = sharedPreferences!.getString(Constant.firstName) ?? "";
+      lastNameController.text = sharedPreferences!.getString(Constant.lastName) ?? "";
+      emailController.text = sharedPreferences!.getString(Constant.email) ?? "";
+      imageURl = sharedPreferences!.getString(Constant.image) ?? "";
       locationController.text = sharedPreferences!.getString(Constant.location) ?? "";
       currentLat = double.tryParse(sharedPreferences!.getString(Constant.lat) ?? "0.0") ?? 0.0;
       currentLng = double.tryParse(sharedPreferences!.getString(Constant.long) ?? "0.0") ?? 0.0;
@@ -70,16 +75,19 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
     double lat = currentLat != 0.0 ? currentLat : (double.tryParse(sharedPreferences!.getString(Constant.lat) ?? "0.0") ?? 0.0);
     double lng = currentLng != 0.0 ? currentLng : (double.tryParse(sharedPreferences!.getString(Constant.long) ?? "0.0") ?? 0.0);
     
-    var response = await loginDataManager!.postUserDetails(
+    final response = await loginDataManager!.postUserDetails(
         firstNameController.text,
         lastNameController.text,
         emailController.text,
         imageURl,
-        sharedPreferences!.getString(Constant.id)??"",
+        sharedPreferences!.getString(Constant.id) ?? "",
         context,
         locationName: locationName.isNotEmpty ? locationName : null,
         lat: lat != 0.0 ? lat : null,
         lng: lng != 0.0 ? lng : null);
+    
+    if (!mounted) return;
+
     var data = UserDetailsModelBean.fromJson(jsonDecode(response.body));
     if (data.status == "success") {
       sharedPreferences!
@@ -104,10 +112,46 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
         sharedPreferences!.setString(Constant.long, lng.toString());
       }
       
-      CommonWidget.successShowSnackBarFor(context, data.message??"");
-      CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+      if (mounted) {
+        CommonWidget.successShowSnackBarFor(context, data.message??"");
+        CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+      }
     } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      if (mounted) {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
+    }
+  }
+
+  Future<void> _handleManualLocationSave(String typedAddress) async {
+    if (typedAddress.trim().isEmpty) return;
+    
+    try {
+      List<geo.Location> locations = await geo.locationFromAddress(typedAddress);
+      if (!mounted) return;
+      if (locations.isNotEmpty) {
+        setState(() {
+          currentLat = locations[0].latitude;
+          currentLng = locations[0].longitude;
+          locationController.text = typedAddress;
+        });
+        
+        // Try to get a cleaner name
+        try {
+          List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(currentLat, currentLng);
+          if (!mounted) return;
+          if (placemarks.isNotEmpty) {
+            String cleanAddress = placemarks[0].locality ?? 
+                                placemarks[0].subAdministrativeArea ?? 
+                                typedAddress;
+            setState(() {
+              locationController.text = cleanAddress;
+            });
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('Geocoding failed for manual entry: $e');
     }
   }
   
@@ -164,18 +208,27 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
         timeLimit: const Duration(seconds: 10),
       );
 
+      if (!mounted) return;
+
       setState(() {
         currentLat = position.latitude;
         currentLng = position.longitude;
       });
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(
           position.latitude, position.longitude);
       
+      if (!mounted) return;
       String address = placemarks[0].locality ?? 
                       placemarks[0].subAdministrativeArea ?? 
                       placemarks[0].administrativeArea ?? 
+                      placemarks[0].name ??
                       "Current Location";
+      
+      // If we have both locality and administrativeArea, format it nicely
+      if (placemarks[0].locality != null && placemarks[0].administrativeArea != null) {
+        address = "${placemarks[0].locality}, ${placemarks[0].administrativeArea}";
+      }
       
       setState(() {
         locationController.text = address;
@@ -208,31 +261,28 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
       var response = await loginDataManager!.postImage(
           image,
           context);
+      
+      if (!mounted) return;
+
       var data = ImageModuleData.fromJson(jsonDecode(response.body));
       if (data.status == "success") {
-        imageURl = data.data?.url??"";
-        //CommonWidget.successShowSnackBarFor(context, data.message??"");
+        setState(() {
+          imageURl = data.data?.url ?? "";
+        });
+        // Update SharedPreferences immediately so it reflects across the app
+        sharedPreferences!.setString(Constant.image, imageURl);
       } else {
-        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+        if (mounted) {
+          CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+        }
       }
     }
   }
 
   _validateAndSave(BuildContext context) async {
     try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? isNewUser = prefs.getString(Constant.isNewUser);
-      bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
-      
-      
-      if (!isNewUserFlag && imageURl == "") {
-        CommonWidget.successShowSnackBarFor(context, "Please Select Profile Image");
-        return;
-      } else {
-        postUserDetails(context);
-      }
+      postUserDetails(context);
     } catch (e) {
-      // If there's an error, treat as new user (make image optional)
       postUserDetails(context);
     }
   }
@@ -300,62 +350,70 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                     const SizedBox(height: 20),
                     
                     // Profile Image Section
-                    Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[200],
-                            border: Border.all(
-                              color: Colors.grey[300]!,
-                              width: 3,
+                    GestureDetector(
+                      onTap: () {
+                        CommonPopUp.imagePick(context, (List<File> files) {
+                          if (files.isNotEmpty) {
+                            setState(() {
+                              selectedFiles = files;
+                            });
+                            postImage(context);
+                          }
+                        });
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey[200],
+                              border: Border.all(
+                                color: Colors.grey[300]!,
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: imageURl.isNotEmpty
+                                  ? Image.network(
+                                      imageURl,
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Icon(
+                                        Icons.person,
+                                        size: 64,
+                                        color: Colors.grey[400],
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
                             ),
                           ),
-                          child: selectedFiles.isEmpty
-                              ? ClipOval(
-                                  child: Image.asset(
-                                    CommonWidget.getImagePath("chat_profile.png"),
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : ClipOval(
-                                  child: CommonWidget.determineImageAsset(
-                                    selectedFiles[0].path ?? "",
-                                  ),
-                                ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: () async {
-                              var data = await BaseActivity.pickmedia(false);
-                              if (data != null) {
-                                setState(() {
-                                  selectedFiles.clear();
-                                  for (int i = 0; i < data.length; i++) {
-                                    selectedFiles.add(data[i]);
-                                  }
-                                });
-                                postImage(context);
-                              }
-                            },
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
                             child: Container(
-                              width: 40,
-                              height: 40,
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: ColorClass.base_color,
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
+                                border: Border.all(color: Colors.white, width: 2),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 8,
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
@@ -367,34 +425,11 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     
                     const SizedBox(height: 12),
-                    
-                    // Optional text for new users
-                    FutureBuilder<SharedPreferences?>(
-                      future: SharedPreferences.getInstance(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          String? isNewUser = snapshot.data!.getString(Constant.isNewUser);
-                          bool isNewUserFlag = isNewUser == "true" || isNewUser == null;
-                          
-                          if (isNewUserFlag) {
-                            return Text(
-                              "Profile image is optional",
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 13,
-                                fontFamily: "Pop400",
-                              ),
-                            );
-                          }
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
                     
                     const SizedBox(height: 40),
                     
@@ -490,7 +525,16 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
                                       sharedPreferences!.setString(Constant.long, lng.toString());
                                     }
                                   },
-                                  language: 'en-US',
+                                  types: const [
+                                    AutoCompleteType.locality,
+                                    AutoCompleteType.sublocality,
+                                    AutoCompleteType.neighborhood,
+                                    AutoCompleteType.postalCode
+                                  ],
+                                    onFinishedEditingWithNoSuggestion: (text) {
+                                      _handleManualLocationSave(text);
+                                    },
+                                    language: 'en-US',
                                 ),
                               ),
                             ),
@@ -591,14 +635,27 @@ class _EditUserDetailsActivityState extends State<EditUserDetailsActivity> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
-            fontFamily: "Pop500",
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+                fontFamily: "Pop500",
+              ),
+            ),
+            if (isOptional)
+              Text(
+                " (Optional)",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontFamily: "PopReg",
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(

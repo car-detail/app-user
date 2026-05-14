@@ -9,8 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../../../Common/Color.dart';
+import '../../../Common/CommonWidget.dart';
 import '../../../Common/ModernDesignSystem.dart';
 import '../../../Common/TourGuide.dart';
 import '../../explore_module/ui/explore_activity.dart';
@@ -27,6 +29,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
   int selectedpage = 0;
   bool? tourShown; // This comes from database - tour_shown field
   LoginDataManager? loginDataManager;
+  final GlobalKey<ExploreActivityState> _exploreKey = GlobalKey<ExploreActivityState>();
   
   // Tour guide keys
   final GlobalKey _homeNavKey = GlobalKey();
@@ -46,7 +49,51 @@ class _DashboardActivityState extends State<DashboardActivity> {
     super.initState();
     selectedpage = widget.currentIndex;
     _loadUserDetails();
+    
+    // Handle when app is opened from a terminated state via notification
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        debugPrint('🔔 User App opened from terminated state via notification');
+        _handleNotificationClick(message);
+      }
+    });
+
+    // Handle when app is in background and opened via notification
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('🔔 User App opened from background via notification');
+      _handleNotificationClick(message);
+    });
+
+    // Listen for foreground messages to refresh data
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('🔔 User Dashboard received foreground message: ${message.data}');
+      if (message.data['type'] == 'BOOKING_CONFIRMED' || 
+          message.data['type'] == 'BOOKING_CANCELLED' ||
+          message.data['type'] == 'BOOKING_COMPLETED') {
+        debugPrint('🔔 Booking update detected. Refreshing data...');
+        if (mounted) {
+          _loadUserDetails();
+          if (context.mounted && message.notification != null) {
+            CommonWidget.successShowSnackBarFor(context, "${message.notification?.title}: ${message.notification?.body}");
+          }
+        }
+      }
+    });
   }
+
+  void _handleNotificationClick(RemoteMessage message) {
+    debugPrint('🔔 Handling notification click: ${message.data}');
+    if (message.data['type'] == 'BOOKING_CONFIRMED' || 
+        message.data['type'] == 'BOOKING_CANCELLED' ||
+        message.data['type'] == 'BOOKING_COMPLETED') {
+      if (mounted) {
+        setState(() {
+          selectedpage = 2; // Navigate to Bookings tab (index 2 in user app)
+        });
+      }
+    }
+  }
+
   
   Future<void> _loadUserDetails() async {
     try {
@@ -57,6 +104,16 @@ class _DashboardActivityState extends State<DashboardActivity> {
         final jsonData = jsonDecode(response.body);
         if (jsonData['status'] == 'success' && jsonData['data'] != null) {
           final userDetails = UserDetailsModelBean.fromJson(jsonData);
+          
+          // Force profile completion if name is missing
+          final String firstName = (userDetails.data?.firstName ?? "").trim();
+          if (firstName.isEmpty || firstName.toLowerCase() == "null") {
+            if (mounted) {
+              CommonWidget.navigateToKillAllScreen(context, const EditUserDetailsActivity());
+              return;
+            }
+          }
+
           if (mounted) {
             setState(() {
               // Ensure tour_shown defaults to false if not present
@@ -123,7 +180,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
       categoriesKey: _categoriesKey,
       nearbyVendorsKey: _nearbyVendorsKey,
     ),
-    const ExploreActivity(),
+    ExploreActivity(key: _exploreKey),
     const BookingListActivity(),
     const ProfileViewActivity()
   ];
@@ -131,14 +188,15 @@ class _DashboardActivityState extends State<DashboardActivity> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
+        extendBody: true,
         body: Stack(
           children: [
             // Green status bar background
@@ -148,7 +206,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
               right: 0,
               child: Container(
                 height: MediaQuery.of(context).padding.top,
-                color: ColorClass.base_color,
+                color: const Color(0xFF166534),
               ),
             ),
             SafeArea(
@@ -166,54 +224,57 @@ class _DashboardActivityState extends State<DashboardActivity> {
 
   Widget _buildModernBottomNav() {
     return Container(
+      margin: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).padding.bottom > 0 ? 8 : 12,
+      ),
+      height: 64,
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            key: _homeNavKey,
-            icon: Icons.home_rounded,
-            label: 'Home',
-            index: 0,
-            isSelected: selectedpage == 0,
-          ),
-          _buildNavItem(
-            key: _exploreNavKey,
-            icon: Icons.explore_rounded,
-            label: 'Explore',
-            index: 1,
-            isSelected: selectedpage == 1,
-          ),
-          _buildNavItem(
-            key: _bookingsNavKey,
-            icon: Icons.book_online_rounded,
-                label: 'Bookings',
-            index: 2,
-            isSelected: selectedpage == 2,
-          ),
-          _buildNavItem(
-            key: _profileNavKey,
-            icon: Icons.person_rounded,
-            label: 'Profile',
-            index: 3,
-            isSelected: selectedpage == 3,
-          ),
-        ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(
+              key: _homeNavKey,
+              icon: Icons.home_rounded,
+              label: 'Home',
+              index: 0,
+              isSelected: selectedpage == 0,
+            ),
+            _buildNavItem(
+              key: _exploreNavKey,
+              icon: Icons.explore_rounded,
+              label: 'Explore',
+              index: 1,
+              isSelected: selectedpage == 1,
+            ),
+            _buildNavItem(
+              key: _bookingsNavKey,
+              icon: Icons.book_online_rounded,
+              label: 'Bookings',
+              index: 2,
+              isSelected: selectedpage == 2,
+            ),
+            _buildNavItem(
+              key: _profileNavKey,
+              icon: Icons.person_rounded,
+              label: 'Profile',
+              index: 3,
+              isSelected: selectedpage == 3,
+            ),
+          ],
         ),
       ),
     );
@@ -227,35 +288,48 @@ class _DashboardActivityState extends State<DashboardActivity> {
     required bool isSelected,
   }) {
     return Expanded(
+      flex: isSelected ? 3 : 2,
       key: key,
       child: GestureDetector(
-      onTap: () {
-        if (mounted) {
-          setState(() => selectedpage = index);
-        }
-      },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-                icon,
-              color: isSelected ? const Color(0xFF1CB273) : Colors.grey[600],
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? const Color(0xFF1CB273) : Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ],
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (mounted) {
+            setState(() => selectedpage = index);
+            if (index == 1) {
+              _exploreKey.currentState?.refreshIfLocationChanged();
+            }
+          }
+        },
+        child: Container(
+          height: double.infinity,
+          alignment: Alignment.center,
+          child: isSelected
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1CB273),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, color: Colors.white, size: 20),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Icon(icon, color: Colors.grey[400], size: 24),
         ),
       ),
     );

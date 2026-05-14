@@ -37,14 +37,15 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   Timer? _resendTimer;
   int _resendCountdown = 60;
   int? _resendToken;
+  String _enteredPhone = ''; // Store the phone number for resending
 
   @override
   void initState() {
     super.initState();
     // Set green status bar
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
     );
@@ -101,21 +102,19 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
               children: [
                 // Header with gradient
                 Container(
+                  width: double.infinity,
                   constraints: BoxConstraints(
                     minHeight: 280 + MediaQuery.of(context).padding.top,
                   ),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        ColorClass.base_color,
-                        ColorClass.base_color.withOpacity(0.8),
+                        Color(0xFF166534),
+                        Color(0xFF1CB273),
+                        Color(0xFF26D17A),
                       ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
                     ),
                   ),
                   padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
@@ -126,11 +125,11 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                         top: -50,
                         right: -50,
                         child: Container(
-                          width: 200,
-                          height: 200,
+                          width: 300,
+                          height: 300,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withOpacity(0.12),
                           ),
                         ),
                       ),
@@ -169,9 +168,9 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                               "Get Started",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: -0.5,
+                                fontSize: 38,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -1.0,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -410,12 +409,20 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   }
 
   void _sendOTP() async {
+    // If we're resending, the controller might be empty or have an OTP
+    // so we use the stored phone number
+    if (_isOTPSent && _enteredPhone.isNotEmpty) {
+      mobileController.text = _enteredPhone;
+    }
+
     if (BaseActivity.checkEmptyField(
         editingController: mobileController,
         message: "Please Enter Mobile Number",
         context: context)) {
       return;
     }
+
+    _enteredPhone = mobileController.text.trim();
     
     // Validate phone number based on country
     Map<String, int> validationRules = _getPhoneValidationRules(selectedCountryIsoCode);
@@ -553,15 +560,16 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   }
 
   void _resendOTP() {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    // Clear the input field
-    mobileController.clear();
-    
-    // Resend OTP using the same phone number
-    _sendOTP();
+    // Re-populate controller with stored phone number before resending
+    if (_enteredPhone.isNotEmpty) {
+      mobileController.text = _enteredPhone;
+      _sendOTP();
+    } else {
+      setState(() {
+        _isOTPSent = false;
+      });
+      CommonWidget.errorShowSnackBarFor(context, "Please enter your mobile number again");
+    }
   }
   
   Future<void> _signInWithCredential(PhoneAuthCredential credential, String otp) async {

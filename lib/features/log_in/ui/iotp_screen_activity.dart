@@ -105,27 +105,37 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
         widget.mobileNo,
         (String verificationId) {
           // OTP sent successfully
-          setState(() {
-            // Update the verification ID in widget.data
-            widget.data.data?.details = verificationId;
-            _isResending = false;
-          });
+          if (mounted) {
+            setState(() {
+              // Update the verification ID in widget.data
+              widget.data.data?.details = verificationId;
+              _isResending = false;
+            });
+          }
           _startResendTimer(); // Restart the timer
-          CommonWidget.successShowSnackBarFor(context, "OTP has been resent successfully");
+          if (context.mounted) {
+            CommonWidget.successShowSnackBarFor(context, "OTP has been resent successfully");
+          }
         },
         (String error) {
           // Error sending OTP
-          setState(() {
-            _isResending = false;
-          });
-          CommonWidget.errorShowSnackBarFor(context, error);
+          if (mounted) {
+            setState(() {
+              _isResending = false;
+            });
+          }
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, error);
+          }
         },
       );
     } catch (e) {
-      setState(() {
-        _isResending = false;
-      });
-      CommonWidget.errorShowSnackBarFor(context, "Failed to resend OTP. Please try again.");
+      if (mounted) {
+        setState(() {
+          _isResending = false;
+        });
+        CommonWidget.errorShowSnackBarFor(context, "Failed to resend OTP. Please try again.");
+      }
     }
   }
 
@@ -416,6 +426,7 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
           widget.mobileNo,
           context);
       
+      if (!mounted) return;
       
       // Check if response is HTML (error page) instead of JSON
       if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
@@ -456,6 +467,8 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
   getUser(BuildContext context) async {
     var response = await loginDataManager!.getUserDetails(context);
     
+    if (!mounted) return;
+    
     // Check if response is HTML (error page) instead of JSON
     if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
       CommonWidget.errorShowSnackBarFor(context, "API Error: Received HTML instead of JSON. Please check your backend connection.");
@@ -481,10 +494,34 @@ class _OTPScreenActivityState extends State<OTPScreenActivity> {
           .setString(Constant.id, data.data!.sId.toString() ?? "");
       sharedPreferences!
           .setString(Constant.UserID, data.data!.sId.toString() ?? "");
-      if (data.data!.isNewUser == true) {
-        CommonWidget.navigateToScreen(context, const EditUserDetailsActivity());
+
+      // Restore location from DB if no local location is stored
+      final storedLat = sharedPreferences!.getString(Constant.lat);
+      if ((storedLat == null || storedLat == "null" || storedLat == "0.0") &&
+          data.data!.location?.coordinates?.lat != null &&
+          data.data!.location?.coordinates?.long != null) {
+        sharedPreferences!.setString(Constant.lat, data.data!.location!.coordinates!.lat.toString());
+        sharedPreferences!.setString(Constant.long, data.data!.location!.coordinates!.long.toString());
+        if (data.data!.location!.name != null && data.data!.location!.name!.isNotEmpty) {
+          sharedPreferences!.setString(Constant.location, data.data!.location!.name!);
+        }
+      }
+
+      final String firstName = (data.data!.firstName ?? "").trim();
+      final bool isNew = data.data!.isNewUser ?? false;
+      
+      debugPrint("🔍 User Profile Check: isNewUser=$isNew, firstName='$firstName'");
+
+      if (isNew == true || firstName.isEmpty || firstName.toLowerCase() == "null") {
+        if (context.mounted) {
+          debugPrint("➡️ Redirecting to EditUserDetailsActivity");
+          CommonWidget.navigateToKillAllScreen(context, const EditUserDetailsActivity());
+        }
       } else {
-        CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+        if (context.mounted) {
+          debugPrint("➡️ Proceeding to DashboardActivity");
+          CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+        }
       }
       //CommonWidget.navigateToScreen(context, OTPScreenActivity());
       } else {

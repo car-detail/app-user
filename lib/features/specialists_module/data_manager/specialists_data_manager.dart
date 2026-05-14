@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart';
@@ -32,22 +34,31 @@ class SpecialistsDataManager{
       try {
         var response = await apiFuntions.getdatauser(context, "v1/services/vendor/$id", cycle: false);
         if (response.statusCode == 200) {
+          // If data is an empty list, $id is a service ID not a vendor ID — fall back
+          try {
+            final body = jsonDecode(response.body);
+            if (body['data'] is List && (body['data'] as List).isEmpty) {
+              return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id", cycle: false);
+            }
+          } catch (_) {}
           return response;
         } else if (response.statusCode == 400) {
-          // If vendor services returns 400, try service-details
           return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id", cycle: false);
         } else {
-          // For other errors, try service-details as fallback
           return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id", cycle: false);
         }
       } catch (e) {
-        // If vendor services fails, try service-details
         return await apiFuntions.getdatauser(context, "${Constant.serviceDetails}$id", cycle: false);
       }
     } catch (e) {
       // Return a mock response to prevent crashes
       return Response('{"status":"error","message":"API call failed: $e"}', 500);
     }
+  }
+
+  /// Fetch a single service by its service ID directly (no vendor-endpoint fallback).
+  getServiceDetailsById(BuildContext context, String serviceId) {
+    return apiFuntions.getdatauser(context, "${Constant.serviceDetails}$serviceId", cycle: false);
   }
 
   Future<Response> getVendorPackages(BuildContext context, String vendorId) async {

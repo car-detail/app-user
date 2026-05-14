@@ -43,27 +43,29 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
     var response = await dataManager!.getBooksMark(
       context,
     );
-    var data = BookmarkModelBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      setState(() {
-        servicesData.clear();
-        servicesData.addAll(data.data!);
-      });
-      //CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    if (mounted) {
+      var data = BookmarkModelBean.fromJson(jsonDecode(response.body));
+      if (data.status == "success") {
+        setState(() {
+          servicesData.clear();
+          servicesData.addAll(data.data!);
+        });
+        //CommonWidget.successShowSnackBarFor(context, data.message ?? "");
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: ColorClass.base_color,
-        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
       backgroundColor: Colors.grey[50],
@@ -72,16 +74,20 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
           // Modern Header
           Container(
             decoration: BoxDecoration(
-              color: ColorClass.base_color,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+              ),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  color: Color(0xFF1CB273).withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: Offset(0, 6),
                 ),
               ],
             ),
@@ -207,12 +213,6 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // Prevent navigation for offline vendors
-            if (isOffline) {
-              _showOfflineMessage(context);
-              return;
-            }
-            
             CommonWidget.navigateToScreen(
               context,
               SpecialistsActivity(service.sId ?? ""),
@@ -443,23 +443,27 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
 
   postBookmark(BuildContext context, String id) async {
     var response = await dataManager!.postBookmark(context, id);
-    var data = ServicesPostBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-      getServices(context);
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    if (mounted) {
+      var data = ServicesPostBean.fromJson(jsonDecode(response.body));
+      if (data.status == "success") {
+        CommonWidget.successShowSnackBarFor(context, data.message ?? "");
+        getServices(context);
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
     }
   }
 
   removeBookmark(BuildContext context, String id) async {
     var response = await dataManager!.removeBookmark(context, id);
-    var data = ServicesPostBean.fromJson(jsonDecode(response.body));
-    if (data.status == "success") {
-      CommonWidget.successShowSnackBarFor(context, data.message ?? "");
-      getServices(context);
-    } else {
-      CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+    if (mounted) {
+      var data = ServicesPostBean.fromJson(jsonDecode(response.body));
+      if (data.status == "success") {
+        CommonWidget.successShowSnackBarFor(context, data.message ?? "");
+        getServices(context);
+      } else {
+        CommonWidget.errorShowSnackBarFor(context, data.message ?? "");
+      }
     }
   }
 

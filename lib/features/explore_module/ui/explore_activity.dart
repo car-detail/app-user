@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart' as geo;
+import 'package:geolocator/geolocator.dart';
 
 import '../../../Common/Color.dart';
 import '../../../Common/CommonWidget.dart';
@@ -16,15 +18,16 @@ import '../../home_module/data_manager/home_data_manager.dart';
 import '../../booking/ui/booking_activity.dart';
 import '../../specialists_module/ui/specialists_activity.dart';
 import '../../home_module/ui/location_picker_screen.dart';
+import '../../../Common/ShimmerLoader.dart';
 
 class ExploreActivity extends StatefulWidget {
   const ExploreActivity({super.key});
 
   @override
-  State<ExploreActivity> createState() => _ExploreActivityState();
+  State<ExploreActivity> createState() => ExploreActivityState();
 }
 
-class _ExploreActivityState extends State<ExploreActivity> {
+class ExploreActivityState extends State<ExploreActivity> {
   List<MixedVendorData> allVendors = [];
   List<MixedVendorData> filteredVendors = [];
   bool isMapView = false;
@@ -39,6 +42,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
   
   HomeDataManager? dataManager;
   SharedPreferences? sharedPreferences;
+  String? _lastFetchedLat; // tracks location used for last fetch
 
   List<String> filterOptions = ["All"]; // will be loaded dynamically
   
@@ -46,7 +50,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
   GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
   LatLng? _currentLocation;
-  final LatLng _defaultLocation = const LatLng(30.7200094, 76.7080831); // Chandigarh
+
   BitmapDescriptor? _vendorIcon;
   
   // Zoom and radius tracking
@@ -54,27 +58,57 @@ class _ExploreActivityState extends State<ExploreActivity> {
   double _lastFetchedRadius = 16093.44; // 10 miles default
   Timer? _debounceTimer;
 
+  // Pagination & Distance states
+  final ScrollController _scrollController = ScrollController();
+  int _pageNumber = 1;
+  bool _isLoadingMore = false;
+  bool _isLastPage = false;
+  final int _pageSize = 20;
+  int _currentDistance = 30000;
+  final int _maxDistanceLimit = 150000;
+
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _scrollController.addListener(_onScroll);
     _initializeData();
   }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.95 &&
+        !isLoading &&
+        !_isLoadingMore &&
+        !isMapView) {
+      if (!_isLastPage) {
+        _loadMoreVendors();
+      } else if (_currentDistance < _maxDistanceLimit) {
+        debugPrint("🔄 ExploreActivity: Auto-expanding distance from ${_currentDistance/1000}km...");
+        _loadMoreVendors(isExpandingDistance: true);
+      }
+    }
+  }
+
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
     _searchController?.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
+
 
   Future<void> _initializeData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = HomeDataManager(sharedPreferences!);
     selectedLocation = sharedPreferences?.getString(Constant.location);
     selectedRadius = _parseRadius(selectedRadiusOption);
+    _currentDistance = selectedRadius?.toInt() ?? 30000;
     await _loadIcons();
     await _loadCategories();
+    await _getCurrentLocation(); // get real GPS before loading vendors
     await _loadVendors();
   }
 
@@ -102,7 +136,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
       final body = await response.body;
       final data = body is String ? body : body.toString();
       final decoded = jsonDecode(data);
-      if (decoded['status'] == 'success' && decoded['data'] != null) {
+      if (mounted && decoded['status'] == 'success' && decoded['data'] != null) {
         final List<dynamic> cats = decoded['data'];
         setState(() {
           filterOptions = ["All"];
@@ -129,40 +163,93 @@ class _ExploreActivityState extends State<ExploreActivity> {
     }
   }
 
+  /// Called by dashboard when switching to explore tab — re-fetches if location changed.
+  void refreshIfLocationChanged() {
+    final currentLat = sharedPreferences?.getString(Constant.lat);
+    if (currentLat != null && currentLat != "null" && currentLat != "0.0" && currentLat != _lastFetchedLat) {
+      _loadVendors();
+    }
+  }
+
   Future<void> _loadVendors() async {
+    _lastFetchedLat = sharedPreferences?.getString(Constant.lat);
     try {
-      setState(() {
-        isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+          _pageNumber = 1;
+          _isLastPage = false;
+          _currentDistance = selectedRadius?.toInt() ?? 30000;
+        });
+      }
 
       // Get mixed vendors (app + Google Places)
-      final mixedVendors = await dataManager!.getMixedVendors(context);
+      debugPrint("🔵 Explore: Fetching items page $_pageNumber at ${_currentDistance/1000}km");
+      final mixedVendors = await dataManager!.getMixedVendors(
+        context, 
+        pageNumber: _pageNumber, 
+        count: _pageSize,
+        maxDistance: _currentDistance,
+      );
       
       // Get current location
       await _getCurrentLocation();
       
-      setState(() {
-        allVendors = mixedVendors;
-        filteredVendors = List.from(allVendors);
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          allVendors = mixedVendors;
+          filteredVendors = List.from(allVendors);
+          _pageNumber++;
+          if (mixedVendors.length < _pageSize) {
+            _isLastPage = true;
+            debugPrint("🛑 Explore: Last page reached at ${_currentDistance/1000}km");
+            
+            // If we reached last page and have very few results, expand immediately
+            if (allVendors.length < 5 && _currentDistance < _maxDistanceLimit) {
+              _loadMoreVendors(isExpandingDistance: true);
+            }
+          }
+          isLoading = false;
+        });
+      }
       
+      // Auto-expand if empty
+      if (allVendors.isEmpty && _currentDistance < _maxDistanceLimit) {
+        _loadMoreVendors(isExpandingDistance: true);
+      }
+
       // Create markers for map
       _createMarkers();
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      debugPrint("🔴 Explore: Fetch error: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _filterVendors() async {
     try {
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+          _pageNumber = 1;
+          _isLastPage = false;
+          _currentDistance = selectedRadius?.toInt() ?? 30000;
+          allVendors.clear();
+          filteredVendors.clear();
+        });
+      }
       List<MixedVendorData> vendors = [];
 
-      final lat = _currentLocation?.latitude ?? _defaultLocation.latitude;
-      final lng = _currentLocation?.longitude ?? _defaultLocation.longitude;
-      final radius = selectedRadius ?? _lastFetchedRadius;
+      if (_currentLocation == null) return;
+      final lat = _currentLocation!.latitude;
+      final lng = _currentLocation!.longitude;
+      final radius = selectedRadius ?? _currentDistance.toDouble();
+
+      debugPrint("🔵 Explore: Filtering page $_pageNumber with filter=$selectedFilter, search=$searchQuery at ${radius/1000}km");
 
       if (selectedFilter != "All") {
         vendors = await dataManager!.getMixedVendorsByCategoryWithRadius(
@@ -171,28 +258,224 @@ class _ExploreActivityState extends State<ExploreActivity> {
           lat,
           lng,
           radius,
+          pageNumber: _pageNumber,
+          count: _pageSize,
         );
       } else if (searchQuery.isNotEmpty) {
-        vendors = await dataManager!.searchVendors(context, searchQuery);
+        vendors = await dataManager!.searchVendors(
+          context, 
+          searchQuery,
+          pageNumber: _pageNumber,
+          count: _pageSize,
+          maxDistance: radius.toInt(),
+        );
+
+        // If no vendors found by name, try to check if it's a location (e.g., "Amritsar")
+        if (vendors.isEmpty && _pageNumber == 1) {
+          try {
+            List<geo.Location> locations =
+                await geo.locationFromAddress(searchQuery);
+            if (locations.isNotEmpty) {
+              final newLocation =
+                  LatLng(locations[0].latitude, locations[0].longitude);
+
+              // Get a friendly name for the location
+              String locationName = searchQuery;
+              try {
+                List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(
+                    newLocation.latitude, newLocation.longitude);
+                if (placemarks.isNotEmpty) {
+                  locationName = placemarks[0].locality ??
+                      placemarks[0].subAdministrativeArea ??
+                      placemarks[0].name ??
+                      searchQuery;
+                }
+              } catch (_) {}
+
+              // Update in-memory state only — do NOT write to SharedPreferences.
+              // Writing here would permanently overwrite the user's real/set location
+              // with whatever they typed in the search box.
+              if (mounted) {
+                setState(() {
+                  _currentLocation = newLocation;
+                  selectedLocation = locationName;
+                });
+              }
+
+              // Fetch vendors at this new location
+              vendors = await dataManager!.getMixedVendorsWithRadius(
+                context,
+                newLocation.latitude,
+                newLocation.longitude,
+                radius,
+                pageNumber: _pageNumber,
+                count: _pageSize,
+              );
+
+              // Move map if in map view
+              if (_mapController != null) {
+                _mapController!
+                    .animateCamera(CameraUpdate.newLatLng(newLocation));
+              }
+
+              if (mounted) {
+                CommonWidget.successShowSnackBarFor(
+                    context, "Showing vendors in $locationName");
+              }
+            }
+          } catch (_) {
+            // Not a valid location, just show empty results
+          }
+        }
       } else {
         vendors = await dataManager!.getMixedVendorsWithRadius(
           context,
           lat,
           lng,
           radius,
+          pageNumber: _pageNumber,
+          count: _pageSize,
         );
       }
 
-      setState(() {
-        allVendors = vendors;
-        filteredVendors = List.from(allVendors);
-        _lastFetchedRadius = radius;
-      });
+      if (mounted) {
+        setState(() {
+          allVendors = vendors;
+          filteredVendors = List.from(allVendors);
+          _lastFetchedRadius = radius;
+          _pageNumber++;
+          if (vendors.length < _pageSize) {
+            _isLastPage = true;
+            debugPrint("🛑 Explore: Last page reached at ${_currentDistance/1000}km");
+            
+            // If filtering yields few results, expand immediately
+            if (allVendors.length < 5 && _currentDistance < _maxDistanceLimit) {
+               _loadMoreVendors(isExpandingDistance: true);
+            }
+          }
+          isLoading = false;
+        });
+      }
+      
+      // Auto-expand if still empty
+      if (allVendors.isEmpty && _currentDistance < _maxDistanceLimit) {
+        _loadMoreVendors(isExpandingDistance: true);
+      }
 
       _createMarkers();
     } catch (e) {
+      debugPrint("🔴 Explore: Filter error: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
+
+  Future<void> _loadMoreVendors({bool isExpandingDistance = false}) async {
+    if (_isLoadingMore) return;
+    if (_isLastPage && !isExpandingDistance) return;
+
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = true;
+          if (isExpandingDistance) {
+            _currentDistance += 20000;
+            _isLastPage = false;
+            _pageNumber = 1;
+          }
+        });
+      }
+
+      if (_currentLocation == null) return;
+      final lat = _currentLocation!.latitude;
+      final lng = _currentLocation!.longitude;
+      // Always use _currentDistance when expanding, or if it has been expanded already
+      final radius = (isExpandingDistance || _currentDistance > (selectedRadius?.toInt() ?? 0))
+          ? _currentDistance.toDouble() 
+          : (selectedRadius ?? _currentDistance.toDouble());
+
+      debugPrint("🔵 Explore: Loading more page $_pageNumber at ${radius/1000}km");
+      List<MixedVendorData> nextVendors = [];
+
+      if (selectedFilter != "All") {
+        nextVendors = await dataManager!.getMixedVendorsByCategoryWithRadius(
+          context,
+          selectedFilter,
+          lat,
+          lng,
+          radius,
+          pageNumber: _pageNumber,
+          count: _pageSize,
+        );
+      } else if (searchQuery.isNotEmpty) {
+        nextVendors = await dataManager!.searchVendors(
+          context, 
+          searchQuery,
+          pageNumber: _pageNumber,
+          count: _pageSize,
+          maxDistance: radius.toInt(),
+        );
+      } else {
+        nextVendors = await dataManager!.getMixedVendorsWithRadius(
+          context,
+          lat,
+          lng,
+          radius,
+          pageNumber: _pageNumber,
+          count: _pageSize,
+        );
+      }
+
+      debugPrint("🟢 Explore: Received ${nextVendors.length} more items");
+
+      if (mounted) {
+        setState(() {
+          if (nextVendors.isNotEmpty) {
+            // Avoid duplicates if we reset page number (though currently we don't reset, but distance expansion might overlap)
+            for (var v in nextVendors) {
+              if (!allVendors.any((existing) => existing.id == v.id)) {
+                allVendors.add(v);
+              }
+            }
+            filteredVendors = List.from(allVendors);
+            _pageNumber++;
+            if (nextVendors.length < _pageSize) {
+              _isLastPage = true;
+              debugPrint("🛑 Explore: Last page reached at current distance");
+            }
+          } else {
+            _isLastPage = true;
+            debugPrint("🛑 Explore: No more items at current distance (${_currentDistance/1000}km)");
+            // If we reached the end during scroll, expand immediately
+            if (_currentDistance < _maxDistanceLimit) {
+              _isLoadingMore = false;
+              _loadMoreVendors(isExpandingDistance: true);
+              return;
+            }
+          }
+          _isLoadingMore = false;
+        });
+      }
+
+      // If we expanded search and still have no items, and haven't hit limit, try one more time
+      if (allVendors.isEmpty && _currentDistance < _maxDistanceLimit && isExpandingDistance) {
+        _loadMoreVendors(isExpandingDistance: true);
+      }
+
+      _createMarkers();
+    } catch (e) {
+      debugPrint("🔴 Explore: Load more error: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
 
   bool _isVendorMatchingFilter(MixedVendorData vendor, String filter) {
     if (filter == "All") return true;
@@ -245,18 +528,34 @@ class _ExploreActivityState extends State<ExploreActivity> {
   }
 
   Future<void> _getCurrentLocation() async {
+    // Use stored location first (respects user's manual selection from home)
     try {
       String? latStr = sharedPreferences?.getString(Constant.lat);
       String? lngStr = sharedPreferences?.getString(Constant.long);
-      
-      if (latStr != null && lngStr != null && latStr != "null" && lngStr != "null") {
+      if (latStr != null && lngStr != null && latStr != "null" && lngStr != "null" && latStr != "0.0") {
         _currentLocation = LatLng(double.parse(latStr), double.parse(lngStr));
-      } else {
-        _currentLocation = _defaultLocation;
+        return;
       }
-    } catch (e) {
-      _currentLocation = _defaultLocation;
-    }
+    } catch (_) {}
+
+    // Only try GPS if no location is stored at all
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      _currentLocation = LatLng(position.latitude, position.longitude);
+      await sharedPreferences?.setString(Constant.lat, position.latitude.toString());
+      await sharedPreferences?.setString(Constant.long, position.longitude.toString());
+      dataManager?.syncLocationToApi(context, sharedPreferences?.getString(Constant.location) ?? "Current Location", position.latitude, position.longitude);
+    } catch (_) {}
   }
 
   void _createMarkers() {
@@ -277,12 +576,6 @@ class _ExploreActivityState extends State<ExploreActivity> {
             snippet: vendor.isAppVendor ? "Vendor App" : "Google Places",
           ),
           onTap: () {
-            // Prevent navigation for offline vendors
-            if (isOffline) {
-              _showOfflineMessage();
-              return;
-            }
-            
             if (vendor.isAppVendor) {
               _navigateToBooking(vendor);
             } else {
@@ -340,10 +633,12 @@ class _ExploreActivityState extends State<ExploreActivity> {
         radius
       );
       
-      setState(() {
-        allVendors = mixedVendors;
-        filteredVendors = List.from(allVendors);
-      });
+      if (mounted) {
+        setState(() {
+          allVendors = mixedVendors;
+          filteredVendors = List.from(allVendors);
+        });
+      }
       
       // Update markers
       _createMarkers();
@@ -354,12 +649,12 @@ class _ExploreActivityState extends State<ExploreActivity> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: ColorClass.base_color,
-        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
@@ -374,16 +669,32 @@ class _ExploreActivityState extends State<ExploreActivity> {
               bottom: 20,
             ),
             decoration: BoxDecoration(
-              color: ColorClass.base_color,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF166534),
+                  Color(0xFF1CB273),
+                  Color(0xFF00E676),
+                ],
               ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF1CB273).withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: Offset(0, 6),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 // Top Row
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     CommonWidget.buildGreenHeaderBackButton(context),
                     const SizedBox(width: 16),
@@ -399,9 +710,10 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     ),
                     // View Toggle
                     Container(
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -418,7 +730,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -434,7 +746,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     },
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
-                      hintText: "Search vendors...",
+                      hintText: "Search vendors or location...",
                       hintStyle: TextStyle(
                         color: Colors.grey[500],
                         fontFamily: "Pop400",
@@ -459,7 +771,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                               },
                             ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
@@ -473,7 +785,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                         height: 44,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(24),
                         ),
                         child: DropdownButton<String>(
                           value: selectedFilter,
@@ -527,12 +839,12 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(24),
                           onTap: () async {
                             final result = await Navigator.push(
                               context,
@@ -574,7 +886,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: PopupMenuButton<String>(
                         child: Container(
@@ -653,9 +965,10 @@ class _ExploreActivityState extends State<ExploreActivity> {
           // Content
           Expanded(
             child: isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                ? SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ShimmerLoader.buildListShimmer(itemCount: 8),
                     ),
                   )
                 : isMapView
@@ -733,7 +1046,9 @@ class _ExploreActivityState extends State<ExploreActivity> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Try adjusting your search or filters",
+              _currentDistance > 30000 
+                  ? "Searching within ${_currentDistance/1000}km..." 
+                  : "Try adjusting your search or filters",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -746,9 +1061,28 @@ class _ExploreActivityState extends State<ExploreActivity> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: filteredVendors.length,
+      itemCount: filteredVendors.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == filteredVendors.length) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const CircularProgressIndicator(),
+                  if (_isLastPage && _currentDistance < _maxDistanceLimit)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text("Expanding search radius to ${_currentDistance/1000 + 20}km...", 
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                    ),
+                ],
+              ),
+            ),
+          );
+        }
         final vendor = filteredVendors[index];
         return _buildVendorCard(vendor);
       },
@@ -1005,12 +1339,6 @@ class _ExploreActivityState extends State<ExploreActivity> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // Prevent navigation for offline vendors
-            if (isOffline) {
-              _showOfflineMessage();
-              return;
-            }
-            
             if (isAppVendor) {
               _navigateToBooking(vendor);
             } else {
@@ -1075,17 +1403,16 @@ class _ExploreActivityState extends State<ExploreActivity> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isOffline)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.red[100],
+                                color: vendor.isOpen ? Colors.green[100] : Colors.red[100],
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                "OFFLINE",
+                                vendor.isOpen ? "OPEN NOW" : "CLOSED",
                                 style: TextStyle(
-                                  color: Colors.red[700],
+                                  color: vendor.isOpen ? Colors.green[700] : Colors.red[700],
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1157,20 +1484,7 @@ class _ExploreActivityState extends State<ExploreActivity> {
                     ],
                   ),
                 ),
-                // Action Icon
-                Icon(
-                  isOffline 
-                      ? Icons.block 
-                      : isAppVendor 
-                          ? Icons.book_online 
-                          : Icons.info_outline,
-                  size: 20,
-                  color: isOffline 
-                      ? Colors.red 
-                      : isAppVendor 
-                          ? ColorClass.base_color 
-                          : Colors.blue,
-                ),
+
               ],
             ),
           ),

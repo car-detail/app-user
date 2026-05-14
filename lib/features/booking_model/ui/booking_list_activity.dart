@@ -8,12 +8,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../Common/Color.dart';
+import '../../../Common/Constant.dart';
 import '../../../Common/CommonWidget.dart';
 import '../../../Common/ContainerDecoration.dart';
 import '../../rating_model/ui/rating_review_screen.dart';
+import '../../specialists_module/ui/specialists_activity.dart';
 import '../data_model/booking_data_manager.dart';
 import '../model/booking_list_bean.dart';
 import '../model/complete_model_bean.dart';
+import '../../../Common/ShimmerLoader.dart';
 
 class BookingListActivity extends StatefulWidget {
   const BookingListActivity({super.key});
@@ -28,6 +31,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
   List<Records> records = [];
   var filterType = "Pending";
   TextEditingController reasone = TextEditingController();
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -42,6 +46,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
     DateTime dateTime = DateTime.now();
     final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
     //getBookingList(context);
+    if (!mounted) return;
     if (mounted && context.mounted) {
       getBookingListFilter(context);
     }
@@ -50,12 +55,12 @@ class _BookingListActivityState extends State<BookingListActivity> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: ColorClass.base_color,
-        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
@@ -70,11 +75,22 @@ class _BookingListActivityState extends State<BookingListActivity> {
               right: 20,
             ),
             decoration: BoxDecoration(
-              color: ColorClass.base_color,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
               ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF1CB273).withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: Offset(0, 6),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -124,16 +140,21 @@ class _BookingListActivityState extends State<BookingListActivity> {
                   await getBookingListFilter(context);
                 }
               },
-            child: records.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      var data = records[index];
-                      return _buildBookingCard(data);
-                    },
-                    ),
+            child: isLoading
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: ShimmerLoader.buildListShimmer(itemCount: 5),
+                  )
+                : records.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: records.length,
+                        itemBuilder: (context, index) {
+                          var data = records[index];
+                          return _buildBookingCard(data);
+                        },
+                      ),
                   ),
           ),
         ],
@@ -222,7 +243,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        data.serviceCategory ?? "Category",
+                        data.vendorDisplayName ?? "Vendor",
                         style: const TextStyle(
                           fontSize: 15,
                           fontFamily: "Pop600",
@@ -349,7 +370,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                               ),
                               const SizedBox(height: 1),
                               Text(
-                                data.serviceCategory ?? "Category",
+                                data.serviceTitle ?? data.serviceCategory ?? "Service",
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontFamily: "Pop600",
@@ -364,9 +385,9 @@ class _BookingListActivityState extends State<BookingListActivity> {
                     ),
                   ),
                 const SizedBox(height: 6),
-                _buildDetailRow(Icons.access_time, "Time Slot", CommonWidget.convertToLocalTime(data.timeSlot ?? "")),
+                _buildDetailRow(Icons.access_time, "Time Slot", CommonWidget.formatTimeSlot(data.timeSlot ?? "")),
                 const SizedBox(height: 6),
-                _buildDetailRow(Icons.calendar_today, "Date", DateFormat('dd-MM-yyyy').format(DateTime.parse(data.date ?? ""))),
+                _buildDetailRow(Icons.calendar_today, "Date", DateFormat(Constant.dateFormatDigits).format(DateTime.parse(data.date ?? ""))),
                 const SizedBox(height: 6),
                 if (data.price != null && data.price! > 0)
                   _buildDetailRow(Icons.attach_money, "Price", "\$${data.price}"),
@@ -482,6 +503,42 @@ class _BookingListActivityState extends State<BookingListActivity> {
                   if (data.commentByVendor != null && data.commentByVendor!.isNotEmpty)
                     _buildDetailRow(Icons.comment, "Vendor Remark", data.commentByVendor!),
                 ],
+
+                // View Vendor button — always visible
+                if (data.vendorId != null && data.vendorId!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        CommonWidget.navigateToScreen(
+                          context,
+                          SpecialistsActivity(data.vendorId!),
+                        );
+                      },
+                      icon: Icon(Icons.storefront_rounded,
+                          size: 16, color: ColorClass.base_color),
+                      label: Text(
+                        "View Vendor",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: "Pop600",
+                          color: ColorClass.base_color,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorClass.base_color,
+                        side: BorderSide(
+                            color: ColorClass.base_color, width: 1.2),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -574,6 +631,10 @@ class _BookingListActivityState extends State<BookingListActivity> {
   getBookingListFilter(BuildContext context) async {
     if (!mounted || !context.mounted) return;
     
+    setState(() {
+      isLoading = true;
+    });
+    
     try {
       var response = await dataManager!.getBookingListFilter(context, filterType);
       
@@ -581,6 +642,9 @@ class _BookingListActivityState extends State<BookingListActivity> {
       
       // Check if response is HTML (error page) instead of JSON
       if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html')) {
+        setState(() {
+          isLoading = false;
+        });
         if (mounted && context.mounted) {
           CommonWidget.errorShowSnackBarFor(context, "API Error: Received HTML instead of JSON. Please check your backend connection.");
         }
@@ -594,6 +658,9 @@ class _BookingListActivityState extends State<BookingListActivity> {
       
       // Check response status code
       if (response.statusCode != 200) {
+        setState(() {
+          isLoading = false;
+        });
         if (mounted && context.mounted) {
           CommonWidget.errorShowSnackBarFor(context, "Unable to load bookings. Please check your connection and try again.");
         }
@@ -610,13 +677,22 @@ class _BookingListActivityState extends State<BookingListActivity> {
         if (data.status == "success") {
           if (mounted) {
             setState(() {
+              isLoading = false;
               records.clear();
-              records.addAll(data.data!.records!);
+              List<Records> fetchedRecords = data.data!.records!;
+              // Sort records by date and timeSlot (descending - most recent first)
+              fetchedRecords.sort((a, b) {
+                int dateCompare = (b.date ?? "").compareTo(a.date ?? "");
+                if (dateCompare != 0) return dateCompare;
+                return (b.timeSlot ?? "").compareTo(a.timeSlot ?? "");
+              });
+              records.addAll(fetchedRecords);
             });
           }
         } else {
           if (mounted) {
             setState(() {
+              isLoading = false;
               records.clear();
             });
           }
@@ -627,6 +703,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
       } catch (jsonError) {
         if (mounted) {
           setState(() {
+            isLoading = false;
             records.clear();
           });
         }
@@ -637,6 +714,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
     } catch (e) {
       if (mounted) {
         setState(() {
+          isLoading = false;
           records.clear();
         });
       }

@@ -1,7 +1,9 @@
 import 'package:car_app/Common/Color.dart';
 import 'package:car_app/Common/CommonWidget.dart';
+import 'package:car_app/Common/Constant.dart';
 import 'package:car_app/features/home_module/model/notification_data_bean.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationActivity extends StatefulWidget {
   List<Notifications> notificationsList;
@@ -17,6 +19,13 @@ class _NotificationActivityState extends State<NotificationActivity> {
   void initState() {
     super.initState();
     debugPrint('🔔 NotificationActivity initState: ${widget.notificationsList.length} notifications');
+    _markAsRead();
+  }
+
+  _markAsRead() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(Constant.lastReadNotificationsAt, DateTime.now().toIso8601String());
+    debugPrint('🔔 Notifications marked as read at: ${DateTime.now().toIso8601String()}');
   }
 
   @override
@@ -75,8 +84,10 @@ class _NotificationActivityState extends State<NotificationActivity> {
                             const SizedBox(
                               width: 5,
                             ),
-
-                            //CommonWidget.getTextWidget500("1h ago", size: 12)
+                            CommonWidget.getTextWidget500(
+                                CommonWidget.formatTimeAgo(data.createdAt),
+                                size: 10,
+                                color: Colors.grey[600]!)
                           ],
                         ),
                       );

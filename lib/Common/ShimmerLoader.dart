@@ -17,9 +17,9 @@ class ShimmerLoader {
     Color? highlightColor,
   }) {
     return Shimmer.fromColors(
-      baseColor: baseColor ?? _carBaseColor.withOpacity(0.03),
-      highlightColor: highlightColor ?? _carHighlightColor.withOpacity(0.08),
-      period: const Duration(milliseconds: 1800),
+      baseColor: baseColor ?? Colors.grey[300]!,
+      highlightColor: highlightColor ?? Colors.grey[100]!,
+      period: const Duration(milliseconds: 1200),
       child: Container(
         width: width,
         height: height,
@@ -40,9 +40,9 @@ class ShimmerLoader {
 
   static Widget buildCardShimmer() {
     return Shimmer.fromColors(
-      baseColor: _carBaseColor.withOpacity(0.02),
-      highlightColor: _carHighlightColor.withOpacity(0.06),
-      period: const Duration(milliseconds: 2000),
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1500),
       child: Container(
         margin: const EdgeInsets.all(8.0),
         padding: const EdgeInsets.all(16.0),
@@ -86,9 +86,9 @@ class ShimmerLoader {
     double borderRadius = 8.0,
   }) {
     return Shimmer.fromColors(
-      baseColor: _carBaseColor.withOpacity(0.02),
-      highlightColor: _carHighlightColor.withOpacity(0.06),
-      period: const Duration(milliseconds: 2000),
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1200),
       child: Container(
         width: width,
         height: height,
@@ -113,9 +113,9 @@ class ShimmerLoader {
     double borderRadius = 4.0,
   }) {
     return Shimmer.fromColors(
-      baseColor: _carBaseColor.withOpacity(0.02),
-      highlightColor: _carHighlightColor.withOpacity(0.06),
-      period: const Duration(milliseconds: 1800),
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1200),
       child: Container(
         width: width,
         height: height,
@@ -182,9 +182,9 @@ class ShimmerLoader {
 
   static Widget buildServiceCardShimmer() {
     return Shimmer.fromColors(
-      baseColor: _carBaseColor.withOpacity(0.02),
-      highlightColor: _carHighlightColor.withOpacity(0.06),
-      period: const Duration(milliseconds: 2000),
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1500),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
@@ -292,9 +292,9 @@ class ShimmerLoader {
 
   static Widget buildOfferCardShimmer() {
     return Shimmer.fromColors(
-      baseColor: _carBaseColor.withOpacity(0.02),
-      highlightColor: _carHighlightColor.withOpacity(0.06),
-      period: const Duration(milliseconds: 2000),
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1500),
       child: Container(
         width: 200,
         margin: const EdgeInsets.only(right: 16),
@@ -321,7 +321,7 @@ class ShimmerLoader {
           children: [
             Container(
               width: double.infinity,
-              height: 100,
+              height: 70, // Reduced from 100 to fit in 150px
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -335,13 +335,13 @@ class ShimmerLoader {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8), // Reduced from 12
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: double.infinity,
-                    height: 16,
+                    height: 12, // Reduced from 16
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -351,10 +351,10 @@ class ShimmerLoader {
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6), // Reduced from 8
                   Container(
                     width: 120,
-                    height: 12,
+                    height: 10, // Reduced from 12
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -364,10 +364,10 @@ class ShimmerLoader {
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6), // Reduced from 8
                   Container(
                     width: 80,
-                    height: 12,
+                    height: 10, // Reduced from 12,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -425,9 +425,9 @@ class ShimmerLoader {
     double borderRadius = 6.0,
   }) {
     return Shimmer.fromColors(
-      baseColor: _carBaseColor.withOpacity(0.01),
-      highlightColor: _carHighlightColor.withOpacity(0.03),
-      period: const Duration(milliseconds: 2200),
+      baseColor: Colors.grey[200]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1500),
       child: Container(
         width: width,
         height: height,

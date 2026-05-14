@@ -1,7 +1,8 @@
 class Constant {
-static var baseurl = "http://localhost:7007/api/"; //dev
-  //  static var baseurl = "https://l3ww2hjs-7007.inc1.devtunnels.ms/"; //dev
-  //  static var baseurl = "http://13.234.217.235:3001/api/"; //dev
+// static var baseurl = "http://localhost:7007/api/"; //dev
+  //  static var baseurl = "http://localhost:7007/api/"; 
+  // static var baseurl = "https://lvpwhs37-7007.inc1.devtunnels.ms/api/";
+   static var baseurl = "https://api.cahrz.com/api/"; //dev
   // static var baseurl service 07/"; //dev
   // static var baseurl = "https://cf5f40e34c76.ngro0-free.app/"; //ngrok tunnel
   static var versionNumber = "v1";
@@ -9,8 +10,8 @@ static var baseurl = "http://localhost:7007/api/"; //dev
 
   //static var generateOTP = "auth/otp-generate-user/bypass";
   //static var verifyOtp = "auth/otp-verify-user/bypass";
-  static var generateOTP = "auth/otp-generate-user";
-  static var verifyOtp = "auth/otp-verify-user";
+  static var generateOTP = "$versionNumber/auth/otp-generate-user";
+  static var verifyOtp = "$versionNumber/auth/otp-verify-user";
   static var getUserDetails = "$versionNumber/user/get-user-details";
   static var updateUserDetails = "$versionNumber/user/update-details/";
   static var category = "$versionNumber/category";
@@ -63,5 +64,6 @@ static var baseurl = "http://localhost:7007/api/"; //dev
   static String location = "location";
   static String lat = "lat";
   static String long = "long";
-
+  static const String dateFormatDigits = "MM-dd-yyyy";
+  static String lastReadNotificationsAt = "lastReadNotificationsAt";
 }

@@ -8,6 +8,7 @@ import 'package:car_app/Common/Constant.dart';
 import 'package:car_app/Common/ModernDesignSystem.dart';
 import 'package:car_app/features/categories_module/ui/categories_list_activity.dart';
 import 'package:car_app/features/categories_module/ui/sevice_list_screen.dart';
+import 'package:google_maps_places_autocomplete_widgets/address_autocomplete_widgets.dart';
 import 'package:car_app/features/home_module/data_manager/home_data_manager.dart';
 import 'package:car_app/features/home_module/model/offer_list_model.dart';
 import 'package:car_app/features/specialists_module/ui/specialists_activity.dart';
@@ -26,7 +27,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:geocoding/geocoding.dart' as geo;
 import 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomplete_textfield.dart';
 
 import '../../../Common/CommonBean.dart';
@@ -85,6 +86,7 @@ class _HomeActivityState extends State<HomeActivity> {
   // Search functionality
   Timer? _searchTimer;
   bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
   
   // Location search
   final TextEditingController _locationController = TextEditingController();
@@ -114,7 +116,8 @@ class _HomeActivityState extends State<HomeActivity> {
   }
   
   Future<void> _initLocationController() async {
-    sharedPreferences ??= await SharedPreferences.getInstance();
+    sharedPreferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final currentLocation = sharedPreferences?.getString(Constant.location) ?? "Select Location";
     final firstName = sharedPreferences?.getString(Constant.firstName) ?? "";
     final lastName = sharedPreferences?.getString(Constant.lastName) ?? "";
@@ -135,25 +138,67 @@ class _HomeActivityState extends State<HomeActivity> {
     _searchTimer?.cancel();
     _scrollThrottleTimer?.cancel();
     _locationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
   
+  Future<void> _handleManualLocationSave(String typedAddress) async {
+    if (typedAddress.trim().isEmpty) return;
+    
+    try {
+      List<geo.Location> locations = await geo.locationFromAddress(typedAddress);
+      if (!mounted) return;
+      if (locations.isNotEmpty) {
+        double lat = locations[0].latitude;
+        double lng = locations[0].longitude;
+        String address = typedAddress;
+
+        // Try to get a cleaner name
+        try {
+          List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(lat, lng);
+          if (placemarks.isNotEmpty) {
+            address = placemarks[0].locality ?? 
+                     placemarks[0].subAdministrativeArea ?? 
+                     typedAddress;
+          }
+        } catch (_) {}
+
+        if (mounted) {
+          await _saveLocation(address, lat, lng);
+        }
+      }
+    } catch (e) {
+      debugPrint('Geocoding failed for manual entry: $e');
+    }
+  }
+
   Future<void> _saveLocation(String address, double lat, double lng) async {
     sharedPreferences ??= await SharedPreferences.getInstance();
-    
+
     await sharedPreferences?.setString(Constant.location, address);
     await sharedPreferences?.setString(Constant.lat, lat.toString());
     await sharedPreferences?.setString(Constant.long, lng.toString());
+
+    // Persist location to DB so it's available across devices/reinstalls
+    if (dataManager != null && mounted) {
+      await dataManager!.syncLocationToApi(context, address, lat, lng);
+    }
+    
+    if (!mounted) return;
     
     if (mounted) {
       setState(() {
         _locationController.text = address;
       });
-      // Refresh vendors with new location
+      // Refresh vendors and offers with new location
       setState(() {
         _isLoading = true;
       });
-      await getMixedVendors(context);
+      await Future.wait([
+        getMixedVendors(context),
+        getOffer(context),
+      ]);
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -168,10 +213,10 @@ class _HomeActivityState extends State<HomeActivity> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() {
-          _isGettingLocation = false;
-        });
         if (mounted) {
+          setState(() {
+            _isGettingLocation = false;
+          });
           CommonWidget.errorShowSnackBarFor(
               context, 'Location services are disabled. Please enable them.');
         }
@@ -182,10 +227,10 @@ class _HomeActivityState extends State<HomeActivity> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _isGettingLocation = false;
-          });
           if (mounted) {
+            setState(() {
+              _isGettingLocation = false;
+            });
             CommonWidget.errorShowSnackBarFor(
                 context, 'Location permissions are denied');
           }
@@ -194,10 +239,10 @@ class _HomeActivityState extends State<HomeActivity> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _isGettingLocation = false;
-        });
         if (mounted) {
+          setState(() {
+            _isGettingLocation = false;
+          });
           CommonWidget.errorShowSnackBarFor(
               context, 'Location permissions are permanently denied');
         }
@@ -208,30 +253,32 @@ class _HomeActivityState extends State<HomeActivity> {
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
+      if (!mounted) return;
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(
           position.latitude, position.longitude);
+      if (!mounted) return;
 
       String address = placemarks[0].locality ??
           placemarks[0].subAdministrativeArea ??
           placemarks[0].administrativeArea ??
           "Current Location";
 
-      await _saveLocation(address, position.latitude, position.longitude);
-      
-      setState(() {
-        _isGettingLocation = false;
-      });
-
       if (mounted) {
+        await _saveLocation(address, position.latitude, position.longitude);
+        
+        setState(() {
+          _isGettingLocation = false;
+        });
+
         CommonWidget.successShowSnackBarFor(
             context, 'Location updated successfully!');
       }
     } catch (e) {
-      setState(() {
-        _isGettingLocation = false;
-      });
       if (mounted) {
+        setState(() {
+          _isGettingLocation = false;
+        });
         CommonWidget.errorShowSnackBarFor(
             context, 'Error getting location: ${e.toString()}');
       }
@@ -239,124 +286,134 @@ class _HomeActivityState extends State<HomeActivity> {
   }
 
   void _onScroll() {
-    // Check if scroll controller is still attached and valid
-    if (!_scrollController.hasClients || !mounted) {
-      return;
-    }
+    if (!_scrollController.hasClients || !mounted) return;
     
     final currentOffset = _scrollController.offset;
+    final screenHeight = MediaQuery.of(context).size.height;
+    double baseHeaderHeight = screenHeight * 0.22;
+    if (baseHeaderHeight < 195) baseHeaderHeight = 195;
     
-    // Calculate if header would be fully collapsed (height < 10)
-    // baseHeaderHeight is typically around 200-250, so when scrollOffset > ~320, header is fully collapsed
-    const double baseHeaderHeight = 250.0;
-    const double minHeaderHeight = 0.0;
-    final double calculatedHeaderHeight = (baseHeaderHeight - (currentOffset * 0.6)).clamp(minHeaderHeight, baseHeaderHeight);
-    final bool isFullyCollapsed = calculatedHeaderHeight < 10;
+    // Calculate current header height based on scroll
+    final double headerHeight = (baseHeaderHeight - (currentOffset * 0.6)).clamp(0.0, baseHeaderHeight);
+    final bool isCollapsing = headerHeight < 20;
     
-    // If header is fully collapsed and was already collapsed, COMPLETELY STOP all processing
-    // This is the key fix - no calculations, no timers, nothing
-    if (isFullyCollapsed && _headerFullyCollapsed) {
-      return; // Exit immediately, do nothing
-    }
-    
-    // Update collapsed state only when transitioning
-    if (isFullyCollapsed != _headerFullyCollapsed) {
-      _headerFullyCollapsed = isFullyCollapsed;
-      // Remove scroll listener when collapsed to prevent any further calls
-      if (isFullyCollapsed) {
-        _scrollController.removeListener(_onScroll);
-      } else {
-        // Re-add listener when expanding
-        if (!_scrollController.hasListeners) {
-          _scrollController.addListener(_onScroll);
-        }
-      }
-      // Only update state when transitioning between collapsed/expanded states
+    // Update _headerFullyCollapsed state
+    if (isCollapsing != _headerFullyCollapsed) {
       if (mounted) {
         setState(() {
+          _headerFullyCollapsed = isCollapsing;
           _scrollOffset = currentOffset;
         });
       }
       return;
     }
     
-    // Only process scroll updates when header is NOT fully collapsed
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    
-    // Prevent issues when at the bottom
-    if (currentOffset >= maxScroll - 1) {
-      if (_scrollOffset != maxScroll && mounted) {
-        _scrollThrottleTimer?.cancel();
-        _scrollThrottleTimer = Timer(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            setState(() {
-              _scrollOffset = maxScroll;
-            });
-          }
+    // If we're at the very top, ensure offset is 0
+    if (currentOffset <= 0) {
+      if (_scrollOffset != 0 && mounted) {
+        setState(() {
+          _scrollOffset = 0;
+          _headerFullyCollapsed = false;
         });
       }
       return;
     }
-    
-    // Only update if scroll offset changed significantly (more than 100 pixels)
-    // Much larger threshold to drastically reduce rebuilds
-    if ((currentOffset - _lastScrollOffset).abs() < 100) {
-      return;
-    }
-    
-    _lastScrollOffset = currentOffset;
-    
-    // Throttle setState calls very aggressively to prevent UI freezing
-    _scrollThrottleTimer?.cancel();
-    _scrollThrottleTimer = Timer(const Duration(milliseconds: 200), () {
-      if (mounted && _scrollController.hasClients && !_headerFullyCollapsed) {
-        final newOffset = _scrollController.offset;
-        // Only update if the change is significant enough (150px) to warrant a rebuild
-        if ((newOffset - _scrollOffset).abs() >= 150) {
-          setState(() {
-            _scrollOffset = newOffset;
-          });
-        }
+
+    // Update scroll offset for smooth header shrinking
+    // Use a small threshold (3px) to prevent unnecessary rebuilds while keeping it smooth
+    if ((currentOffset - _scrollOffset).abs() > 3) {
+      if (mounted) {
+        setState(() {
+          _scrollOffset = currentOffset;
+        });
       }
-    });
+    }
   }
 
   void _checkUserLoginStatus() async {
     sharedPreferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
     String? userId = sharedPreferences?.getString(Constant.id);
     setState(() {
       _isUserLoggedIn = userId != null && userId.isNotEmpty;
     });
   }
 
+  /// Silently refreshes GPS into SharedPreferences before API calls — no UI feedback, no API re-triggers.
+  Future<void> _refreshLocationSilently() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      await sharedPreferences?.setString(Constant.lat, position.latitude.toString());
+      await sharedPreferences?.setString(Constant.long, position.longitude.toString());
+
+      try {
+        List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(
+            position.latitude, position.longitude);
+        String address = placemarks[0].locality ??
+            placemarks[0].subAdministrativeArea ??
+            placemarks[0].administrativeArea ??
+            "Current Location";
+        // Always update to current GPS address on app start
+        await sharedPreferences?.setString(Constant.location, address);
+        if (mounted) {
+          dataManager?.syncLocationToApi(context, address, position.latitude, position.longitude);
+        }
+        if (mounted) {
+          setState(() {
+            _locationController.text = address;
+          });
+        }
+      } catch (_) {}
+    } catch (_) {
+      // Silently fail — proceed with whatever is already stored
+    }
+  }
+
   start() async {
     try {
     sharedPreferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
     dataManager = HomeDataManager(sharedPreferences!);
     bookmarkDataManager = CategoriesListDataManager(sharedPreferences!);
-      
+
       setState(() {
         _isLoading = true;
       });
-      
+
+      // Always refresh GPS coordinates on start; _refreshLocationSilently only updates
+      // the display address if the user hasn't explicitly picked a location
+      await _refreshLocationSilently();
+      if (!mounted) return;
+
       // Run all API calls in parallel with timeout
-      await Future.wait<void>([
-        getCategory(context).timeout(const Duration(seconds: 10), onTimeout: () {
-        }),
-        getServices(context).timeout(const Duration(seconds: 10), onTimeout: () {
-        }),
-        getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {
-        }),
-        getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {
-        }),
-        getMixedVendors(context).timeout(const Duration(seconds: 10), onTimeout: () {
-        }),
-        getNotifications(context),
-      ]);
+      if (mounted) {
+        await Future.wait<void>([
+          getCategory(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
+          getServices(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
+          getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
+          getMixedVendors(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
+          getNotifications(context),
+        ]);
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -411,20 +468,17 @@ class _HomeActivityState extends State<HomeActivity> {
 
   Future<void> _performSearch() async {
     if (_searchQuery.isEmpty) return;
-    
+
     setState(() {
       _isSearching = true;
+      _isLoading = true; // Show shimmer while search is in progress
     });
     
     try {
-      // Search using backend API
+      // 1. Search for vendors using name first
       final searchResults = await dataManager!.searchVendors(context, _searchQuery);
-      
-      setState(() {
-        _isSearching = false;
-      });
-      
-      
+      if (!mounted) return;
+
       // Navigate to search results screen
       CommonWidget.navigateToScreen(
         context,
@@ -434,10 +488,13 @@ class _HomeActivityState extends State<HomeActivity> {
         ),
       );
     } catch (e) {
-      setState(() {
-        _isSearching = false;
-      });
-      CommonWidget.errorShowSnackBarFor(context, "Search failed. Please try again.");
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+          _isLoading = false;
+        });
+        CommonWidget.errorShowSnackBarFor(context, "Search failed. Please try again.");
+      }
     }
   }
 
@@ -446,20 +503,19 @@ class _HomeActivityState extends State<HomeActivity> {
     try {
       // Get user location for Google Places integration
       var location = await _getUserLocationData();
-      var response = await dataManager!.getAllServicesWithLocation(context, location);
-      if (response != null) {
-        var responseData = jsonDecode(response.body);
-        if (responseData['status'] == 'success' && responseData['data'] != null) {
-          setState(() {
-            servicesData.clear();
-            final servicesList = responseData['data'] as List;
-            servicesData.addAll(servicesList.map((item) => ServicesData.fromJson(item)).toList());
-            for (var vendor in servicesData) {
-            }
-          });
-        } else {
+      if (!mounted) return;
+      if (mounted) {
+        var response = await dataManager!.getAllServicesWithLocation(context, location);
+        if (response != null && mounted) {
+          var responseData = jsonDecode(response.body);
+          if (responseData['status'] == 'success' && responseData['data'] != null) {
+            setState(() {
+              servicesData.clear();
+              final servicesList = responseData['data'] as List;
+              servicesData.addAll(servicesList.map((item) => ServicesData.fromJson(item)).toList());
+            });
+          }
         }
-      } else {
       }
     } catch (e) {
     }
@@ -497,17 +553,10 @@ class _HomeActivityState extends State<HomeActivity> {
         };
       }
       
-      // If no stored location, use default location (Chandigarh)
-      return {
-        'lat': 30.7200094,
-        'lng': 76.7080831,
-      };
+      // No stored location available
+      return null;
     } catch (e) {
-      // Return default location on error
-      return {
-        'lat': 30.7200094,
-        'lng': 76.7080831,
-      };
+      return null;
     }
   }
 
@@ -519,7 +568,7 @@ class _HomeActivityState extends State<HomeActivity> {
     
     // Calculate animation values based on scroll offset
     // Make header height responsive to screen size
-    double baseHeaderHeight = screenHeight * 0.22; // Increased to accommodate search bar
+    double baseHeaderHeight = (statusBarHeight + 180).clamp(200.0, 260.0);
     double minHeaderHeight = 0.0; // Allow complete collapse
     
     // If header is fully collapsed, use cached values to prevent unnecessary calculations
@@ -536,19 +585,13 @@ class _HomeActivityState extends State<HomeActivity> {
       // Calculate header height and animations only when header is visible
       headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(minHeaderHeight, baseHeaderHeight);
       
-      // Ensure minimum height for very small screens
-      if (screenHeight < 600) {
-        baseHeaderHeight = 180.0; // Increased to accommodate search bar
-        headerHeight = (baseHeaderHeight - (_scrollOffset * 0.6)).clamp(0.0, baseHeaderHeight);
-      }
-      
       welcomeOpacity = 1.0 - (_scrollOffset / 80.0).clamp(0.0, 1.0);
       welcomeScale = 1.0 - (_scrollOffset / 150.0).clamp(0.0, 0.3);
     }
     
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
@@ -561,19 +604,15 @@ class _HomeActivityState extends State<HomeActivity> {
           Column(
               children: [
                 // Green status bar background
-                Container(
-                  height: statusBarHeight,
-                  color: ColorClass.base_color,
-                ),
-                // Column to hold header and content
+                // Removed manual status bar container as it's handled by parent SafeArea
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header - Completely remove from tree when collapsed to prevent any rebuilds
-                if (!_headerFullyCollapsed && headerHeight > 10)
+                if (!_headerFullyCollapsed && headerHeight > 20)
                 IgnorePointer(
-                  ignoring: headerHeight < 10, // Ignore pointer events when header is collapsed
+                  ignoring: headerHeight < 20, // Ignore pointer events when header is collapsed
                   child: Container(
                     height: headerHeight,
                       width: double.infinity, // Ensure full width
@@ -581,21 +620,38 @@ class _HomeActivityState extends State<HomeActivity> {
                     clipBehavior: Clip.hardEdge, // Clip content when height is 0
                           child: Container(
                       padding: EdgeInsets.only(
-                          top: statusBarHeight + 8, 
-                          bottom: 12, 
-                        left: 20, 
+                          top: statusBarHeight + 8,
+                          bottom: 12,
+                        left: 20,
                         right: 20
                       ),
                       decoration: BoxDecoration(
-                        color: ColorClass.base_color,
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(25),
-                          bottomRight: Radius.circular(25),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF166534),
+                            Color(0xFF1CB273),
+                            Color(0xFF00E676),
+                          ],
                         ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF1CB273).withOpacity(0.4),
+                            blurRadius: 16,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
                       ),
                       // Add margin to prevent content overlap
                       margin: const EdgeInsets.only(bottom: 0),
-                      child: Column(
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -605,20 +661,36 @@ class _HomeActivityState extends State<HomeActivity> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                   Expanded(
-                                    child: Text(
-                                      _userFirstName.isNotEmpty || _userLastName.isNotEmpty
-                                          ? "Welcome, ${_userFirstName.isNotEmpty ? _userFirstName : _userLastName}${_userLastName.isNotEmpty && _userFirstName.isNotEmpty ? " $_userLastName" : ""}"
-                                          : "Welcome",
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                        fontSize: 18,
-                                        fontFamily: "Pop600",
-                                        fontWeight: FontWeight.bold,
-                                            ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          "Welcome back 👋",
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w400,
+                                            fontFamily: "Pop400",
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _userFirstName.isNotEmpty || _userLastName.isNotEmpty
+                                              ? "${_userFirstName.isNotEmpty ? _userFirstName : _userLastName}${_userLastName.isNotEmpty && _userFirstName.isNotEmpty ? " $_userLastName" : ""}"
+                                              : "Cahrz",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 22,
+                                            fontFamily: "Pop600",
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
                                   const SizedBox(width: 8),
                               GestureDetector(
                                 onTap: () {
@@ -627,16 +699,63 @@ class _HomeActivityState extends State<HomeActivity> {
                                       context, NotificationActivity(notificationsList));
                                 },
                                 child: Container(
-                                      width: 36,
-                                      height: 36,
+                                      width: 44,
+                                      height: 44,
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.2),
-                                        shape: BoxShape.circle,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                                   ),
-                                  child: const Icon(
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    alignment: Alignment.center,
+                                    children: [
+                                      const Icon(
                                         Icons.notifications_outlined,
-                                    color: Colors.white,
-                                        size: 20,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                      if (notificationsList.any((n) {
+                                        String? lastReadStr = sharedPreferences?.getString(Constant.lastReadNotificationsAt);
+                                        if (lastReadStr == null) return true;
+                                        DateTime lastRead = DateTime.parse(lastReadStr);
+                                        return n.createdAt != null && DateTime.parse(n.createdAt!).isAfter(lastRead);
+                                      }))
+                                        Positioned(
+                                          right: -4,
+                                          top: -4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 18,
+                                              minHeight: 18,
+                                            ),
+                                            child: Builder(
+                                              builder: (context) {
+                                                int unreadCount = notificationsList.where((n) {
+                                                  String? lastReadStr = sharedPreferences?.getString(Constant.lastReadNotificationsAt);
+                                                  if (lastReadStr == null) return true;
+                                                  DateTime lastRead = DateTime.parse(lastReadStr);
+                                                  return n.createdAt != null && DateTime.parse(n.createdAt!).isAfter(lastRead);
+                                                }).length;
+                                                return Text(
+                                                  '${unreadCount > 9 ? "9+" : unreadCount}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                );
+                                              }
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -692,85 +811,112 @@ class _HomeActivityState extends State<HomeActivity> {
                                           final lng = place.lng ?? 0.0;
                                           _saveLocation(address, lat, lng);
                                         },
+                                        initialValue: _locationController.text,
+                                        types: const [
+                                          AutoCompleteType.locality,
+                                          AutoCompleteType.sublocality,
+                                          AutoCompleteType.neighborhood,
+                                          AutoCompleteType.postalCode
+                                        ],
+                                        onFinishedEditingWithNoSuggestion: (text) {
+                                          _handleManualLocationSave(text);
+                                        },
                                         language: 'en-US',
                                       ),
                                             ),
-                                    Icon(
-                                      Icons.arrow_drop_down,
-                                      color: Colors.grey[600],
-                                      size: 18,
-                                            ),
-                                    const SizedBox(width: 6),
+                                    IconButton(
+                                      icon: _isGettingLocation
+                                          ? SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: ColorClass.base_color),
+                                            )
+                                          : Icon(Icons.my_location,
+                                              color: ColorClass.base_color,
+                                              size: 18),
+                                      onPressed: _isGettingLocation
+                                          ? null
+                                          : _getCurrentLocation,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      tooltip: "Get current location",
+                                    ),
+                                    const SizedBox(width: 8),
                                       ],
                                     ),
                                 ),
                               const SizedBox(height: 8),
                               // Search Field
-                                Container(
+                              Container(
                                 key: widget.searchKey,
                                 height: 44,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: TextField(
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _searchQuery = value;
-                                        });
-                                      },
-                                      onSubmitted: (value) {
-                                        if (value.isNotEmpty) {
-                                          _performSearch();
-                                        }
-                                      },
-                                    decoration: InputDecoration(
-                                      hintText: "Search for services, locations...",
-                                      hintStyle: TextStyle(
-                                        fontFamily: "Pop400",
-                                        color: Colors.grey[600],
-                                      fontSize: 13,
-                                      ),
-                                    prefixIcon: Padding(
-                                      padding: const EdgeInsets.all(10),
-                                      child: Icon(
-                                        Icons.search,
-                                  color: ColorClass.base_color,
-                                        size: 18,
-                                      ),
-                                      ),
-                                      suffixIcon: _searchQuery.isNotEmpty
-                                        ? IconButton(
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      _searchQuery = "";
-                                                      filteredMixedVendorsData = List.from(mixedVendorsData);
-                                                      _isSearching = false;
-                                                    });
-                                                  },
-                                                  icon: Icon(
-                                                    Icons.clear,
-                                                    color: Colors.grey[600],
-                                              size: 18,
-                                                  ),
-                                            )
-                                          : null,
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                      contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 10,
-                                      ),
-                                    isDense: true,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchQuery = value;
+                                    });
+                                  },
+                                  onSubmitted: (value) {
+                                    if (value.isNotEmpty) {
+                                      _performSearch();
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: "Search for services, vendors...",
+                                    hintStyle: const TextStyle(
+                                      color: Colors.grey,
+                                      fontFamily: "Pop400",
+                                      fontSize: 14,
                                     ),
+                                    prefixIcon: const Icon(Icons.search, color: Color(0xFF00B074)),
+                                    suffixIcon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (_searchController.text.isNotEmpty)
+                                          IconButton(
+                                            icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                                            onPressed: () {
+                                              setState(() {
+                                                _searchController.clear();
+                                                _searchQuery = "";
+                                                filteredMixedVendorsData = List.from(mixedVendorsData);
+                                                _isSearching = false;
+                                              });
+                                            },
+                                          ),
+                                        IconButton(
+                                          icon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF00B074)),
+                                          onPressed: () {
+                                            if (_searchController.text.isNotEmpty) {
+                                              _performSearch();
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    border: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 12,
+                                    ),
+                                    isDense: true,
                                   ),
                                 ),
+                              ),
                               ],
                             ),
                           ),
-                  ),
-                ),
+                        ), // Close SingleChildScrollView
+                      ),
+                    ),
               // Main Content - Expanded ensures it takes remaining space after header
           Expanded(
                 child: Container(
@@ -848,7 +994,7 @@ class _HomeActivityState extends State<HomeActivity> {
                         padding: EdgeInsets.only(
                           left: 15,
                           right: 15,
-                          top: (!_headerFullyCollapsed && headerHeight > 10) 
+                          top: (!_headerFullyCollapsed && headerHeight > 20) 
                               ? 28 
                               : (_scrollOffset > 100) 
                                   ? 88  // Account for floating minimized header (80px) + spacing
@@ -858,6 +1004,64 @@ class _HomeActivityState extends State<HomeActivity> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                        // Offers Section
+                        if (offerListData.isNotEmpty) ...[
+                          Text(
+                            "Special Offers",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: "Pop500",
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Column(
+                            children: [
+                              SizedBox(
+                                height: 200,
+                                child: PageView.builder(
+                                  controller: offerPageController,
+                                  onPageChanged: (index) {
+                                    setState(() {
+                                      currentOfferPage = index;
+                                    });
+                                  },
+                                  itemCount: offerListData.length,
+                                  itemBuilder: (context, index) {
+                                    final offer = offerListData[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                                      child: _buildFullWidthOfferCard(offer),
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (offerListData.length > 1)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: List.generate(
+                                      offerListData.length,
+                                      (index) => Container(
+                                        width: 8,
+                                        height: 8,
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: currentOfferPage == index
+                                              ? ColorClass.base_color
+                                              : Colors.grey[300],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                         // Categories Grid - 2 per row, full width (No heading)
                         Container(
                           key: widget.categoriesKey,
@@ -992,64 +1196,6 @@ class _HomeActivityState extends State<HomeActivity> {
                             ],
                                 ),
                         ),
-                        const SizedBox(height: 20),
-                        // Offers Section - Only show if offers exist within 50 miles
-                        if (offerListData.isNotEmpty) ...[
-                          Text(
-                            "Special Offers",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: "Pop500",
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Column(
-                            children: [
-                              SizedBox(
-                                height: 200,
-                                child: PageView.builder(
-                                  controller: offerPageController,
-                                  onPageChanged: (index) {
-                                    setState(() {
-                                      currentOfferPage = index;
-                                    });
-                                  },
-                                  itemCount: offerListData.length,
-                                  itemBuilder: (context, index) {
-                                    final offer = offerListData[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 0),
-                                      child: _buildFullWidthOfferCard(offer),
-                                    );
-                                  },
-                                ),
-                              ),
-                              if (offerListData.length > 1)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(
-                                      offerListData.length,
-                                      (index) => Container(
-                                        width: 8,
-                                        height: 8,
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: currentOfferPage == index
-                                              ? ColorClass.base_color
-                                              : Colors.grey[300],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
                       ],
                                   ),
                                 ),
@@ -1915,6 +2061,49 @@ class _HomeActivityState extends State<HomeActivity> {
                           color: vendor.isAppVendor ? ColorClass.base_color : Colors.blue,
                         ),
                 ),
+                // Open/Closed Badge
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: vendor.isOpen ? Colors.green.withOpacity(0.9) : Colors.red.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          vendor.isOpen ? "OPEN" : "CLOSED",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontFamily: "Pop600",
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 // Gradient overlay at bottom for text readability
                 Positioned(
                   bottom: 0,
@@ -2130,13 +2319,17 @@ class _HomeActivityState extends State<HomeActivity> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () async {
-                setState(() {
-                  _isLoading = true;
-                });
-                await getMixedVendors(context);
-                setState(() {
-                  _isLoading = false;
-                });
+                if (mounted) {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  await getMixedVendors(context);
+                }
+                if (mounted) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                }
               },
               icon: const Icon(Icons.refresh, size: 16),
               label: const Text("Refresh", style: TextStyle(fontFamily: "Pop500")),
@@ -2154,183 +2347,179 @@ class _HomeActivityState extends State<HomeActivity> {
 
   // Build Full Width Offer Card for Carousel
   Widget _buildFullWidthOfferCard(OfferListModelData offer) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            // Background Image or Color
-            if (offer.image != null && offer.image!.isNotEmpty)
-              Image.network(
-                offer.image!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: double.infinity,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          ColorClass.base_color,
-                          ColorClass.base_color.withOpacity(0.7),
-                        ],
+    return GestureDetector(
+      onTap: () {
+        if (offer.vendor != null && offer.vendor!.isNotEmpty) {
+          CommonWidget.navigateToScreen(
+            context,
+            SpecialistsActivity(offer.vendor!),
+          );
+        } else {
+          CommonWidget.errorShowSnackBarFor(context, "Vendor details not available for this offer.");
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // Background Image or Color
+              if (offer.image != null && offer.image!.isNotEmpty)
+                Image.network(
+                  offer.image!,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: double.infinity,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            ColorClass.base_color,
+                            ColorClass.base_color.withOpacity(0.7),
+                          ],
+                        ),
                       ),
+                    );
+                  },
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        ColorClass.base_color,
+                        ColorClass.base_color.withOpacity(0.7),
+                      ],
                     ),
-                  );
-                },
-              )
-            else
+                  ),
+                ),
+              // Content Overlay
               Container(
                 width: double.infinity,
                 height: 200,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                     colors: [
-                      ColorClass.base_color,
-                      ColorClass.base_color.withOpacity(0.7),
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            color: Colors.orange[300],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              offer.title ?? "Offer",
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: "Pop600",
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        offer.description ?? "",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (offer.discount != null && offer.discount! > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "${offer.discount}% OFF",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.all_inclusive,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "Never expires",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
               ),
-            // Content Overlay
-            Container(
-              width: double.infinity,
-              height: 200,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.local_fire_department,
-                          color: Colors.orange[300],
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            offer.title ?? "Offer",
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: "Pop600",
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      offer.description ?? "",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (offer.discount != null && offer.discount! > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "${offer.discount}% OFF",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.all_inclusive,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  "Never expires",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: (offer.isActive ?? true) ? Colors.green : Colors.grey,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            (offer.isActive ?? true) ? "Active" : "Inactive",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2340,64 +2529,76 @@ class _HomeActivityState extends State<HomeActivity> {
   Widget _buildOfferCard(OfferListModelData offer) {
     // Add null safety check
     return RepaintBoundary(
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: 16),
-        decoration: ModernDesignSystem.modernCard(
-          borderRadius: ModernDesignSystem.radiusL,
-          shadows: ModernDesignSystem.shadowMedium,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // Optimize layout
-          children: [
+      child: GestureDetector(
+        onTap: () {
+          if (offer.vendor != null && offer.vendor!.isNotEmpty) {
+            CommonWidget.navigateToScreen(
+              context,
+              SpecialistsActivity(offer.vendor!),
+            );
+          } else {
+            CommonWidget.errorShowSnackBarFor(context, "Vendor details not available for this offer.");
+          }
+        },
+        child: Container(
+          width: 280,
+          margin: const EdgeInsets.only(right: 16),
+          decoration: ModernDesignSystem.modernCard(
+            borderRadius: ModernDesignSystem.radiusL,
+            shadows: ModernDesignSystem.shadowMedium,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min, // Optimize layout
+            children: [
               ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(ModernDesignSystem.radiusL),
-                topRight: Radius.circular(ModernDesignSystem.radiusL),
-              ),
-              child: Container(
-                height: 100,
-                width: double.infinity,
-                color: ColorClass.base_color.withOpacity(0.1),
-                child: const Icon(
-                  Icons.local_offer,
-                  size: 48,
-                  color: Colors.orange,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(ModernDesignSystem.radiusL),
+                  topRight: Radius.circular(ModernDesignSystem.radiusL),
+                ),
+                child: Container(
+                  height: 100,
+                  width: double.infinity,
+                  color: ColorClass.base_color.withOpacity(0.1),
+                  child: const Icon(
+                    Icons.local_offer,
+                    size: 48,
+                    color: Colors.orange,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    offer.title ?? "Special Offer",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontFamily: "Pop600",
-                      color: Colors.black87,
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      offer.title ?? "Special Offer",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontFamily: "Pop600",
+                        color: Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    offer.description ?? "Limited time offer",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: "Pop400",
-                      color: Colors.grey[600],
+                    const SizedBox(height: 4),
+                    Text(
+                      offer.description ?? "Limited time offer",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: "Pop400",
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2444,10 +2645,14 @@ class _HomeActivityState extends State<HomeActivity> {
                     // Use externalApplication mode to open in App Store app on iOS
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   } else {
-                    CommonWidget.errorShowSnackBarFor(context, "Could not open App Store");
+                    if (context.mounted) {
+                      CommonWidget.errorShowSnackBarFor(context, "Could not open App Store");
+                    }
                   }
                 } catch (e) {
-                  CommonWidget.errorShowSnackBarFor(context, "Error opening App Store: $e");
+                  if (context.mounted) {
+                    CommonWidget.errorShowSnackBarFor(context, "Error opening App Store: $e");
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -2472,14 +2677,17 @@ class _HomeActivityState extends State<HomeActivity> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      CommonWidget.successShowSnackBarFor(context, "Could not open the link");
+      if (mounted) {
+        CommonWidget.successShowSnackBarFor(context, "Could not open the link");
+      }
     }
   }
 
   Future<void> getCategory(BuildContext context) async {
     try {
     var response = await dataManager!.getcategory(context);
-      if (response != null) {
+      if (!mounted) return;
+      if (response != null && mounted) {
         var responseData = jsonDecode(response.body);
         if (responseData['status'] == 'success' && responseData['data'] != null) {
       setState(() {
@@ -2497,7 +2705,8 @@ class _HomeActivityState extends State<HomeActivity> {
   Future<void> getServices(BuildContext context) async {
     try {
     var response = await dataManager!.getAllServices(context);
-      if (response != null) {
+      if (!mounted) return;
+      if (response != null && mounted) {
         var responseData = jsonDecode(response.body);
         if (responseData['status'] == 'success' && responseData['data'] != null) {
       setState(() {
@@ -2516,13 +2725,12 @@ class _HomeActivityState extends State<HomeActivity> {
   Future<void> getOffer(BuildContext context) async {
     try {
       var response = await dataManager!.getOffer(context);
-      if (response != null) {
+      if (!mounted) return;
+      if (response != null && mounted) {
         var responseData = jsonDecode(response.body);
         if (responseData['status'] == 'success' && responseData['data'] != null) {
           // Get user location for distance calculation
           final userLocation = _getUserLocation();
-          final userLat = userLocation['lat']!;
-          final userLng = userLocation['lng']!;
           
           // 50 miles = 80,467 meters
           const double maxDistanceMeters = 80467;
@@ -2536,7 +2744,9 @@ class _HomeActivityState extends State<HomeActivity> {
                 final offer = OfferListModelData.fromJson(offerJson);
                 
                 // Calculate distance if location is available
-                if (offer.location?.coordinates != null) {
+                if (userLocation != null && offer.location?.coordinates != null) {
+                  final userLat = userLocation['lat']!;
+                  final userLng = userLocation['lng']!;
                   final offerLat = offer.location!.coordinates!.lat;
                   final offerLng = offer.location!.coordinates!.long;
                   
@@ -2546,56 +2756,71 @@ class _HomeActivityState extends State<HomeActivity> {
                       userLat, userLng, offerLat, offerLng
                     );
                     
-                    // Only add offer if it's within 50 miles and is active
-                    if (distance <= maxDistanceMeters && (offer.isCurrentlyActive == true || offer.isActive == true)) {
+                    // Only add offer if it's within 50 miles
+                    if (distance <= maxDistanceMeters) {
                       offer.distance = distance;
                       offerListData.add(offer);
                     }
                   } else {
-                    // If no coordinates, don't add the offer
+                    // If no coordinates, still add the offer
+                    offerListData.add(offer);
                   }
                 } else {
-                  // If no location, don't add the offer
+                  // If no location available, still add the offer
+                  offerListData.add(offer);
                 }
               }
             }
+            
+            // Sort offers by distance (closest first)
+            offerListData.sort((a, b) => 
+              (a.distance ?? double.infinity).compareTo(b.distance ?? double.infinity)
+            );
+            debugPrint("FETCHED OFFERS: ${offerListData.length}");
           });
         }
       }
     } catch (e) {
       // Continue without offers if API fails
+      debugPrint("OFFER ERROR: $e");
     }
   }
 
   Future<void> getMixedVendors(BuildContext context) async {
     try {
       final vendors = await dataManager!.getMixedVendors(context);
+      if (!mounted) return;
       
-      // Calculate distances for all vendors
+      // Calculate distances for all vendors if location is available
       final userLocation = _getUserLocation();
-      final userLat = userLocation['lat']!;
-      final userLng = userLocation['lng']!;
       
-      for (var vendor in vendors) {
-        if (vendor.latitude != 0 && vendor.longitude != 0) {
-          vendor.distance = MixedVendorData.calculateDistanceBetween(
-            userLat, userLng, vendor.latitude, vendor.longitude
-          );
+      if (userLocation != null) {
+        final userLat = userLocation['lat']!;
+        final userLng = userLocation['lng']!;
+        
+        for (var vendor in vendors) {
+          if (vendor.latitude != 0 && vendor.longitude != 0) {
+            vendor.distance = MixedVendorData.calculateDistanceBetween(
+              userLat, userLng, vendor.latitude, vendor.longitude
+            );
+          }
         }
       }
       
-      setState(() {
-        mixedVendorsData.clear();
-        mixedVendorsData.addAll(vendors);
-        filteredMixedVendorsData = List.from(mixedVendorsData);
-      });
+      if (mounted) {
+        setState(() {
+          mixedVendorsData.clear();
+          mixedVendorsData.addAll(vendors);
+          filteredMixedVendorsData = List.from(mixedVendorsData);
+        });
+      }
       
     } catch (e) {
       // Continue without vendors if API fails
     }
   }
 
-  Map<String, double> _getUserLocation() {
+  Map<String, double>? _getUserLocation() {
     try {
       final latStr = sharedPreferences?.getString(Constant.lat);
       final lngStr = sharedPreferences?.getString(Constant.long);
@@ -2607,17 +2832,10 @@ class _HomeActivityState extends State<HomeActivity> {
         };
       }
       
-      // If no stored location, use default location (Chandigarh)
-      return {
-        'lat': 30.7200094,
-        'lng': 76.7080831,
-      };
+      // No stored location available
+      return null;
     } catch (e) {
-      // Return default location on error
-      return {
-        'lat': 30.7200094,
-        'lng': 76.7080831,
-      };
+      return null;
     }
   }
 
@@ -2664,30 +2882,32 @@ class _HomeActivityState extends State<HomeActivity> {
       if (vendor.isBookmarked) {
         // Remove bookmark
         var response = await bookmarkDataManager!.removeBookmark(context, vendor.id);
+        if (!mounted) return;
         var data = jsonDecode(response.body);
-        if (data['status'] == "success") {
+        if (data['status'] == "success" && mounted) {
           setState(() {
             vendor.isBookmarked = false;
           });
           CommonWidget.successShowSnackBarFor(context, "Removed from bookmarks");
-        } else {
+        } else if (mounted) {
           CommonWidget.errorShowSnackBarFor(context, data['message'] ?? "Failed to remove bookmark");
         }
       } else {
         // Add bookmark
         var response = await bookmarkDataManager!.postBookmark(context, vendor.id);
+        if (!mounted) return;
         var data = jsonDecode(response.body);
-        if (data['status'] == "success") {
+        if (data['status'] == "success" && mounted) {
           setState(() {
             vendor.isBookmarked = true;
           });
           CommonWidget.successShowSnackBarFor(context, "Added to bookmarks");
-        } else {
+        } else if (mounted) {
           CommonWidget.errorShowSnackBarFor(context, data['message'] ?? "Failed to add bookmark");
         }
       }
     } catch (e) {
-      CommonWidget.errorShowSnackBarFor(context, "Error updating bookmark");
+      if (mounted) CommonWidget.errorShowSnackBarFor(context, "Error updating bookmark");
     }
   }
 

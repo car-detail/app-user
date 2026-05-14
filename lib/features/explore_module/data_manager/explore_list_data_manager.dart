@@ -9,14 +9,15 @@ class ExploreListDataManager {
   SharedPreferences sharedPreferences;
   ExploreListDataManager(this.sharedPreferences);
   ApiFuntions apiFuntions = ApiFuntions();
-  getAllServices(BuildContext context) {
+  getAllServices(BuildContext context, {int pageNumber = 1, int count = 12, int? maxDistance}) {
     String? lat = sharedPreferences.getString(Constant.lat);
     String? long = sharedPreferences.getString(Constant.long);
     
-    String url = "${Constant.getAllService}pageNumber=1&count=12";
+    int distance = maxDistance ?? 30000;
+    String url = "${Constant.getAllService}pageNumber=$pageNumber&count=$count";
     
     if (lat != null && long != null && lat != "null" && long != "null") {
-      url += "&lat=$lat&long=$long&maxDistance=30000";
+      url += "&lat=$lat&long=$long&maxDistance=$distance";
     }
     
     url += "&sortBy=createdAt";
@@ -41,14 +42,15 @@ class ExploreListDataManager {
     return apiFuntions.getdatauser(context, Constant.category);
   }
 
-  getAllVendors(BuildContext context, {String? category, String? searchTerm}) {
+  getAllVendors(BuildContext context, {int pageNumber = 1, int count = 50, String? category, String? searchTerm, int? maxDistance}) {
     String? lat = sharedPreferences.getString(Constant.lat);
     String? long = sharedPreferences.getString(Constant.long);
     
-    String url = "${Constant.getAllVendors}pageNumber=1&count=50&includeGooglePlaces=true";
+    int distance = maxDistance ?? 30000;
+    String url = "${Constant.getAllVendors}pageNumber=$pageNumber&count=$count&includeGooglePlaces=true";
     
     if (lat != null && long != null && lat != "null" && long != "null") {
-      url += "&lat=$lat&long=$long&maxDistance=30000";
+      url += "&lat=$lat&long=$long&maxDistance=$distance";
     }
     
     if (category != null && category.isNotEmpty && category != 'All') {

@@ -91,9 +91,15 @@ class BookingModelData {
         ? Location.fromJson(json['location'])
         : null;
     createdBy = json['createdBy'];
-    vendorId = json['vendorId'] != null
-        ? VendorId.fromJson(json['vendorId'])
-        : null;
+    if (json['vendorId'] != null) {
+      if (json['vendorId'] is Map<String, dynamic>) {
+        vendorId = VendorId.fromJson(json['vendorId']);
+      } else if (json['vendorId'] is String) {
+        vendorId = VendorId(sId: json['vendorId']);
+      }
+    } else {
+      vendorId = null;
+    }
     promotionPlanPrice = json['promotionPlanPrice'];
     promotionSerialNumber = json['promotionSerialNumber'];
     isActive = json['isActive'];
@@ -196,6 +202,9 @@ class VendorId {
   String? openTime;
   String? closeTime;
   bool? isShopOpen;
+  String? timeZone;
+  List<TimeSlots>? timeSlots;
+  int? slotCapacity;
 
   VendorId(
       {this.sId,
@@ -205,7 +214,10 @@ class VendorId {
         this.location,
         this.openTime,
         this.closeTime,
-        this.isShopOpen});
+        this.isShopOpen,
+        this.timeZone,
+        this.timeSlots,
+        this.slotCapacity});
 
   VendorId.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -218,6 +230,14 @@ class VendorId {
     openTime = json['openTime'];
     closeTime = json['closeTime'];
     isShopOpen = json['isShopOpen'];
+    timeZone = json['timeZone'];
+    if (json['timeSlots'] != null) {
+      timeSlots = <TimeSlots>[];
+      json['timeSlots'].forEach((v) {
+        timeSlots!.add(TimeSlots.fromJson(v));
+      });
+    }
+    slotCapacity = json['slotCapacity'];
   }
 
   Map<String, dynamic> toJson() {
@@ -232,6 +252,11 @@ class VendorId {
     data['openTime'] = openTime;
     data['closeTime'] = closeTime;
     data['isShopOpen'] = isShopOpen;
+    data['timeZone'] = timeZone;
+    if (timeSlots != null) {
+      data['timeSlots'] = timeSlots!.map((v) => v.toJson()).toList();
+    }
+    data['slotCapacity'] = slotCapacity;
     return data;
   }
 }

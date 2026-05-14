@@ -116,211 +116,275 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: ColorClass.base_color,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: CommonWidget.buildBackButton(
-            context,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            iconColor: Colors.black87,
-          ),
-          title: const Text(
-            "Profile",
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, size: 20, color: Colors.red),
-              tooltip: "Logout",
-              onPressed: () => _showLogoutDialog(context),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
+        backgroundColor: const Color(0xFFF8FAFC), // Modern soft background
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
                 onRefresh: _loadUserDetails,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                child: Stack(
+                  children: [
+                    // Gradient Header Background
+                    Container(
+                      height: 240,
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF166534),
+                            Color(0xFF1CB273),
+                            Color(0xFF00E676),
+                          ],
                         ),
-                      ],
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                      ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
+                    
+                    // Main Content
+                    SafeArea(
+                      bottom: false,
                       child: Column(
                         children: [
-                          // Profile Picture
-                          Center(
-                            child: CircleAvatar(
-                              radius: 60,
-                              backgroundColor: ColorClass.base_color.withOpacity(0.1),
-                              child: ClipOval(
-                                child: (userDetails?.data?.image != null && 
-                                        userDetails!.data!.image!.isNotEmpty)
-                                    ? Image.network(
-                                        userDetails!.data!.image!,
-                                        height: 120,
-                                        width: 120,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Image.asset(
-                                            CommonWidget.getImagePath("chat_profile.png"),
-                                            height: 120,
-                                            width: 120,
-                                            fit: BoxFit.cover,
-                                          );
-                                        },
-                                      )
-                                    : Image.asset(
-                                        CommonWidget.getImagePath("chat_profile.png"),
-                                        height: 120,
-                                        width: 120,
-                                        fit: BoxFit.cover,
-                                      ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // User Name
-                          Text(
-                            _getDisplayName(),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          // Email
-                          Text(
-                            _getValueOrNA(
-                              userDetails?.data?.email,
-                              sharedPreferences?.getString(Constant.email),
-                            ),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          
-                          // Personal Information Section
-                          _buildInfoRow(
-                            icon: Icons.person,
-                            label: "First Name",
-                            value: _getValueOrNA(
-                              userDetails?.data?.firstName,
-                              sharedPreferences?.getString(Constant.firstName),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildInfoRow(
-                            icon: Icons.person_outline,
-                            label: "Last Name",
-                            value: _getValueOrNA(
-                              userDetails?.data?.lastName,
-                              sharedPreferences?.getString(Constant.lastName),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildInfoRow(
-                            icon: Icons.email,
-                            label: "Email",
-                            value: _getValueOrNA(
-                              userDetails?.data?.email,
-                              sharedPreferences?.getString(Constant.email),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildInfoRow(
-                            icon: Icons.location_on,
-                            label: "Location",
-                            value: _getLocation(),
-                          ),
-                          const SizedBox(height: 32),
-                          
-                          // Edit Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ProfileActivity(),
+                          // Custom App Bar
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                CommonWidget.buildGreenHeaderBackButton(context),
+                                const Text(
+                                  "Profile",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontFamily: "Pop600",
                                   ),
-                                ).then((_) {
-                                  // Refresh user details after editing
-                                  _loadUserDetails();
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ColorClass.base_color,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                "Edit Profile",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.logout, color: Colors.white, size: 20),
+                                    onPressed: () => _showLogoutDialog(context),
+                                  ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Profile Card & Content
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 30),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                alignment: Alignment.topCenter,
+                                children: [
+                                  // Card Background
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 60),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.06),
+                                          blurRadius: 24,
+                                          offset: const Offset(0, 12),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.fromLTRB(24, 76, 24, 30),
+                                    child: Column(
+                                      children: [
+                                        // User Name
+                                        Text(
+                                          _getDisplayName(),
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            fontFamily: "Pop700",
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        
+                                        // Email
+                                        Text(
+                                          _getValueOrNA(
+                                            userDetails?.data?.email,
+                                            sharedPreferences?.getString(Constant.email),
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontFamily: "Pop400",
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        
+                                        // Personal Information Section
+                                        _buildModernInfoRow(
+                                          icon: Icons.phone_android_rounded,
+                                          label: "Phone Number",
+                                          value: _getValueOrNA(
+                                            userDetails?.data?.mobile,
+                                            sharedPreferences?.getString(Constant.mobile),
+                                          ),
+                                        ),
+                                        const Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                          child: Divider(color: Color(0xFFF1F5F9), height: 1),
+                                        ),
+                                        _buildModernInfoRow(
+                                          icon: Icons.location_on_rounded,
+                                          label: "Location",
+                                          value: _getLocation(),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        
+                                        // Edit Button
+                                        Container(
+                                          width: double.infinity,
+                                          height: 56,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(16),
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF1CB273), Color(0xFF00E676)],
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xFF1CB273).withOpacity(0.3),
+                                                blurRadius: 12,
+                                                offset: const Offset(0, 6),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => const ProfileActivity(),
+                                                ),
+                                              ).then((_) {
+                                                // Refresh user details after editing
+                                                _loadUserDetails();
+                                              });
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.transparent,
+                                              shadowColor: Colors.transparent,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              "Edit Profile",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontFamily: "Pop600",
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Overlapping Profile Picture
+                                  Positioned(
+                                    top: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.08),
+                                            blurRadius: 16,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 56,
+                                        backgroundColor: const Color(0xFFF1F5F9),
+                                        child: ClipOval(
+                                          child: _getUserImageUrl().isNotEmpty
+                                              ? Image.network(
+                                                  _getUserImageUrl(),
+                                                  width: 112,
+                                                  height: 112,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) => Icon(
+                                                    Icons.person,
+                                                    size: 64,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                                )
+                                              : Icon(
+                                                  Icons.person,
+                                                  size: 64,
+                                                  color: Colors.grey[400],
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
       ),
     );
   }
 
-  Widget _buildInfoRow({
+  Widget _buildModernInfoRow({
     required IconData icon,
     required String label,
     required String value,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(
-          icon,
-          color: ColorClass.base_color,
-          size: 22,
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: ColorClass.base_color,
+            size: 20,
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,18 +392,18 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  fontFamily: "Pop400",
+                  color: Colors.grey[500],
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 value,
                 style: const TextStyle(
                   fontSize: 16,
+                  fontFamily: "Pop500",
                   color: Colors.black87,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -365,6 +429,13 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
     // Fallback to SharedPreferences
     String location = sharedPreferences?.getString(Constant.location) ?? "";
     return location.isEmpty ? "N/A" : location;
+  }
+
+  String _getUserImageUrl() {
+    if (userDetails?.data?.image != null && userDetails!.data!.image!.isNotEmpty) {
+      return userDetails!.data!.image!;
+    }
+    return sharedPreferences?.getString(Constant.image) ?? "";
   }
 
   String _getValueOrNA(String? apiValue, String? sharedPrefValue) {

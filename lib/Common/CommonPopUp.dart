@@ -1,9 +1,20 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'Color.dart';
+import 'Constant.dart';
+import 'BaseActivity.dart';
 
 class CommonPopUp {
+  static imagePick(BuildContext context, Function(List<File> files) onSelected) {
+    BaseActivity.showFilePicker(context, (list) {
+      if (list != null) {
+        onSelected(list);
+      }
+    }, isFile: false, isPhoto: true, allowMultipleImage: false);
+  }
+
   static showalertDialog(
       BuildContext context,
       String boldtitle,
@@ -183,7 +194,7 @@ class CommonPopUp {
       if (pickedDate == null) {
         return;
       }
-      String formattedDate = DateFormat('dd/MM/yyyy').format(pickedDate);
+      String formattedDate = DateFormat(Constant.dateFormatDigits).format(pickedDate);
       updatefield(
           pickedDate); //formatted date output using intl package =>  2021-03-16
       /*setState(() {
@@ -225,7 +236,7 @@ class CommonPopUp {
       if (pickedDate == null) {
         return;
       }
-      String formattedDate = DateFormat('dd/MM/yyyy').format(pickedDate);
+      String formattedDate = DateFormat(Constant.dateFormatDigits).format(pickedDate);
       updatefield(
           pickedDate); //formatted date output using intl package =>  2021-03-16
       /*setState(() {
