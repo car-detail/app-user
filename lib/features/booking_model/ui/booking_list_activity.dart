@@ -97,7 +97,7 @@ class _BookingListActivityState extends State<BookingListActivity> {
                 CommonWidget.buildGreenHeaderBackButton(context),
                 const SizedBox(width: 16),
                 const Text(
-                  "My Bookings",
+                  "Bookings",
                   style: TextStyle(
                     fontSize: 24,
                     fontFamily: "Pop600",

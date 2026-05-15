@@ -20,6 +20,12 @@ class SearchResultsScreen extends StatefulWidget {
 
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
   @override
+  void initState() {
+    super.initState();
+    MixedVendorData.sortVendors(widget.searchResults);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -197,6 +203,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildVendorTypeTag(vendor.isAppVendor),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -315,6 +323,38 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVendorTypeTag(bool isAppVendor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isAppVendor ? ColorClass.base_color : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: !isAppVendor ? Border.all(color: Colors.blue.shade200) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAppVendor ? Icons.verified_rounded : Icons.location_on,
+            color: isAppVendor ? Colors.white : Colors.blue.shade700,
+            size: 12,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isAppVendor ? "CAHRZ PARTNER" : "GOOGLE BUSINESS",
+            style: TextStyle(
+              color: isAppVendor ? Colors.white : Colors.blue.shade700,
+              fontSize: 10,
+              fontFamily: "Pop700",
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
           ),
         ],

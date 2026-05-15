@@ -1,8 +1,8 @@
 class Constant {
-// static var baseurl = "http://localhost:7007/api/"; //dev
+static var baseurl = "http://localhost:7007/api/"; //dev
   //  static var baseurl = "http://localhost:7007/api/"; 
   // static var baseurl = "https://lvpwhs37-7007.inc1.devtunnels.ms/api/";
-   static var baseurl = "https://api.cahrz.com/api/"; //dev
+  //  static var baseurl = "https://api.cahrz.com/api/"; //dev
   // static var baseurl service 07/"; //dev
   // static var baseurl = "https://cf5f40e34c76.ngro0-free.app/"; //ngrok tunnel
   static var versionNumber = "v1";

@@ -64,6 +64,7 @@ class MyApp extends StatelessWidget {
       ),
       child: MaterialApp(
       builder: BotToastInit(),
+      navigatorObservers: [BotToastNavigatorObserver()],
       title: 'Cahrz',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),

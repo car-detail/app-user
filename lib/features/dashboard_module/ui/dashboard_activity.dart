@@ -305,7 +305,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
           alignment: Alignment.center,
           child: isSelected
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1CB273),
                     borderRadius: BorderRadius.circular(25),

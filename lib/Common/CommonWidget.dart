@@ -1003,35 +1003,92 @@ class CommonWidget {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
 */
 
-    BotToast.showText(
-      contentPadding: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
-      contentColor: Colors.red[100]!,
-      text: message,
-      textStyle: const TextStyle(
-          color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16),
-    );
+  static errorShowSnackBarFor(BuildContext context, String message) {
+    _showPremiumNotification(message, isError: true);
   }
 
   static successShowSnackBarFor(BuildContext context, String message) {
-    /*final snackBar = SnackBar(
-        backgroundColor: Colors.green[100],
-        content: Container(
-            child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: Colors.green, fontWeight: FontWeight.w500, fontSize: 16),
-        )));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);*/
+    _showPremiumNotification(message, isError: false);
+  }
 
-    BotToast.showText(
-      contentPadding: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
-      contentColor: Colors.green[100]!,
-      text: message,
-      textStyle: const TextStyle(
-          color: Colors.green, fontWeight: FontWeight.w500, fontSize: 16),
+  static void _showPremiumNotification(String message, {required bool isError}) {
+    BotToast.showCustomNotification(
+      duration: const Duration(seconds: 4),
+      toastBuilder: (cancel) => Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              margin: const EdgeInsets.only(top: 10, left: 20, right: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+                border: Border.all(
+                  color: (isError ? Colors.red : ColorClass.base_color).withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isError ? Colors.red : ColorClass.base_color).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isError ? Icons.error_rounded : Icons.check_circle_rounded,
+                      color: isError ? Colors.red : ColorClass.base_color,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isError ? "Error" : "Success",
+                          style: TextStyle(
+                            color: isError ? Colors.red[700] : ColorClass.base_color,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Popbold",
+                          ),
+                        ),
+                        Text(
+                          message,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: "PopReg",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                    onPressed: () => cancel(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

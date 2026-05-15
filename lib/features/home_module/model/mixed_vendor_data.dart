@@ -209,4 +209,16 @@ class MixedVendorData {
       return [];
     }
   }
+
+  /// Sort list of vendors: App Vendors first, then by distance
+  static void sortVendors(List<MixedVendorData> vendors) {
+    vendors.sort((a, b) {
+      // Rule 1: App vendors come first
+      if (a.isAppVendor && !b.isAppVendor) return -1;
+      if (!a.isAppVendor && b.isAppVendor) return 1;
+
+      // Rule 2: Both are of the same type, sort by distance
+      return a.distance.compareTo(b.distance);
+    });
+  }
 }

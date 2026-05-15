@@ -196,6 +196,7 @@ class ExploreActivityState extends State<ExploreActivity> {
       await _getCurrentLocation();
       
       if (mounted) {
+        MixedVendorData.sortVendors(mixedVendors);
         setState(() {
           allVendors = mixedVendors;
           filteredVendors = List.from(allVendors);
@@ -339,6 +340,7 @@ class ExploreActivityState extends State<ExploreActivity> {
       }
 
       if (mounted) {
+        MixedVendorData.sortVendors(vendors);
         setState(() {
           allVendors = vendors;
           filteredVendors = List.from(allVendors);
@@ -440,6 +442,7 @@ class ExploreActivityState extends State<ExploreActivity> {
                 allVendors.add(v);
               }
             }
+            MixedVendorData.sortVendors(allVendors);
             filteredVendors = List.from(allVendors);
             _pageNumber++;
             if (nextVendors.length < _pageSize) {
@@ -1388,6 +1391,9 @@ class ExploreActivityState extends State<ExploreActivity> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Vendor Type Tag
+                      _buildVendorTypeTag(vendor.isAppVendor),
+                      const SizedBox(height: 4),
                       // Vendor Name and Offline Badge
                       Row(
                         children: [
@@ -1770,6 +1776,41 @@ class ExploreActivityState extends State<ExploreActivity> {
         content: Text("This vendor is currently offline"),
         backgroundColor: Colors.red,
         duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildVendorTypeTag(bool isAppVendor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isAppVendor ? ColorClass.base_color.withOpacity(0.1) : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isAppVendor ? ColorClass.base_color.withOpacity(0.3) : Colors.blue.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAppVendor ? Icons.verified_user_rounded : Icons.location_on,
+            color: isAppVendor ? ColorClass.base_color : Colors.blue.shade700,
+            size: 11,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            isAppVendor ? "PARTNER" : "GOOGLE",
+            style: TextStyle(
+              color: isAppVendor ? ColorClass.base_color : Colors.blue.shade700,
+              fontSize: 10,
+              fontFamily: "Pop700",
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
       ),
     );
   }

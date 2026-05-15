@@ -50,6 +50,7 @@ class OfferListModelData {
   String? updatedAt;
   int? iV;
   double? distance;
+  SimpleVendorData? vendorData;
 
   OfferListModelData(
       {this.sId,
@@ -69,8 +70,8 @@ class OfferListModelData {
         this.validFrom,
         this.validUntil,
         this.updatedAt,
-        this.iV,
-        this.distance});
+        this.distance,
+        this.vendorData});
 
   OfferListModelData.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -94,6 +95,9 @@ class OfferListModelData {
     updatedAt = json['updatedAt'];
     iV = json['__v'];
     distance = json['distance']?.toDouble();
+    vendorData = json['vendorData'] != null
+        ? SimpleVendorData.fromJson(json['vendorData'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -119,6 +123,28 @@ class OfferListModelData {
     data['updatedAt'] = updatedAt;
     data['__v'] = iV;
     data['distance'] = distance;
+    if (vendorData != null) {
+      data['vendorData'] = vendorData!.toJson();
+    }
+    return data;
+  }
+}
+
+class SimpleVendorData {
+  String? id;
+  String? displayName;
+
+  SimpleVendorData({this.id, this.displayName});
+
+  SimpleVendorData.fromJson(Map<String, dynamic> json) {
+    id = json['_id'];
+    displayName = json['displayName'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['_id'] = id;
+    data['displayName'] = displayName;
     return data;
   }
 }

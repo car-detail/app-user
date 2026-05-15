@@ -98,12 +98,13 @@ class _HomeActivityState extends State<HomeActivity> {
   
   // Offers carousel
   PageController? offerPageController;
-  int currentOfferPage = 0;
+  int _currentOfferPage = 0;
+  Timer? _offerTimer;
 
   @override
   void initState() {
     super.initState();
-    offerPageController = PageController();
+    offerPageController = PageController(initialPage: 0);
     // Use post-frame callback to ensure scroll controller is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scrollController.hasClients) {
@@ -132,6 +133,7 @@ class _HomeActivityState extends State<HomeActivity> {
 
   @override
   void dispose() {
+    _offerTimer?.cancel();
     offerPageController?.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -140,6 +142,25 @@ class _HomeActivityState extends State<HomeActivity> {
     _locationController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _startOfferTimer() {
+    _offerTimer?.cancel();
+    if (offerListData.length > 1) {
+      _offerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+        if (offerPageController != null && offerPageController!.hasClients) {
+          int nextPage = _currentOfferPage + 1;
+          if (nextPage >= offerListData.length) {
+            nextPage = 0;
+          }
+          offerPageController!.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOutQuart,
+          );
+        }
+      });
+    }
   }
   
   Future<void> _handleManualLocationSave(String typedAddress) async {
@@ -925,13 +946,7 @@ class _HomeActivityState extends State<HomeActivity> {
                   clipBehavior: Clip.hardEdge,
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                    await getMixedVendors(context);
-                    setState(() {
-                      _isLoading = false;
-                    });
+                    await start();
                   },
                   child: _isLoading 
                     ? SingleChildScrollView(
@@ -1004,64 +1019,11 @@ class _HomeActivityState extends State<HomeActivity> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                        // Offers Section
-                        if (offerListData.isNotEmpty) ...[
-                          Text(
-                            "Special Offers",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: "Pop500",
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Column(
-                            children: [
-                              SizedBox(
-                                height: 200,
-                                child: PageView.builder(
-                                  controller: offerPageController,
-                                  onPageChanged: (index) {
-                                    setState(() {
-                                      currentOfferPage = index;
-                                    });
-                                  },
-                                  itemCount: offerListData.length,
-                                  itemBuilder: (context, index) {
-                                    final offer = offerListData[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 0),
-                                      child: _buildFullWidthOfferCard(offer),
-                                    );
-                                  },
-                                ),
-                              ),
-                              if (offerListData.length > 1)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(
-                                      offerListData.length,
-                                      (index) => Container(
-                                        width: 8,
-                                        height: 8,
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: currentOfferPage == index
-                                              ? ColorClass.base_color
-                                              : Colors.grey[300],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                            const SizedBox(height: 12),
+                            // Premium Auto-Scrolling Offers Carousel
+                            _buildOfferCarouselSection(),
+                            const SizedBox(height: 24),
+
                         // Categories Grid - 2 per row, full width (No heading)
                         Container(
                           key: widget.categoriesKey,
@@ -1158,9 +1120,9 @@ class _HomeActivityState extends State<HomeActivity> {
                                 ),
                               ),
                           ],
-                        ),
-                        const SizedBox(height: 12),
-                              // Show vendor cards (Vertical Layout) - Using MixedVendorsData to include Google Places vendors
+                          ),
+                       const SizedBox(height: 12),
+                               // Show vendor cards (Vertical Layout) - Using MixedVendorsData to include Google Places vendorsde Google Places vendors
                               filteredMixedVendorsData.isEmpty
                                   ? Container(
                           height: 200,
@@ -1196,7 +1158,7 @@ class _HomeActivityState extends State<HomeActivity> {
                             ],
                                 ),
                         ),
-                      ],
+                       ],
                                   ),
                                 ),
                               ),
@@ -2346,6 +2308,215 @@ class _HomeActivityState extends State<HomeActivity> {
   }
 
   // Build Full Width Offer Card for Carousel
+  Widget _buildOfferCarouselSection() {
+    if (offerListData.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            "Hot Deals Near You",
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: "Pop600",
+              color: Colors.grey[800],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 180,
+          child: PageView.builder(
+            controller: offerPageController,
+            itemCount: offerListData.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentOfferPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return _buildOfferBannerItem(offerListData[index]);
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Pagination dots
+        if (offerListData.length > 1)
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                offerListData.length,
+                (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  height: 6,
+                  width: _currentOfferPage == index ? 18 : 6,
+                  decoration: BoxDecoration(
+                    color: _currentOfferPage == index 
+                        ? ColorClass.base_color 
+                        : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildOfferBannerItem(OfferListModelData offer) {
+    // Determine the vendor ID from either the vendor field or the joined vendorData
+    String? vendorId = offer.vendor;
+    if ((vendorId == null || vendorId.isEmpty) && offer.vendorData != null) {
+      vendorId = offer.vendorData!.id;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (vendorId != null && vendorId.isNotEmpty) {
+          CommonWidget.navigateToScreen(
+            context, 
+            SpecialistsActivity(vendorId)
+          );
+        } else {
+          CommonWidget.errorShowSnackBarFor(context, "Vendor details not available");
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Full background image
+              offer.image != null && offer.image!.isNotEmpty
+                  ? Image.network(
+                      offer.image!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: ColorClass.base_color.withOpacity(0.1),
+                        child: Icon(Icons.local_offer, color: ColorClass.base_color, size: 40),
+                      ),
+                    )
+                  : Container(
+                      color: ColorClass.base_color.withOpacity(0.1),
+                      child: Icon(Icons.local_offer, color: ColorClass.base_color, size: 40),
+                    ),
+              
+              // Gradient Overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.2),
+                      Colors.black.withOpacity(0.8),
+                    ],
+                    stops: const [0.4, 0.6, 1.0],
+                  ),
+                ),
+              ),
+              
+              // Offer Badge (Top Right)
+              if (offer.discount != null && offer.discount! > 0)
+                Positioned(
+                  top: 15,
+                  right: 15,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [ColorClass.base_color, ColorClass.base_color.withOpacity(0.8)],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      "${offer.discount}% OFF",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+                
+              // Info Overlay (Bottom)
+              Positioned(
+                bottom: 15,
+                left: 15,
+                right: 15,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      offer.title ?? "Special Offer",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontFamily: "Pop600",
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: ColorClass.base_color, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          offer.distance != null 
+                              ? "${(offer.distance! / 1000).toStringAsFixed(1)} km away"
+                              : "Near you",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontFamily: "Pop400",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFullWidthOfferCard(OfferListModelData offer) {
     return GestureDetector(
       onTap: () {
@@ -2737,45 +2908,53 @@ class _HomeActivityState extends State<HomeActivity> {
           
           setState(() {
             offerListData.clear();
-            // Parse the offers data properly
-            List<dynamic> offersJson = responseData['data'] as List;
+            
+            // Handle different data structures (Direct list or nested in 'offers' key)
+            dynamic rawData = responseData['data'];
+            List<dynamic> offersJson = [];
+            
+            if (rawData is List) {
+              offersJson = rawData;
+            } else if (rawData is Map && rawData['offers'] is List) {
+              offersJson = rawData['offers'];
+            } else if (rawData is Map && rawData['data'] is List) {
+              offersJson = rawData['data'];
+            }
+            
             for (var offerJson in offersJson) {
               if (offerJson != null) {
-                final offer = OfferListModelData.fromJson(offerJson);
-                
-                // Calculate distance if location is available
-                if (userLocation != null && offer.location?.coordinates != null) {
-                  final userLat = userLocation['lat']!;
-                  final userLng = userLocation['lng']!;
-                  final offerLat = offer.location!.coordinates!.lat;
-                  final offerLng = offer.location!.coordinates!.long;
+                try {
+                  final offer = OfferListModelData.fromJson(offerJson);
                   
-                  if (offerLat != null && offerLng != null) {
-                    // Calculate distance in meters
-                    final distance = MixedVendorData.calculateDistanceBetween(
-                      userLat, userLng, offerLat, offerLng
-                    );
+                  // Calculate distance if location is available for sorting
+                  if (userLocation != null && offer.location?.coordinates != null) {
+                    final userLat = userLocation['lat']!;
+                    final userLng = userLocation['lng']!;
+                    final offerLat = offer.location!.coordinates!.lat;
+                    final offerLng = offer.location!.coordinates!.long;
                     
-                    // Only add offer if it's within 50 miles
-                    if (distance <= maxDistanceMeters) {
-                      offer.distance = distance;
-                      offerListData.add(offer);
+                    if (offerLat != null && offerLng != null) {
+                      offer.distance = MixedVendorData.calculateDistanceBetween(
+                        userLat, userLng, offerLat, offerLng
+                      );
                     }
-                  } else {
-                    // If no coordinates, still add the offer
-                    offerListData.add(offer);
                   }
-                } else {
-                  // If no location available, still add the offer
+                  
                   offerListData.add(offer);
+                } catch (e) {
+                  debugPrint("Error parsing individual offer: $e");
                 }
               }
             }
             
             // Sort offers by distance (closest first)
-            offerListData.sort((a, b) => 
-              (a.distance ?? double.infinity).compareTo(b.distance ?? double.infinity)
-            );
+            if (offerListData.isNotEmpty) {
+              offerListData.sort((a, b) => 
+                (a.distance ?? double.infinity).compareTo(b.distance ?? double.infinity)
+              );
+              // Restart auto-scroll timer after data load
+              _startOfferTimer();
+            }
             debugPrint("FETCHED OFFERS: ${offerListData.length}");
           });
         }

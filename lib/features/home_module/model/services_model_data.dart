@@ -100,6 +100,20 @@ class ServicesData {
       return data;
   }
 
+  /// Sort list of vendors: App Vendors first, then by distance
+  static void sortVendors(List<ServicesData> vendors) {
+    vendors.sort((a, b) {
+      // Rule 1: App vendors come first
+      final aIsApp = (a.isAppVendor == true) || (a.category?.toLowerCase() != "google places");
+      final bIsApp = (b.isAppVendor == true) || (b.category?.toLowerCase() != "google places");
+      
+      if (aIsApp && !bIsApp) return -1;
+      if (!aIsApp && bIsApp) return 1;
+
+      // Rule 2: Both are of the same type, sort by distance
+      return (a.distance ?? 0).compareTo(b.distance ?? 0);
+    });
+  }
 }
 
 class Location {

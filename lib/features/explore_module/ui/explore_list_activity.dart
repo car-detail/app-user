@@ -128,6 +128,7 @@ class _ExploreListActivityState extends State<ExploreListActivity> {
           
           if (data.data != null && data.data!.isNotEmpty) {
             servicesData.addAll(data.data!);
+            ServicesData.sortVendors(servicesData);
             _pageNumber++;
             
             if (data.data!.length < _pageSize) {
@@ -430,11 +431,7 @@ class _ExploreListActivityState extends State<ExploreListActivity> {
                                                     height: 4,
                                                     decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle),
                                                   ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    !isAppVendor ? "Google Places" : "App Vendor",
-                                                    style: TextStyle(fontSize: 11, color: isAppVendor ? ColorClass.base_color : Colors.blue[700], fontWeight: FontWeight.w500),
-                                                  ),
+                                                  _buildVendorTypeTag(isAppVendor),
                                                 ],
                                               ),
                                             ],
@@ -534,6 +531,41 @@ class _ExploreListActivityState extends State<ExploreListActivity> {
         Icons.store,
         size: 35,
         color: isOffline ? Colors.grey[400] : ColorClass.base_color,
+      ),
+    );
+  }
+
+  Widget _buildVendorTypeTag(bool isAppVendor) {
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isAppVendor ? ColorClass.base_color.withOpacity(0.1) : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isAppVendor ? ColorClass.base_color.withOpacity(0.3) : Colors.blue.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAppVendor ? Icons.verified_user_rounded : Icons.location_on,
+            color: isAppVendor ? ColorClass.base_color : Colors.blue.shade700,
+            size: 10,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isAppVendor ? "PARTNER" : "GOOGLE",
+            style: TextStyle(
+              color: isAppVendor ? ColorClass.base_color : Colors.blue.shade700,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
