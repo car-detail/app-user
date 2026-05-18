@@ -83,12 +83,33 @@ class _DashboardActivityState extends State<DashboardActivity> {
 
   void _handleNotificationClick(RemoteMessage message) {
     debugPrint('🔔 Handling notification click: ${message.data}');
-    if (message.data['type'] == 'BOOKING_CONFIRMED' || 
-        message.data['type'] == 'BOOKING_CANCELLED' ||
-        message.data['type'] == 'BOOKING_COMPLETED') {
-      if (mounted) {
-        setState(() {
-          selectedpage = 2; // Navigate to Bookings tab (index 2 in user app)
+    final bookingId = message.data['bookingId'] ?? message.data['id'];
+    final type = message.data['type'];
+    
+    if (bookingId != null && bookingId.toString().isNotEmpty) {
+      BookingListActivity.targetBookingId = bookingId.toString();
+      if (type == 'NEW_BOOKING' || type == 'PENDING_BOOKING') {
+        BookingListActivity.targetFilterType = 'Pending';
+      } else if (type == 'BOOKING_CONFIRMED' || type == 'BOOKING_COMPLETED') {
+        BookingListActivity.targetFilterType = 'Completed';
+      } else if (type == 'BOOKING_CANCELLED') {
+        BookingListActivity.targetFilterType = 'Cancelled';
+      } else {
+        BookingListActivity.targetFilterType = 'Pending';
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        selectedpage = 2; // Navigate to Bookings tab (index 2 in user app)
+      });
+      
+      if (bookingId != null && bookingId.toString().isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          BookingListActivity.bookingListKey.currentState?.handleDeepLink(
+            BookingListActivity.targetBookingId ?? "",
+            BookingListActivity.targetFilterType ?? "Pending"
+          );
         });
       }
     }
@@ -181,7 +202,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
       nearbyVendorsKey: _nearbyVendorsKey,
     ),
     ExploreActivity(key: _exploreKey),
-    const BookingListActivity(),
+    BookingListActivity(key: BookingListActivity.bookingListKey),
     const ProfileViewActivity()
   ];
 

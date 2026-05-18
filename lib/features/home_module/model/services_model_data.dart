@@ -129,8 +129,8 @@ class Location {
     coordinates = json['coordinates'] != null
         ? Coordinates.fromJson(json['coordinates'])
         : null;
-    lat = json['lat'];
-    lng = json['lng'];
+    lat = (json['lat'] as num?)?.toDouble();
+    lng = (json['lng'] as num?)?.toDouble();
   }
 
   Map<String, dynamic> toJson() {
@@ -152,8 +152,8 @@ class Coordinates {
   Coordinates({this.long, this.lat});
 
   Coordinates.fromJson(Map<String, dynamic> json) {
-    long = json['lng'];
-    lat = json['lat'];
+    long = (json['lng'] as num?)?.toDouble();
+    lat = (json['lat'] as num?)?.toDouble();
   }
 
   Map<String, dynamic> toJson() {

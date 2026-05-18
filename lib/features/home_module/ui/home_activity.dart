@@ -2388,9 +2388,9 @@ class _HomeActivityState extends State<HomeActivity> {
         }
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(0),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.15),
@@ -2400,7 +2400,7 @@ class _HomeActivityState extends State<HomeActivity> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(0),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -2941,8 +2941,8 @@ class _HomeActivityState extends State<HomeActivity> {
                   }
                   
                   offerListData.add(offer);
-                } catch (e) {
-                  debugPrint("Error parsing individual offer: $e");
+                } catch (e, st) {
+                  debugPrint("Error parsing individual offer: $e\n$st");
                 }
               }
             }

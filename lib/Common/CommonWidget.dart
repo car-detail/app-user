@@ -990,20 +990,6 @@ class CommonWidget {
   }
 
   static errorShowSnackBarFor(BuildContext context, String message) {
-/*
-    final snackBar = SnackBar(
-        backgroundColor: Colors.red[100],
-        content: Container(
-            child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16),
-        )));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-*/
-
-  static errorShowSnackBarFor(BuildContext context, String message) {
     _showPremiumNotification(message, isError: true);
   }
 
@@ -1014,6 +1000,7 @@ class CommonWidget {
   static void _showPremiumNotification(String message, {required bool isError}) {
     BotToast.showCustomNotification(
       duration: const Duration(seconds: 4),
+      allowClick: true,
       toastBuilder: (cancel) => Material(
         color: Colors.transparent,
         child: SafeArea(
