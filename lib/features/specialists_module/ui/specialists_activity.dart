@@ -195,27 +195,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       ),
                     ),
                   ],
-                  // Service Info Card
-                  _buildServiceInfoCard(context),
-                  const SizedBox(height: 12),
-                  // Separator
-                  Divider(height: 1, thickness: 1, color: Colors.grey[200]),
-                  const SizedBox(height: 12),
-                  // Quick Info Cards
-                  _buildQuickInfoCards(context),
-                  const SizedBox(height: 12),
-                  // Separator
-                  Divider(height: 1, thickness: 1, color: Colors.grey[200]),
-                  const SizedBox(height: 12),
+                  // Vendor Hero Card -- identity, rating, price and contact in one place
+                  _buildVendorHeroCard(context),
+                  const SizedBox(height: 16),
                   // Navigation Tabs
                   _buildNavigationTabs(context),
-                  const SizedBox(height: 12),
-                  // Separator
-                  Divider(height: 1, thickness: 1, color: Colors.grey[200]),
-                  const SizedBox(height: 12),
-                  // Vendor Info Card
-                  _buildVendorInfoCard(context),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
                   // Tab Content - show content based on selected tab
                   _buildTabContent(context),
                   const SizedBox(height: 100), // Space for bottom button
@@ -232,207 +217,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
-  Widget _buildEnhancedHeader(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.4,
-      child: Stack(
-        children: [
-          // Cover Image - Use service image, fallback to vendor image, then default
-          GestureDetector(
-            onTap: () {
-              List<String> images = [];
-              if (servicesDetailsData.coverImage != null && servicesDetailsData.coverImage!.isNotEmpty) {
-                images.add(servicesDetailsData.coverImage!);
-              } else if (servicesDetailsData.vendorId?.displayPicture != null && 
-                         servicesDetailsData.vendorId!.displayPicture!.isNotEmpty) {
-                images.add(servicesDetailsData.vendorId!.displayPicture!);
-              }
-              
-              // Add all detail images to the list
-              if (servicesDetailsData.detailImages.isNotEmpty) {
-                for (var img in servicesDetailsData.detailImages) {
-                  if (!images.contains(img)) images.add(img);
-                }
-              }
-              if (images.isNotEmpty) {
-                CommonWidget.navigateToScreen(
-                  context,
-                  ZoomableImageList(imageUrls: images)
-                );
-              }
-            },
-            child: SizedBox(
-              width: double.infinity,
-              height: double.infinity,
-              child: (servicesDetailsData.coverImage != null && servicesDetailsData.coverImage!.isNotEmpty)
-                  ? Image.network(
-                      servicesDetailsData.coverImage!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        // Fallback to vendor image
-                        return _buildCoverImageWithVendorFallback();
-                      },
-                    )
-                  : _buildCoverImageWithVendorFallback(),
-            ),
-          ),
-          
-          // Gradient Overlay
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
-              ),
-            ),
-          ),
-          
-          // Top Navigation
-          Positioned(
-            top: 45,
-            left: 16,
-            right: 16,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CommonWidget.buildBackButton(
-                  context,
-                  backgroundColor: Colors.white.withOpacity(0.9),
-                  iconColor: Colors.black87,
-                ),
-                GestureDetector(
-                  onTap: _toggleBookmark,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      isBookmarked ? Icons.bookmark : Icons.bookmark_border, 
-                      color: isBookmarked ? ColorClass.base_color : Colors.black87, 
-                      size: 20
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Service Title Overlay
-          Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // All Category Badges
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: _getVendorCategories().map((category) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: ColorClass.base_color,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        category,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontFamily: "Pop500",
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  servicesDetailsData.serviceTitle ?? "Service",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontFamily: "Pop600",
-                    shadows: [
-                      Shadow(
-                        offset: const Offset(0, 1),
-                        blurRadius: 3,
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (servicesDetailsData.location?.name != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.white, size: 16),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          servicesDetailsData.location?.name ?? "",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontFamily: "Pop400",
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCoverImageWithVendorFallback() {
-    // Priority 1: Try service cover image first
-    String? coverImage = servicesDetailsData.coverImage;
-    if (coverImage != null && coverImage.trim().isNotEmpty) {
-      return Image.network(
-        coverImage,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          // If cover image fails to load, fallback to vendor image
-          return _buildHeaderImageWithVendorFallback();
-        },
-      );
-    }
-    // Priority 2: If no cover image, use vendor image
-    return _buildHeaderImageWithVendorFallback();
-  }
-
-  Widget _buildHeaderImageWithVendorFallback() {
-    // Priority 2: Try vendor display picture
-    String? vendorImage = servicesDetailsData.vendorId?.displayPicture;
-    if (vendorImage != null && vendorImage.trim().isNotEmpty) {
-      return Image.network(
-        vendorImage,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildDefaultCoverImage();
-        },
-      );
-    }
-    // Priority 3: If no vendor image, show default
-    return _buildDefaultCoverImage();
-  }
 
   Widget _buildCollapsibleHeaderImageWithVendorFallback() {
     // Priority 1: Try service cover image first
@@ -489,43 +273,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
-  Widget _buildDefaultCoverImage() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            ColorClass.base_color.withOpacity(0.8),
-            ColorClass.base_color.withOpacity(0.6),
-          ],
-        ),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.local_car_wash,
-              size: 80,
-              color: Colors.white,
-            ),
-            SizedBox(height: 16),
-            Text(
-              "Car Service",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontFamily: "Pop600",
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildCollapsibleHeader(BuildContext context) {
     return SliverAppBar(
@@ -705,356 +452,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
-  Widget _buildServiceInfoCard(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          children: [
-            // Premium gradient header bar
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0D1116), Color(0xFF192028)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_rounded, color: Colors.white, size: 18),
-                  const SizedBox(width: 10),
-                  const Text(
-                    "Service Details",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontFamily: "Pop600",
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Content area
-            Padding(
-              padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section Header with light grey background
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-            children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: ColorClass.base_color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.info_rounded, color: ColorClass.base_color, size: 18),
-                ),
-                const SizedBox(width: 10),
-              const Text(
-                "Service Details",
-                style: TextStyle(
-                    fontSize: 16,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          ),
-          const SizedBox(height: 12),
-          if (servicesDetailsData.averageRating != 0) ...[
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.star_rounded, color: Colors.amber.shade700, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "${servicesDetailsData.averageRating?.toStringAsFixed(1) ?? '0.0'} Rating",
-                    style: const TextStyle(
-                      fontSize: 16,
-                          fontFamily: "Pop600",
-                      color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Based on reviews",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: "Pop400",
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.people_rounded, color: Colors.blue.shade700, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        servicesDetailsData.totalReviews.toString(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                          fontFamily: "Pop600",
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Reviews",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: "Pop400",
-                      color: Colors.grey[600],
-                    ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    Colors.grey[300]!,
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-          if (servicesDetailsData.price != null && servicesDetailsData.price! > 0) ...[
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        ColorClass.base_color,
-                        ColorClass.base_color.withOpacity(0.8),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ColorClass.base_color.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.attach_money_rounded, color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Starting from",
-                    style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: "Pop400",
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "\$${servicesDetailsData.price}",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontFamily: "Pop600",
-                      color: ColorClass.base_color,
-                          fontWeight: FontWeight.bold,
-                    ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    Colors.grey[300]!,
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-          if (servicesDetailsData.serviceDuration != null) ...[
-            Row(
-              children: [
-                      Icon(Icons.access_time_rounded, color: Colors.grey[600], size: 16),
-                      const SizedBox(width: 6),
-                Text(
-                        "Duration: ${servicesDetailsData.serviceDuration ?? "N/A"}",
-                  style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: "Pop400",
-                          color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickInfoCards(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildInfoCard(
-            icon: Icons.verified_user_rounded,
-            title: "Verified",
-            subtitle: "Trusted",
-            color: const Color(0xFF192028),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildInfoCard(
-            icon: Icons.access_time_filled_rounded,
-            title: "Available",
-            subtitle: "Book Now",
-            color: const Color(0xFF0EA5E9),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildInfoCard(
-            icon: Icons.location_on_rounded,
-            title: "Nearby",
-            subtitle: "Quick",
-            color: const Color(0xFFF59E0B),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: color.withOpacity(0.15),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              fontFamily: "Pop600",
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 10,
-              fontFamily: "Pop400",
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildNavigationTabs(BuildContext context) {
     // Build list of available tabs based on content
@@ -1384,7 +781,11 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
-  Widget _buildVendorInfoCard(BuildContext context) {
+  Widget _buildVendorHeroCard(BuildContext context) {
+    final hasRating = servicesDetailsData.averageRating != 0;
+    final hasPrice = servicesDetailsData.price != null && servicesDetailsData.price! > 0;
+    final hasDuration = servicesDetailsData.serviceDuration != null;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1431,134 +832,188 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             // Content
             Padding(
               padding: const EdgeInsets.all(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Vendor Avatar with ring
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF192028), Color(0xFF0D1116)],
-                      ),
-                    ),
-                    child: Container(
-                      width: 66,
-                      height: 66,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[100],
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: ClipOval(
-                        child: servicesDetailsData.vendorId?.displayPicture != null &&
-                                servicesDetailsData.vendorId!.displayPicture!.isNotEmpty
-                            ? Image.network(
-                                servicesDetailsData.vendorId!.displayPicture!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(Icons.local_car_wash, color: Colors.grey[500], size: 28);
-                                },
-                              )
-                            : Icon(Icons.local_car_wash, color: Colors.grey[500], size: 28),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Vendor Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          servicesDetailsData.vendorId?.displayName ?? "Service Provider",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontFamily: "Pop700",
-                            color: Colors.black87,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Vendor Avatar with ring
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF192028), Color(0xFF0D1116)],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
+                        child: Container(
+                          width: 66,
+                          height: 66,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[100],
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: servicesDetailsData.vendorId?.displayPicture != null &&
+                                    servicesDetailsData.vendorId!.displayPicture!.isNotEmpty
+                                ? Image.network(
+                                    servicesDetailsData.vendorId!.displayPicture!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(Icons.local_car_wash, color: Colors.grey[500], size: 28);
+                                    },
+                                  )
+                                : Icon(Icons.local_car_wash, color: Colors.grey[500], size: 28),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Vendor Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF192028).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.verified_rounded, color: Color(0xFF192028), size: 12),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "Verified Pro",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontFamily: "Pop500",
-                                      color: Color(0xFF192028),
-                                    ),
-                                  ),
-                                ],
+                            Text(
+                              servicesDetailsData.vendorId?.displayName ?? "Service Provider",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Pop700",
+                                color: Colors.black87,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF192028).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.verified_rounded, color: Color(0xFF192028), size: 12),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        "Verified Pro",
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontFamily: "Pop500",
+                                          color: Color(0xFF192028),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            _buildCategoriesChips(),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        _buildCategoriesChips(),
-                      ],
-                    ),
-                  ),
-                  // Call button
-                  GestureDetector(
-                    onTap: () async {
-                      // Guest guard
-                      final String userId = sharedPreferences?.getString(Constant.id) ?? "";
-                      if (userId.isEmpty) {
-                        _showLoginRequiredDialog(context, "Sign in to call this vendor.");
-                        return;
-                      }
-                      final raw = servicesDetailsData.vendorId?.mobile?.trim();
-                      if (raw == null || raw.isEmpty) {
-                        if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
-                        return;
-                      }
-                      final phone = raw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-                      if (phone.isEmpty) {
-                        if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
-                        return;
-                      }
-                      try {
-                        final Uri phoneUri = Uri.parse('tel:$phone');
-                        if (await canLaunchUrl(phoneUri)) {
-                          await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
-                        } else {
-                          if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Cannot open phone dialer');
-                        }
-                      } catch (e) {
-                        if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Could not start call');
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF192028), Color(0xFF0D1116)],
+                      ),
+                      // Call button
+                      GestureDetector(
+                        onTap: () async {
+                          // Guest guard
+                          final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+                          if (userId.isEmpty) {
+                            _showLoginRequiredDialog(context, "Sign in to call this vendor.");
+                            return;
+                          }
+                          final raw = servicesDetailsData.vendorId?.mobile?.trim();
+                          if (raw == null || raw.isEmpty) {
+                            if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
+                            return;
+                          }
+                          final phone = raw.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                          if (phone.isEmpty) {
+                            if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
+                            return;
+                          }
+                          try {
+                            final Uri phoneUri = Uri.parse('tel:$phone');
+                            if (await canLaunchUrl(phoneUri)) {
+                              await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+                            } else {
+                              if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Cannot open phone dialer');
+                            }
+                          } catch (e) {
+                            if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Could not start call');
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF192028), Color(0xFF0D1116)],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF192028).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.phone_rounded, color: Colors.white, size: 20),
                         ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF192028).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  if (hasRating || hasPrice || hasDuration) ...[
+                    const SizedBox(height: 16),
+                    Container(height: 1, color: Colors.grey[200]),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        if (hasRating) ...[
+                          Icon(Icons.star_rounded, color: Colors.amber.shade700, size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            servicesDetailsData.averageRating?.toStringAsFixed(1) ?? '0.0',
+                            style: const TextStyle(fontSize: 13, fontFamily: "Pop600", color: Colors.black87),
+                          ),
+                          Text(
+                            " (${servicesDetailsData.totalReviews})",
+                            style: TextStyle(fontSize: 12, fontFamily: "Pop400", color: Colors.grey[600]),
                           ),
                         ],
-                      ),
-                      child: const Icon(Icons.phone_rounded, color: Colors.white, size: 20),
+                        if (hasRating && (hasPrice || hasDuration)) ...[
+                          const SizedBox(width: 12),
+                          Container(width: 1, height: 14, color: Colors.grey[300]),
+                          const SizedBox(width: 12),
+                        ],
+                        if (hasPrice) ...[
+                          Text(
+                            "From \$${servicesDetailsData.price}",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontFamily: "Pop600",
+                              color: ColorClass.base_color,
+                            ),
+                          ),
+                        ],
+                        if (hasPrice && hasDuration) ...[
+                          const SizedBox(width: 12),
+                          Container(width: 1, height: 14, color: Colors.grey[300]),
+                          const SizedBox(width: 12),
+                        ],
+                        if (hasDuration) ...[
+                          Icon(Icons.access_time_rounded, color: Colors.grey[500], size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            servicesDetailsData.serviceDuration ?? "",
+                            style: TextStyle(fontSize: 12, fontFamily: "Pop400", color: Colors.grey[700]),
+                          ),
+                        ],
+                      ],
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
