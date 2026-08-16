@@ -280,7 +280,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
               right: 0,
               child: Container(
                 height: MediaQuery.of(context).padding.top,
-                color: const Color(0xFF166534),
+                color: const Color(0xFF0D1116),
               ),
             ),
             SafeArea(

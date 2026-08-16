@@ -679,9 +679,9 @@ class ExploreActivityState extends State<ExploreActivity> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF166534),
+                  Color(0xFF0D1116),
                   Color(0xFF192028),
-                  Color(0xFF00E676),
+                  Color(0xFF2A3542),
                 ],
               ),
               borderRadius: const BorderRadius.only(

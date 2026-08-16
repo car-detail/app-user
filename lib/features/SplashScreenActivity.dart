@@ -33,7 +33,13 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
   
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
-    
+
+    // Let the first frame actually reach the screen before requesting
+    // notification permission -- a system alert presented too early in
+    // cold launch can hold the window at a blank frame.
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+
     // Initialize Firebase Messaging and get token
     try {
       FirebaseMessaging messaging = FirebaseMessaging.instance;

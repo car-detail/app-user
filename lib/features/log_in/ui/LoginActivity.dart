@@ -140,8 +140,8 @@ class _LoginActivityState extends State<LoginActivity> {
                             },
                             child: Container(
                               child: CommonWidget.getGradinetButton("Generate OTP",
-                                  startcolor: 0xff1CA669,
-                                  endcolor: 0xff1CA669,
+                                  startcolor: 0xFF192028,
+                                  endcolor: 0xFF192028,
                                   height: 40),
                             )),
                       ]),

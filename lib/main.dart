@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:car_app/features/SplashScreenActivity.dart';
 import 'package:car_app/features/log_in/ui/new_login_activity.dart';
@@ -20,32 +22,43 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Custom Local Notifications
-  await NotificationService.initialize();
-  
   // Set the background messaging handler early on
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  
-  // Only request location permission on mobile platforms, not web
-  if (!kIsWeb) {
-    var status = await Permission.locationWhenInUse.status;
 
-    if (status.isDenied) {
-      status = await Permission.locationWhenInUse.request();
-    }
-
-    if (status.isPermanentlyDenied) {
-      //openAppSettings(); // optionally guide user to settings
-    }
-  }
-
+  // Show the UI immediately -- don't make the user stare at a blank
+  // screen while system permission dialogs (notifications, location)
+  // are pending. These used to run here, awaited, before runApp(),
+  // which meant nothing rendered until both dialogs were answered.
   runApp(const MyApp());
+
+  // Give the engine a beat to present its first frame before requesting
+  // notification/location permission, so the dialogs don't interrupt
+  // cold launch.
+  Future.delayed(const Duration(milliseconds: 1200), () {
+    // Initialize Custom Local Notifications (may prompt for permission)
+    unawaited(NotificationService.initialize());
+
+    // Only request location permission on mobile platforms, not web
+    if (!kIsWeb) {
+      unawaited(() async {
+        var status = await Permission.locationWhenInUse.status;
+
+        if (status.isDenied) {
+          status = await Permission.locationWhenInUse.request();
+        }
+
+        if (status.isPermanentlyDenied) {
+          //openAppSettings(); // optionally guide user to settings
+        }
+      }());
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {

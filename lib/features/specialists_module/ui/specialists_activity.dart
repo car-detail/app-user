@@ -532,7 +532,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       expandedHeight: MediaQuery.sizeOf(context).height * 0.4,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF166534),
+      backgroundColor: const Color(0xFF0D1116),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
@@ -728,7 +728,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF166534), Color(0xFF192028)],
+                  colors: [Color(0xFF0D1116), Color(0xFF192028)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -1118,7 +1118,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF166534), Color(0xFF192028)],
+                  colors: [Color(0xFF0D1116), Color(0xFF192028)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -1408,7 +1408,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF166534), Color(0xFF192028)],
+                  colors: [Color(0xFF0D1116), Color(0xFF192028)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -1440,7 +1440,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF192028), Color(0xFF166534)],
+                        colors: [Color(0xFF192028), Color(0xFF0D1116)],
                       ),
                     ),
                     child: Container(
@@ -1545,7 +1545,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF192028), Color(0xFF166534)],
+                          colors: [Color(0xFF192028), Color(0xFF0D1116)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
@@ -3304,9 +3304,9 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: [
-                Color(0xFF166534),
+                Color(0xFF0D1116),
                 Color(0xFF192028),
-                Color(0xFF00E676),
+                Color(0xFF2A3542),
               ],
             ),
             borderRadius: BorderRadius.circular(18),

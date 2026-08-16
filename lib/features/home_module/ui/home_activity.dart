@@ -707,9 +707,9 @@ class _HomeActivityState extends State<HomeActivity> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFF166534),
+                            Color(0xFF0D1116),
                             Color(0xFF192028),
-                            Color(0xFF00E676),
+                            Color(0xFF2A3542),
                           ],
                         ),
                         borderRadius: const BorderRadius.only(
@@ -953,7 +953,7 @@ class _HomeActivityState extends State<HomeActivity> {
                                       fontFamily: "Pop400",
                                       fontSize: 14,
                                     ),
-                                    prefixIcon: const Icon(Icons.search, color: Color(0xFF00B074)),
+                                    prefixIcon: const Icon(Icons.search, color: Color(0xFF192028)),
                                     suffixIcon: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -970,7 +970,7 @@ class _HomeActivityState extends State<HomeActivity> {
                                             },
                                           ),
                                         IconButton(
-                                          icon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF00B074)),
+                                          icon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF192028)),
                                           onPressed: () {
                                             if (_searchController.text.isNotEmpty) {
                                               _performSearch();
@@ -1982,7 +1982,7 @@ class _HomeActivityState extends State<HomeActivity> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [ColorClass.base_color, const Color(0xFF166534)],
+            colors: [ColorClass.base_color, const Color(0xFF0D1116)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -3743,14 +3743,14 @@ class _GooglePlacesDetailPage extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF166534), Color(0xFF192028)],
+          colors: [Color(0xFF0D1116), Color(0xFF192028)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF166534).withOpacity(0.3),
+            color: const Color(0xFF0D1116).withOpacity(0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),

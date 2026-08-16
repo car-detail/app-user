@@ -165,9 +165,9 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFF166534),
+                      Color(0xFF0D1116),
                       Color(0xFF192028),
-                      Color(0xFF00E676),
+                      Color(0xFF2A3542),
                     ],
                   ),
                   borderRadius: BorderRadius.only(
@@ -255,7 +255,7 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF192028), Color(0xFF00E676)],
+                                    colors: [Color(0xFF192028), Color(0xFF2A3542)],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
@@ -337,9 +337,9 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFF166534),
+                            Color(0xFF0D1116),
                             Color(0xFF192028),
-                            Color(0xFF00E676),
+                            Color(0xFF2A3542),
                           ],
                         ),
                         borderRadius: BorderRadius.only(
@@ -479,7 +479,7 @@ class _ProfileViewActivityState extends State<ProfileViewActivity> {
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(16),
                                             gradient: const LinearGradient(
-                                              colors: [Color(0xFF192028), Color(0xFF00E676)],
+                                              colors: [Color(0xFF192028), Color(0xFF2A3542)],
                                               begin: Alignment.centerLeft,
                                               end: Alignment.centerRight,
                                             ),

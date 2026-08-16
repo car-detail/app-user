@@ -421,9 +421,9 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF166534),
+                    Color(0xFF0D1116),
                     Color(0xFF192028),
-                    Color(0xFF00E676),
+                    Color(0xFF2A3542),
                   ],
                 ),
               ),
@@ -440,7 +440,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF166534),
+                            const Color(0xFF0D1116),
                             const Color(0xFF192028).withOpacity(0.8),
                           ],
                         ),

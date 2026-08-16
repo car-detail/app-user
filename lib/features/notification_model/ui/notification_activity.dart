@@ -131,7 +131,7 @@ class _NotificationActivityState extends State<NotificationActivity> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF166534), Color(0xFF192028)],
+                colors: [Color(0xFF0D1116), Color(0xFF192028)],
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(30),
@@ -185,7 +185,7 @@ class _NotificationActivityState extends State<NotificationActivity> {
                               Container(
                                 height: 48, width: 48,
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [Color(0xFF192028), Color(0xFF00C853)]),
+                                  gradient: LinearGradient(colors: [Color(0xFF192028), Color(0xFF2A3542)]),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Icon(Icons.notifications_rounded, color: Colors.white, size: 22),
@@ -229,7 +229,7 @@ class _NotificationActivityState extends State<NotificationActivity> {
                   Container(
                     width: 80, height: 80,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Color(0xFF192028).withOpacity(0.15), Color(0xFF00C853).withOpacity(0.1)]),
+                      gradient: LinearGradient(colors: [Color(0xFF192028).withOpacity(0.15), Color(0xFF2A3542).withOpacity(0.1)]),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.notifications_off_rounded, size: 36, color: Color(0xFF192028)),

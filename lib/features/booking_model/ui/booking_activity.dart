@@ -281,7 +281,7 @@ class _BookingActivityState extends State<BookingActivity> {
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Color(0xFF166534), Color(0xFF192028)],
+                                colors: [Color(0xFF0D1116), Color(0xFF192028)],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
@@ -950,9 +950,9 @@ class _BookingActivityState extends State<BookingActivity> {
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                           colors: [
-                            Color(0xFF166534),
+                            Color(0xFF0D1116),
                             Color(0xFF192028),
-                            Color(0xFF00E676),
+                            Color(0xFF2A3542),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(18),
@@ -1250,7 +1250,7 @@ class _BookingActivityState extends State<BookingActivity> {
       barrierDismissible: false,
       builder: (context) => const Center(
         child: CircularProgressIndicator(
-          color: Color(0xFF166534), // Using brand green directly for safety
+          color: Color(0xFF0D1116), // Using brand green directly for safety
         ),
       ),
     );
