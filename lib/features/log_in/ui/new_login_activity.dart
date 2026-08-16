@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pinput/pinput.dart';
 import '../../../Api/ApiFuntion.dart';
 import '../../../Common/BaseActivity.dart';
 import '../../../Common/Color.dart';
@@ -13,6 +14,9 @@ import '../../../Common/Constant.dart';
 import '../data_manager/LoginDataManager.dart';
 import '../model/GenerateOTPModelBean.dart';
 import '../../dashboard_module/ui/dashboard_activity.dart';
+import '../../../design_system/car_assets.dart';
+import '../../../design_system/components/bouncy_tap.dart';
+import '../../../design_system/components/staggered_fade_in.dart';
 
 /// Fresh, clean login screen for vendor app
 /// Uses direct API-based authentication without Firebase Phone Auth
@@ -151,142 +155,249 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                 // Charcoal panel -- matches the get-started screen's bottom sheet
                 Transform.translate(
                   offset: const Offset(0, -28),
-                  child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
-                  decoration: BoxDecoration(
-                    color: ColorClass.base_color,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(28),
-                      topRight: Radius.circular(28),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      const Text(
-                        "Get Started",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isOTPSent
-                            ? "Enter the verification code"
-                            : "Enter your mobile number to continue",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-
-                      if (!_isOTPSent)
-                        // Mobile Number Input with Country Code
-                        _buildMobileInput()
-                      else
-                        // OTP Input
-                        _buildOTPInput(),
-
-                      const SizedBox(height: 24),
-
-                      // Action Button
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : (_isOTPSent ? _verifyOTP : _sendOTP),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: ColorClass.base_color,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(28, 40, 28, 24),
+                        decoration: BoxDecoration(
+                          color: ColorClass.base_color,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(28),
+                            topRight: Radius.circular(28),
                           ),
-                          elevation: 0,
                         ),
-                        child: _isLoading
-                            ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
-                                ),
-                              )
-                            : Text(
-                                _isOTPSent ? "Verify OTP" : "Send OTP",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                  color: ColorClass.base_color,
-                                ),
-                              ),
-                      ),
-
-                      if (!_isOTPSent) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: TextButton(
-                            onPressed: () async {
-                              await sharedPreferences?.setString(Constant.id, '');
-                              await sharedPreferences?.setString(Constant.accessToken, '');
-                              if (context.mounted) {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (BuildContext context) => DashboardActivity(),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(28),
+                            topRight: Radius.circular(28),
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              // Faint decorative blobs for artistic texture
+                              Positioned(
+                                top: -60,
+                                left: -50,
+                                child: Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.04),
                                   ),
-                                  (route) => false,
-                                );
-                              }
-                            },
-                            child: Text(
-                              "Explore as Guest",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontFamily: "Pop600",
-                                color: Colors.white.withOpacity(0.85),
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
+                                ),
                               ),
+                              Positioned(
+                                bottom: -80,
+                                right: -60,
+                                child: Container(
+                                  width: 220,
+                                  height: 220,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.03),
+                                  ),
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  StaggeredFadeIn(
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 300),
+                                      transitionBuilder: (child, animation) => FadeTransition(
+                                        opacity: animation,
+                                        child: SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: const Offset(0, 0.15),
+                                            end: Offset.zero,
+                                          ).animate(animation),
+                                          child: child,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        key: ValueKey(_isOTPSent),
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _isOTPSent ? "Verify Code" : "Get Started",
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _isOTPSent
+                                                ? "Enter the 6-digit code sent to your phone"
+                                                : "Enter your mobile number to continue",
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.7),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 28),
+
+                                  StaggeredFadeIn(
+                                    delay: const Duration(milliseconds: 80),
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 300),
+                                      transitionBuilder: (child, animation) => FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      ),
+                                      child: KeyedSubtree(
+                                        key: ValueKey(_isOTPSent),
+                                        child: !_isOTPSent
+                                            ? _buildMobileInput()
+                                            : _buildOTPInput(),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 24),
+
+                                  // Action Button
+                                  StaggeredFadeIn(
+                                    delay: const Duration(milliseconds: 140),
+                                    child: BouncyTap(
+                                      onTap: _isLoading ? null : (_isOTPSent ? _verifyOTP : _sendOTP),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(vertical: 18),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(28),
+                                        ),
+                                        child: Center(
+                                          child: _isLoading
+                                              ? SizedBox(
+                                                  height: 20,
+                                                  width: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                                                  ),
+                                                )
+                                              : Text(
+                                                  _isOTPSent ? "Verify OTP" : "Send OTP",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    letterSpacing: 0.5,
+                                                    color: ColorClass.base_color,
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  if (!_isOTPSent) ...[
+                                    const SizedBox(height: 16),
+                                    Center(
+                                      child: TextButton(
+                                        onPressed: () async {
+                                          await sharedPreferences?.setString(Constant.id, '');
+                                          await sharedPreferences?.setString(Constant.accessToken, '');
+                                          if (context.mounted) {
+                                            Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (BuildContext context) => DashboardActivity(),
+                                              ),
+                                              (route) => false,
+                                            );
+                                          }
+                                        },
+                                        child: Text(
+                                          "Explore as Guest",
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontFamily: "Pop600",
+                                            color: Colors.white.withOpacity(0.85),
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 16),
+
+                                  if (_isOTPSent && _resendCountdown > 0)
+                                    Center(
+                                      child: Text(
+                                        "Resend OTP in $_resendCountdown seconds",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    )
+                                  else if (_isOTPSent)
+                                    Center(
+                                      child: GestureDetector(
+                                        onTap: _isLoading ? null : _resendOTP,
+                                        child: Text(
+                                          "Resend OTP",
+                                          style: TextStyle(
+                                            color: _isLoading ? Colors.white.withOpacity(0.4) : Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Car-wash badge straddling the photo/panel seam for brand identity
+                      Positioned(
+                        top: -32,
+                        right: 28,
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            CarAssets.carWashHose,
+                            fit: BoxFit.contain,
+                            color: ColorClass.base_color,
+                            colorBlendMode: BlendMode.srcIn,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.local_car_wash_rounded,
+                              color: ColorClass.base_color,
                             ),
                           ),
                         ),
-                      ],
-
-                      const SizedBox(height: 16),
-
-                      if (_isOTPSent && _resendCountdown > 0)
-                        Center(
-                          child: Text(
-                            "Resend OTP in $_resendCountdown seconds",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 14,
-                            ),
-                          ),
-                        )
-                      else if (_isOTPSent)
-                        Center(
-                          child: GestureDetector(
-                            onTap: _isLoading ? null : _resendOTP,
-                            child: Text(
-                              "Resend OTP",
-                              style: TextStyle(
-                                color: _isLoading ? Colors.white.withOpacity(0.4) : Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ),
+                      ),
                     ],
-                  ),
                   ),
                 ),
               ],
@@ -382,39 +493,32 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   }
 
   Widget _buildOTPInput() {
-    return Container(
+    final defaultTheme = PinTheme(
+      width: 46,
+      height: 54,
+      textStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: ColorClass.base_color,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: TextField(
+    );
+    final focusedTheme = defaultTheme.copyDecorationWith(
+      border: Border.all(color: Colors.white, width: 2),
+      borderRadius: BorderRadius.circular(14),
+    );
+    return Center(
+      child: Pinput(
         controller: otpController,
+        length: 6,
         keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(6),
-        ],
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-        decoration: InputDecoration(
-          hintText: "Enter 6-digit code",
-          hintStyle: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 16,
-          ),
-          prefixIcon: Icon(
-            Icons.lock,
-            color: ColorClass.base_color,
-            size: 24,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 18,
-          ),
-        ),
+        defaultPinTheme: defaultTheme,
+        focusedPinTheme: focusedTheme,
+        submittedPinTheme: defaultTheme,
+        showCursor: true,
         onChanged: (value) {
           if (value.length == 6) {
             // Auto-verify when 6 digits are entered
