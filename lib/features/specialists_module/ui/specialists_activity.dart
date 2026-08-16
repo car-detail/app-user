@@ -2110,71 +2110,72 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           badge: "${detailImages.length} photo${detailImages.length == 1 ? '' : 's'}",
         ),
         const SizedBox(height: 14),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.15,
-          ),
-          itemCount: detailImages.length,
-          itemBuilder: (context, index) {
-            return BouncyTap(
-              onTap: () {
-                CommonWidget.navigateToScreen(
-                  context,
-                  ZoomableImageList(
-                    imageUrls: detailImages,
-                    currentIndex: index,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            const spacing = 12.0;
+            final tileWidth = (constraints.maxWidth - spacing) / 2;
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: List.generate(detailImages.length, (index) {
+                return BouncyTap(
+                  onTap: () {
+                    CommonWidget.navigateToScreen(
+                      context,
+                      ZoomableImageList(
+                        imageUrls: detailImages,
+                        currentIndex: index,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: tileWidth,
+                    height: tileWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Colors.grey[100],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            detailImages[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.image_rounded,
+                                color: Colors.grey[400],
+                                size: 32,
+                              );
+                            },
+                          ),
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: Colors.grey[100],
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.network(
-                        detailImages[index],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.image_rounded,
-                            color: Colors.grey[400],
-                            size: 32,
-                          );
-                        },
-                      ),
-                      Positioned(
-                        right: 8,
-                        bottom: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              }),
             );
           },
         ),
