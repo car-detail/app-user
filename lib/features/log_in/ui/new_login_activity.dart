@@ -44,7 +44,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   @override
   void initState() {
     super.initState();
-    // Set green status bar
+    // Light status bar icons over the dark charcoal header
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -106,16 +106,16 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                 Container(
                   width: double.infinity,
                   constraints: BoxConstraints(
-                    minHeight: 280 + MediaQuery.of(context).padding.top,
+                    minHeight: 260 + MediaQuery.of(context).padding.top,
                   ),
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFF166534),
                         Color(0xFF192028),
-                        Color(0xFF26D17A),
+                        Color(0xFF2A3542),
+                        Color(0xFF0D1116),
                       ],
                     ),
                   ),
@@ -170,7 +170,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                               "Get Started",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 38,
+                                fontSize: 32,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -1.0,
                               ),
@@ -194,14 +194,22 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                   ),
                 ),
               
-                // Login Form
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
+                // Login Form -- curved white sheet overlapping the dark header
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: -28),
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 20),
-                      
+
                       if (!_isOTPSent) 
                         // Mobile Number Input with Country Code
                         _buildMobileInput()
@@ -219,9 +227,9 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                          elevation: 2,
+                          elevation: 0,
                         ),
                         child: _isLoading
                             ? const SizedBox(

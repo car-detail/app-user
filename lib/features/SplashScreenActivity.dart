@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../Common/Color.dart';
 import '../Common/CommonWidget.dart';
 import '../Common/Constant.dart';
 import 'dashboard_module/ui/dashboard_activity.dart';
@@ -147,76 +148,143 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage('assets/images/first_image.png'),
-              fit: BoxFit.cover)),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(15, 30, 15, 15),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Only show Get Started button if user is NOT logged in
-              if(userid == null || userid!.isEmpty) ...[
-                GestureDetector(
-                    onTap: () {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => const NewLoginActivity(),
-                        ),
-                            (route) => false,
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 30, right: 30),
-                      child: CommonWidget.getGradinetButton(
-                          "Get Started",
-                          startcolor: 0xff006538,
-                          endcolor: 0xff006538,
-                          height: 50
-                      ),
-                    )),
-                const SizedBox(height: 16),
-                Center(
-                  child: TextButton(
-                    onPressed: () async {
-                      sharedPreferences = await SharedPreferences.getInstance();
-                      await sharedPreferences?.setString(Constant.id, '');
-                      await sharedPreferences?.setString(Constant.accessToken, '');
-                      if (context.mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (BuildContext context) => DashboardActivity(),
-                          ),
-                          (route) => false,
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "Explore as Guest",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: "Pop600",
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
+    return Scaffold(
+      backgroundColor: ColorClass.base_color,
+      body: Column(
+        children: [
+          Expanded(
+            flex: 6,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/vetor/car-wash-detailing-station.jpg',
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          ColorClass.base_color.withOpacity(0),
+                          ColorClass.base_color,
+                        ],
                       ),
                     ),
                   ),
                 ),
               ],
-            ],
+            ),
           ),
+          Expanded(
+            flex: 5,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
+              decoration: BoxDecoration(
+                color: ColorClass.base_color,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(36),
+                  topRight: Radius.circular(36),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Wheels On Demand",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontFamily: "Pop600",
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "Your trusted partner for hassle-free car wash and detailing services",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: "Pop400",
+                      color: Colors.white.withOpacity(0.7),
+                      height: 1.4,
+                    ),
+                  ),
+                  const Spacer(),
+                  // Only show Get Started button if user is NOT logged in
+                  if (userid == null || userid!.isEmpty) ...[
+                    GestureDetector(
+                      onTap: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => const NewLoginActivity(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        child: Text(
+                          "Get Started",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: "Pop600",
+                            color: ColorClass.base_color,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Center(
+                      child: TextButton(
+                        onPressed: () async {
+                          sharedPreferences = await SharedPreferences.getInstance();
+                          await sharedPreferences?.setString(Constant.id, '');
+                          await sharedPreferences?.setString(Constant.accessToken, '');
+                          if (context.mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (BuildContext context) => DashboardActivity(),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        child: Text(
+                          "Explore as Guest",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontFamily: "Pop600",
+                            color: Colors.white.withOpacity(0.85),
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
