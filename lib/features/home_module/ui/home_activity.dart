@@ -23,6 +23,8 @@ import 'package:car_app/features/home_module/ui/all_vendors_screen.dart';
 import 'package:car_app/features/categories_module/ui/all_categories_screen.dart';
 import 'package:car_app/features/home_module/ui/location_picker_screen.dart';
 import 'loyalty_points_screen.dart';
+import '../../../design_system/components/bouncy_tap.dart';
+import '../../../design_system/components/staggered_fade_in.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,6 +63,14 @@ class HomeActivity extends StatefulWidget {
 }
 
 class _HomeActivityState extends State<HomeActivity> {
+  String _capitalizeWords(String text) {
+    if (text.trim().isEmpty) return text;
+    return text
+        .split(' ')
+        .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
+        .join(' ');
+  }
+
   List<CategoryData> categoryData = [];
   List<booking_bean.Records> recentCompletedBookings = [];
   int userLoyaltyPoints = 0;
@@ -1066,17 +1076,17 @@ class _HomeActivityState extends State<HomeActivity> {
                         padding: EdgeInsets.only(
                           left: 15,
                           right: 15,
-                          top: (!_headerFullyCollapsed && headerHeight > 20) 
-                              ? 28 
-                              : (_scrollOffset > 100) 
-                                  ? 88  // Account for floating minimized header (80px) + spacing
-                                  : 0, 
+                          top: (!_headerFullyCollapsed && headerHeight > 20)
+                              ? 12
+                              : (_scrollOffset > 100)
+                                  ? statusBarHeight + 72  // Floating header height + spacing
+                                  : 0,
                           bottom: 90, // Extra padding for bottom navigation
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 4),
                             // Premium Auto-Scrolling Offers Carousel
                             _buildOfferCarouselSection(),
                             const SizedBox(height: 24),
@@ -1092,7 +1102,7 @@ class _HomeActivityState extends State<HomeActivity> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio: 2.8, // Optimized aspect ratio for better fit
+                              childAspectRatio: 1.35, // Taller hero-tile layout
                             ),
                             itemCount: categoryData.length > 4 ? 4 : categoryData.length, // Show max 4 categories
                       itemBuilder: (context, index) {
@@ -1107,37 +1117,48 @@ class _HomeActivityState extends State<HomeActivity> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                            _buildCircularQuickAction(
+                            StaggeredFadeIn(
+                              child: _buildCircularQuickAction(
                                 "My Bookings",
-                              Icons.book_online_rounded,
+                                Icons.book_online_rounded,
                                 () {
                                   CommonWidget.navigateToScreen(context, const BookingListActivity());
                                 },
-                              Colors.blue,
+                                const Color(0xFF3B82F6),
+                              ),
                             ),
-                            _buildCircularQuickAction(
-                              "Bookmarks",
-                              Icons.bookmark_rounded,
-                              () {
-                                CommonWidget.navigateToScreen(context, const BookmarkActivity());
-                              },
-                              Colors.orange,
-                        ),
-                            _buildCircularQuickAction(
+                            StaggeredFadeIn(
+                              delay: const Duration(milliseconds: 60),
+                              child: _buildCircularQuickAction(
+                                "Bookmarks",
+                                Icons.bookmark_rounded,
+                                () {
+                                  CommonWidget.navigateToScreen(context, const BookmarkActivity());
+                                },
+                                const Color(0xFFF59E0B),
+                              ),
+                            ),
+                            StaggeredFadeIn(
+                              delay: const Duration(milliseconds: 120),
+                              child: _buildCircularQuickAction(
                                 "Explore Map",
-                              Icons.map_rounded,
+                                Icons.map_rounded,
                                 () {
                                   CommonWidget.navigateToScreen(context, const ExploreActivity(startWithMap: true));
                                 },
-                              ColorClass.base_color,
+                                ColorClass.base_color,
+                              ),
                             ),
-                            _buildCircularQuickAction(
-                              "Profile",
-                              Icons.person_rounded,
+                            StaggeredFadeIn(
+                              delay: const Duration(milliseconds: 180),
+                              child: _buildCircularQuickAction(
+                                "Profile",
+                                Icons.person_rounded,
                                 () {
-                                CommonWidget.navigateToScreen(context, const ProfileActivity());
+                                  CommonWidget.navigateToScreen(context, const ProfileActivity());
                                 },
-                              Colors.purple,
+                                const Color(0xFFA855F7),
+                              ),
                             ),
                           ],
                         ),
@@ -1236,36 +1257,41 @@ class _HomeActivityState extends State<HomeActivity> {
               right: 0,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                height: 80,
+                height: statusBarHeight + 64,
                 padding: EdgeInsets.only(
-                  top: statusBarHeight + 5, 
-                  bottom: 10, 
-                  left: 20, 
-                  right: 20
+                  top: statusBarHeight,
+                  left: 20,
+                  right: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: ColorClass.base_color,
+                  gradient: ModernDesignSystem.brandGradient,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(22),
+                    bottomRight: Radius.circular(22),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
+                  children: [
                     Expanded(
                       child: Text(
                         _userFirstName.isNotEmpty || _userLastName.isNotEmpty
-                            ? "${_userFirstName.isNotEmpty ? _userFirstName : _userLastName}${_userLastName.isNotEmpty && _userFirstName.isNotEmpty ? " $_userLastName" : ""}"
+                            ? _capitalizeWords(
+                                "${_userFirstName.isNotEmpty ? _userFirstName : _userLastName}${_userLastName.isNotEmpty && _userFirstName.isNotEmpty ? " $_userLastName" : ""}")
                             : "Cahrz",
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontFamily: "Pop600",
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1278,17 +1304,18 @@ class _HomeActivityState extends State<HomeActivity> {
                               context, NotificationActivity(notificationsList));
                         },
                         child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withOpacity(0.25)),
+                          ),
+                          child: const Icon(
                             Icons.notifications_active_rounded,
-                                                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -2032,125 +2059,158 @@ class _HomeActivityState extends State<HomeActivity> {
     final title = (category.categoryTitle ?? "").toLowerCase();
     final isWash = title.contains('wash');
     final isDetailing = title.contains('detail') || title.contains('polish');
-    
-    return GestureDetector(
-                        onTap: () {
-                          CommonWidget.navigateToScreen(
-          context,
-          CategoriesListActivity(category),
-        );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-          color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+
+    final List<Color> gradientColors = isWash
+        ? [const Color(0xFF3B82F6), const Color(0xFF2563EB)]
+        : isDetailing
+            ? [const Color(0xFFA855F7), const Color(0xFF7C3AED)]
+            : [Colors.grey.shade500, Colors.grey.shade700];
+    final IconData categoryIcon = isWash
+        ? Icons.local_car_wash_rounded
+        : isDetailing
+            ? Icons.auto_awesome_rounded
+            : Icons.category_rounded;
+
+    return StaggeredFadeIn(
+      delay: Duration(milliseconds: 60 * index),
+      child: BouncyTap(
+        onTap: () {
+          CommonWidget.navigateToScreen(
+            context,
+            CategoriesListActivity(category),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-                          ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Icon Container
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isWash 
-                      ? Colors.blue.shade50 
-                      : isDetailing 
-                          ? Colors.purple.shade50 
-                          : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: isWash
-                      ? Icon(
-                          Icons.local_car_wash,
-                          color: Colors.blue.shade700,
-                          size: 26,
-                        )
-                      : isDetailing
-                          ? Icon(
-                              Icons.auto_awesome,
-                              color: Colors.purple.shade700,
-                              size: 26,
-                            )
-                          : Icon(
-                              Icons.category,
-                              color: Colors.grey.shade700,
-                              size: 26,
-                          ),
-                        ),
-                      ),
-              const SizedBox(width: 10),
-              // Category Name
-              Expanded(
-                child: Text(
-                  category.categoryTitle ?? "",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontFamily: "Pop600",
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: gradientColors.first.withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
-              const SizedBox(width: 4),
-              // Arrow Icon
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 12,
-                color: Colors.grey[400],
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
+              children: [
+                // Decorative oversized watermark icon
+                Positioned(
+                  right: -14,
+                  bottom: -14,
+                  child: Icon(
+                    categoryIcon,
+                    size: 84,
+                    color: Colors.white.withOpacity(0.14),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.22),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Icon(categoryIcon, color: Colors.white, size: 24),
+                      ),
+                      const Spacer(),
+                      Text(
+                        category.categoryTitle ?? "",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Pop600",
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.15,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            "Explore",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: "Pop500",
+                              color: Colors.white.withOpacity(0.85),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-        ],
-      ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildCircularQuickAction(String title, IconData icon, VoidCallback onTap, Color color) {
-    return GestureDetector(
+    final hsl = HSLColor.fromColor(color);
+    final Color deeper = hsl.withLightness((hsl.lightness - 0.14).clamp(0.0, 1.0)).toColor();
+
+    return BouncyTap(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: color.withOpacity(0.3),
-                width: 1,
+              gradient: LinearGradient(
+                colors: [color, deeper],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Icon(
               icon,
-              color: color,
-              size: 28,
+              color: Colors.white,
+              size: 26,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             title,
-          style: const TextStyle(
+            style: const TextStyle(
               fontSize: 12,
-            fontFamily: "Pop500",
+              fontFamily: "Pop500",
+              fontWeight: FontWeight.w600,
               color: Colors.black87,
+            ),
           ),
-        ),
         ],
       ),
     );
@@ -2570,7 +2630,7 @@ class _HomeActivityState extends State<HomeActivity> {
   Widget _buildOfferCarouselSection() {
     if (offerListData.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.zero,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Image.asset(
