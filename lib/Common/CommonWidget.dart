@@ -315,9 +315,14 @@ class CommonWidget {
   static void navigateToKillScreen(BuildContext context, Widget page) {
     if (!context.mounted) return;
     try {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => page),
-      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => page),
+          );
+        }
+      });
     } catch (e) {
     }
   }
@@ -325,8 +330,13 @@ class CommonWidget {
   static void navigateToKillAllScreen(BuildContext context, Widget page) {
     if (!context.mounted) return;
     try {
-      Navigator.pushAndRemoveUntil(context,
-          MaterialPageRoute(builder: (context) => page), (route) => false);
+      FocusManager.instance.primaryFocus?.unfocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(context,
+              MaterialPageRoute(builder: (context) => page), (route) => false);
+        }
+      });
     } catch (e) {
     }
   }
@@ -643,7 +653,7 @@ class CommonWidget {
               end: Alignment.bottomRight,
               colors: [
                 Color(0xFF166534),
-                Color(0xFF1CB273),
+                Color(0xFF192028),
                 Color(0xFF00E676),
               ],
             ),
@@ -999,13 +1009,11 @@ class CommonWidget {
 
   static void _showPremiumNotification(String message, {required bool isError}) {
     BotToast.showCustomNotification(
+      align: Alignment.topCenter,
+      useSafeArea: true,
       duration: const Duration(seconds: 4),
-      allowClick: true,
       toastBuilder: (cancel) => Material(
-        color: Colors.transparent,
-        child: SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
+            color: Colors.transparent,
             child: Container(
               margin: const EdgeInsets.only(top: 10, left: 20, right: 20),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1074,8 +1082,6 @@ class CommonWidget {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 

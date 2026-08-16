@@ -15,13 +15,15 @@ import '../../../Common/Constant.dart';
 import '../../home_module/model/services_model_data.dart';
 import '../../home_module/model/mixed_vendor_data.dart';
 import '../../home_module/data_manager/home_data_manager.dart';
-import '../../booking/ui/booking_activity.dart';
+import '../../booking_model/ui/booking_activity.dart';
 import '../../specialists_module/ui/specialists_activity.dart';
 import '../../home_module/ui/location_picker_screen.dart';
+import '../../log_in/ui/new_login_activity.dart';
 import '../../../Common/ShimmerLoader.dart';
 
 class ExploreActivity extends StatefulWidget {
-  const ExploreActivity({super.key});
+  final bool startWithMap;
+  const ExploreActivity({this.startWithMap = false, super.key});
 
   @override
   State<ExploreActivity> createState() => ExploreActivityState();
@@ -30,7 +32,7 @@ class ExploreActivity extends StatefulWidget {
 class ExploreActivityState extends State<ExploreActivity> {
   List<MixedVendorData> allVendors = [];
   List<MixedVendorData> filteredVendors = [];
-  bool isMapView = false;
+  late bool isMapView;
   bool isLoading = true;
   String searchQuery = "";
   String selectedFilter = "All";
@@ -71,6 +73,7 @@ class ExploreActivityState extends State<ExploreActivity> {
   @override
   void initState() {
     super.initState();
+    isMapView = widget.startWithMap;
     _searchController = TextEditingController();
     _scrollController.addListener(_onScroll);
     _initializeData();
@@ -677,7 +680,7 @@ class ExploreActivityState extends State<ExploreActivity> {
                 end: Alignment.bottomRight,
                 colors: [
                   Color(0xFF166534),
-                  Color(0xFF1CB273),
+                  Color(0xFF192028),
                   Color(0xFF00E676),
                 ],
               ),
@@ -687,7 +690,7 @@ class ExploreActivityState extends State<ExploreActivity> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFF1CB273).withOpacity(0.4),
+                  color: Color(0xFF192028).withOpacity(0.4),
                   blurRadius: 16,
                   offset: Offset(0, 6),
                 ),
@@ -1412,13 +1415,13 @@ class ExploreActivityState extends State<ExploreActivity> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: vendor.isOpen ? Colors.green[100] : Colors.red[100],
+                                color: vendor.isOpen ? ColorClass.base_light_color : Colors.red[100],
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 vendor.isOpen ? "OPEN NOW" : "CLOSED",
                                 style: TextStyle(
-                                  color: vendor.isOpen ? Colors.green[700] : Colors.red[700],
+                                  color: vendor.isOpen ? ColorClass.base_color : Colors.red[700],
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1667,7 +1670,7 @@ class ExploreActivityState extends State<ExploreActivity> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: ColorClass.base_color,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1716,6 +1719,11 @@ class ExploreActivityState extends State<ExploreActivity> {
   }
 
   void _openGoogleMaps(MixedVendorData vendor) async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to view directions.");
+      return;
+    }
     if (vendor.latitude != 0 && vendor.longitude != 0) {
       final lat = vendor.latitude;
       final lng = vendor.longitude;
@@ -1732,6 +1740,11 @@ class ExploreActivityState extends State<ExploreActivity> {
   }
 
   void _callVendor(MixedVendorData vendor) async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to call this vendor.");
+      return;
+    }
     final raw = vendor.phone?.trim();
     if (raw == null || raw.isEmpty) {
       if (mounted) {
@@ -1768,6 +1781,48 @@ class ExploreActivityState extends State<ExploreActivity> {
         );
       }
     }
+  }
+
+  void _showLoginRequiredDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Login Required",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                  ),
+                ).then((value) {
+                  if (value == true) {
+                    // Do nothing, state should refresh if they try the action again
+                  }
+                });
+              },
+              child: const Text("Log In"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showOfflineMessage() {

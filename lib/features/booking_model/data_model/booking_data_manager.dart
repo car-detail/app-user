@@ -53,7 +53,7 @@ class BookingDataManager {
       String date,
       String time,
       String timeZone,
-      {String? packageId, String? packageName, int? packagePrice}) {
+      {String? packageId, String? packageName, int? packagePrice, int? pointsRedeemed}) {
     Map<String, dynamic> bookingData = {
       "vendorId": vendorId,
       "serviceIds": serviceIds,
@@ -62,6 +62,10 @@ class BookingDataManager {
       "timeSlot": time,
       "timeZone": timeZone.isEmpty ? "UTC" : timeZone
     };
+    
+    if (pointsRedeemed != null && pointsRedeemed > 0) {
+      bookingData["pointsRedeemed"] = pointsRedeemed;
+    }
     
     // Add package information if a package is selected
     if (packageId != null && packageName != null && packagePrice != null) {

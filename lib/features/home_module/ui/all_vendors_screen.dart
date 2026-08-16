@@ -211,7 +211,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+              colors: [Color(0xFF166534), Color(0xFF192028), Color(0xFF00E676)],
             ),
           ),
         ),
@@ -469,7 +469,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: vendor.isOpen ? Colors.green[100] : Colors.red[100],
+                        color: vendor.isOpen ? ColorClass.base_light_color : Colors.red[100],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -477,7 +477,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontFamily: "Pop600",
-                          color: vendor.isOpen ? Colors.green[700] : Colors.red[700],
+                          color: vendor.isOpen ? ColorClass.base_color : Colors.red[700],
                         ),
                       ),
                     ),

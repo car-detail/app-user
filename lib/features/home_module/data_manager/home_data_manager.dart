@@ -302,4 +302,7 @@ class HomeDataManager {
     }
   }
 
+  getMyBookings(BuildContext context) {
+    return apiFuntions.getdatauser(context, "${Constant.myBooking}?pageNumber=1&count=10");
+  }
 }

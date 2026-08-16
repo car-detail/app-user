@@ -11,6 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../Common/CommonWidget.dart';
 import '../../../ZoomImageList.dart';
 import '../../booking_model/ui/booking_activity.dart';
+import '../../log_in/ui/new_login_activity.dart';
+import '../../../Common/Constant.dart';
 import '../../rating_model/ui/rating_review_screen.dart';
 import '../../categories_module/data_manager/categories_list_data_manager.dart';
 import '../data_manager/specialists_data_manager.dart';
@@ -726,7 +728,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF166534), Color(0xFF1CB273)],
+                  colors: [Color(0xFF166534), Color(0xFF192028)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -969,7 +971,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
             icon: Icons.verified_user_rounded,
             title: "Verified",
             subtitle: "Trusted",
-            color: const Color(0xFF1CB273),
+            color: const Color(0xFF192028),
           ),
         ),
         const SizedBox(width: 10),
@@ -1116,7 +1118,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF166534), Color(0xFF1CB273)],
+                  colors: [Color(0xFF166534), Color(0xFF192028)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -1126,7 +1128,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF1CB273).withOpacity(0.3),
+                    color: const Color(0xFF192028).withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -1406,7 +1408,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF166534), Color(0xFF1CB273)],
+                  colors: [Color(0xFF166534), Color(0xFF192028)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -1438,7 +1440,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF1CB273), Color(0xFF166534)],
+                        colors: [Color(0xFF192028), Color(0xFF166534)],
                       ),
                     ),
                     child: Container(
@@ -1483,20 +1485,20 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1CB273).withOpacity(0.1),
+                                color: const Color(0xFF192028).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.verified_rounded, color: Color(0xFF1CB273), size: 12),
+                                  Icon(Icons.verified_rounded, color: Color(0xFF192028), size: 12),
                                   SizedBox(width: 4),
                                   Text(
                                     "Verified Pro",
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontFamily: "Pop500",
-                                      color: Color(0xFF1CB273),
+                                      color: Color(0xFF192028),
                                     ),
                                   ),
                                 ],
@@ -1512,6 +1514,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   // Call button
                   GestureDetector(
                     onTap: () async {
+                      // Guest guard
+                      final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+                      if (userId.isEmpty) {
+                        _showLoginRequiredDialog(context, "Sign in to call this vendor.");
+                        return;
+                      }
                       final raw = servicesDetailsData.vendorId?.mobile?.trim();
                       if (raw == null || raw.isEmpty) {
                         if (mounted) CommonWidget.errorShowSnackBarFor(context, 'Phone number not available');
@@ -1537,12 +1545,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF1CB273), Color(0xFF166534)],
+                          colors: [Color(0xFF192028), Color(0xFF166534)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1CB273).withOpacity(0.3),
+                            color: const Color(0xFF192028).withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -1961,7 +1969,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   icon: Icons.verified_user_rounded,
                   title: "Status",
                   value: servicesDetailsData.isActive == true ? "Active" : "Inactive",
-                  color: servicesDetailsData.isActive == true ? Colors.green.shade700 : Colors.grey[700]!,
+                  color: servicesDetailsData.isActive == true ? ColorClass.base_color : Colors.grey[700]!,
                 ),
               ),
             ],
@@ -3004,12 +3012,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: ColorClass.base_color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.attach_money, color: Colors.green[700], size: 24),
+                        Icon(Icons.attach_money, color: ColorClass.base_color, size: 24),
                         const SizedBox(width: 8),
                         // Show discounted price if discount exists, otherwise show original price
                         if (discount != null && discount > 0) ...[
@@ -3031,7 +3039,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green[700],
+                              color: ColorClass.base_color,
                               fontFamily: "Pop600",
                             ),
                           ),
@@ -3042,7 +3050,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green[700],
+                              color: ColorClass.base_color,
                               fontFamily: "Pop600",
                             ),
                           ),
@@ -3279,6 +3287,11 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       ),
       child: GestureDetector(
         onTap: () {
+          final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+          if (userId.isEmpty) {
+            _showLoginRequiredDialog(context, "Sign in to book this service.");
+            return;
+          }
           CommonWidget.navigateToScreen(
             context,
             BookingActivity(servicesDetailsData.vendorId?.sId ?? widget.servicesData),
@@ -3292,14 +3305,14 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               end: Alignment.centerRight,
               colors: [
                 Color(0xFF166534),
-                Color(0xFF1CB273),
+                Color(0xFF192028),
                 Color(0xFF00E676),
               ],
             ),
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1CB273).withOpacity(0.4),
+                color: const Color(0xFF192028).withOpacity(0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -3625,6 +3638,11 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   }
 
   Future<void> _toggleBookmark() async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to bookmark this service.");
+      return;
+    }
     try {
       if (isBookmarked) {
         // Remove bookmark
@@ -3660,5 +3678,47 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         CommonWidget.errorShowSnackBarFor(context, "Error updating bookmark");
       }
     }
+  }
+
+  void _showLoginRequiredDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Login Required",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                  ),
+                ).then((value) {
+                  if (value == true) {
+                    // Do nothing, state should refresh if they try the action again
+                  }
+                });
+              },
+              child: const Text("Log In"),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

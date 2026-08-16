@@ -162,27 +162,57 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // Only show Get Started button if user is NOT logged in
-              if(userid == null || userid!.isEmpty)
-              GestureDetector(
-                  onTap: () {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (BuildContext context) => NewLoginActivity(),
+              if(userid == null || userid!.isEmpty) ...[
+                GestureDetector(
+                    onTap: () {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (BuildContext context) => const NewLoginActivity(),
+                        ),
+                            (route) => false,
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(left: 30, right: 30),
+                      child: CommonWidget.getGradinetButton(
+                          "Get Started",
+                          startcolor: 0xff006538,
+                          endcolor: 0xff006538,
+                          height: 50
                       ),
+                    )),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () async {
+                      sharedPreferences = await SharedPreferences.getInstance();
+                      await sharedPreferences?.setString(Constant.id, '');
+                      await sharedPreferences?.setString(Constant.accessToken, '');
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => DashboardActivity(),
+                          ),
                           (route) => false,
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 30, right: 30),
-                    child: CommonWidget.getGradinetButton(
-                        "Get Started",
-                        startcolor: 0xff006538,
-                        endcolor: 0xff006538,
-                        height: 50
+                        );
+                      }
+                    },
+                    child: const Text(
+                      "Explore as Guest",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: "Pop600",
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
-                  )),
+                  ),
+                ),
+              ],
             ],
           ),
           ),

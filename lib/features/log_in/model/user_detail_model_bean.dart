@@ -47,6 +47,7 @@ class Data {
   int? iV;
   Location? location;
   bool? tour_shown;
+  int? loyaltyPoints;
 
   Data(
       {this.sId,
@@ -69,7 +70,8 @@ class Data {
         this.updatedAt,
         this.iV,
         this.location,
-        this.tour_shown});
+        this.tour_shown,
+        this.loyaltyPoints});
 
   Data.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -94,6 +96,7 @@ class Data {
     location = json['location'] != null ? Location.fromJson(json['location']) : null;
     // Default to false if tour_shown is not present in response
     tour_shown = json['tour_shown'] ?? false;
+    loyaltyPoints = json['loyaltyPoints'];
   }
 
   Map<String, dynamic> toJson() {
@@ -118,6 +121,7 @@ class Data {
     data['updatedAt'] = updatedAt;
     data['__v'] = iV;
     data['tour_shown'] = tour_shown;
+    data['loyaltyPoints'] = loyaltyPoints;
     if (location != null) {
       data['location'] = location!.toJson();
     }

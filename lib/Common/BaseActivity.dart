@@ -1,11 +1,8 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'Color.dart';
 import 'CommonWidget.dart';
 
 class BaseActivity {
@@ -36,60 +33,24 @@ class BaseActivity {
     return null;
   }
 
-  static Future<List<File>?> pickmultipleFile(
-      {List<String> allowedExtensions = const [
-        "pdf",
-        "ppt",
-        "xlsx",
-        "doc",
-        "png",
-        "jpg",
-        "jpeg",
-        "aac",
-        "m4a",
-        "mp3",
-        "wav"
-      ],
-      bool allowMultiple = true}) async {
-    List<File> file = [];
-    try {
-      FilePickerResult? imagePicker = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowMultiple: allowMultiple,
-        allowedExtensions: allowedExtensions,
-      );
-      if (imagePicker != null) {
-        file.addAll(imagePicker.paths.map((path) => File(path!)).toList());
-      }
-      return file;
-    } catch (e) {
-    }
-    return null;
-  }
-
   static Future<List<File>?> pickmedia(bool allowMultiple) async {
-    List<File> file = [];
+    List<File> files = [];
     try {
-      FilePickerResult? imagePicker = await FilePicker.platform.pickFiles(
-        allowMultiple: allowMultiple,
-        type: FileType.media,
-      );
-      if (imagePicker != null) {
-        if (kIsWeb) {
-          // For web, use files instead of paths
-          for (var platformFile in imagePicker.files) {
-            if (platformFile.bytes != null) {
-              // Create a temporary file from bytes for web
-              file.add(File.fromRawPath(platformFile.bytes!));
-            }
-          }
-        } else {
-          // For mobile, use paths
-          file.addAll(imagePicker.paths.map((path) => File(path!)).toList());
+      final ImagePicker picker = ImagePicker();
+      if (allowMultiple) {
+        final List<XFile> pickedImages = await picker.pickMultiImage();
+        if (pickedImages.isNotEmpty) {
+          files.addAll(pickedImages.map((xFile) => File(xFile.path)).toList());
+        }
+      } else {
+        final XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
+        if (pickedImage != null) {
+          files.add(File(pickedImage.path));
         }
       }
-      return file;
+      return files.isNotEmpty ? files : null;
     } catch (e) {
+      debugPrint("Error in pickmedia: $e");
     }
     return null;
   }
@@ -111,161 +72,37 @@ class BaseActivity {
   static Future<List<File>?> pickImage(bool allowMultiple) async {
     List<File> files = [];
     try {
-      // Request permissions
-      /*var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-      }*/
-      //if (status.isGranted) {
-        FilePickerResult? imagePicker = await FilePicker.platform.pickFiles(
-          allowMultiple: allowMultiple,
-          type: FileType.image,
-        );
-        if (imagePicker != null) {
-          files.addAll(imagePicker.paths.map((path) => File(path!)).toList());
+      final ImagePicker picker = ImagePicker();
+      if (allowMultiple) {
+        final List<XFile> pickedImages = await picker.pickMultiImage();
+        if (pickedImages.isNotEmpty) {
+          files.addAll(pickedImages.map((xFile) => File(xFile.path)).toList());
         }
-      /*} else {
-      }*/
+      } else {
+        final XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
+        if (pickedImage != null) {
+          files.add(File(pickedImage.path));
+        }
+      }
     } catch (e) {
+      debugPrint("Error in pickImage: $e");
     }
-    return files;
+    return files.isNotEmpty ? files : null;
   }
 
-  static showFilePicker(
-      BuildContext context, Function(List<File>? list) onTeacherSelected,
-      {List<String> allowedExtensions = const [
-        "pdf",
-        "ppt",
-        "xlsx",
-        "doc",
-        "aac",
-        "m4a",
-        "mp3",
-        "wav"
-      ],
-      bool isFile = true,
-      bool isPhoto = true,
-      bool isOnlyPhoto = false,
-      bool allowMultipleImage = true}) {
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            contentPadding: EdgeInsets.zero,
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            content: SizedBox(
-              height: 156,
-              width: MediaQuery.of(context).size.width * 0.9,
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: AlignmentDirectional.topEnd,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.only(top: 10, right: 10),
-                        child: const Image(
-                          image: AssetImage("assets/images/delete.png"),
-                          height: 25,
-                          width: 25,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(left: 25, right: 25),
-                          width: double.infinity,
-                          child: CommonWidget.getTextWidgetPopSemi(
-                              "Choose Option For Attachment",
-                              color: ColorClass.base_color),
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Divider(
-                          height: 1,
-                          color: ColorClass.light_gray_base,
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            if (isFile)
-                              GestureDetector(
-                                onTap: () async {
-                                  Navigator.pop(context);
-                                  var listInage = await pickmultipleFile(
-                                      allowedExtensions: allowedExtensions);
-                                  onTeacherSelected(listInage);
-                                },
-                                child: Column(children: [
-                                  Image.asset(
-                                    CommonWidget.getImagePath("gallery-1.png"),
-                                    height: 50,
-                                    width: 50,
-                                  ),
-                                  CommonWidget.getTextWidgetPopSemi("File",
-                                      size: 14)
-                                ]),
-                              ),
-                            if (isPhoto)
-                              GestureDetector(
-                                onTap: () async {
-                                  Navigator.pop(context);
-                                  var listInage =
-                                      await pickmedia(allowMultipleImage);
-                                  onTeacherSelected(listInage);
-                                },
-                                child: Column(children: [
-                                  Image.asset(
-                                    CommonWidget.getImagePath("gallery.png"),
-                                    height: 50,
-                                    width: 50,
-                                  ),
-                                  CommonWidget.getTextWidgetPopSemi("Photo",
-                                      size: 14)
-                                ]),
-                              ),
-                            if (isOnlyPhoto)
-                              GestureDetector(
-                                onTap: () async {
-                                  Navigator.pop(context);
-                                  var listInage =
-                                      await pickmedia(allowMultipleImage);
-                                  onTeacherSelected(listInage);
-                                },
-                                child: Column(children: [
-                                  Image.asset(
-                                    CommonWidget.getImagePath("gallery.png"),
-                                    height: 50,
-                                    width: 50,
-                                  ),
-                                  CommonWidget.getTextWidgetPopSemi("Photo",
-                                      size: 14)
-                                ]),
-                              ),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
+  /// Opens the image picker directly — no dialog, no file option.
+  /// [allowMultipleImage] controls whether multiple images can be selected.
+  static Future<void> showFilePicker(
+      BuildContext context,
+      Function(List<File>? list) onTeacherSelected,
+      {
+      @Deprecated('No longer used — file upload removed') List<String> allowedExtensions = const [],
+      @Deprecated('No longer used — always image only') bool isFile = false,
+      @Deprecated('No longer used — always image only') bool isPhoto = true,
+      @Deprecated('No longer used — always image only') bool isOnlyPhoto = true,
+      bool allowMultipleImage = true,
+      }) async {
+    final list = await pickmedia(allowMultipleImage);
+    onTeacherSelected(list);
   }
 }

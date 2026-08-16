@@ -17,6 +17,7 @@ import '../../../Common/Constant.dart';
 import '../data_model/booking_data_manager.dart';
 import '../model/booking_post_bean.dart';
 import '../../specialists_module/data_manager/specialists_data_manager.dart';
+import '../../../Api/ApiFuntion.dart';
 
 class BookingActivity extends StatefulWidget {
   String servicesData;
@@ -53,6 +54,8 @@ class _BookingActivityState extends State<BookingActivity> {
   int totalServicePrice = 0;
   String? selectedServiceDuration;
   String selectionType = "service"; // "service" or "package"
+  int userLoyaltyPoints = 0;
+  bool redeemPoints = false;
 
   @override
   void initState() {
@@ -66,6 +69,25 @@ class _BookingActivityState extends State<BookingActivity> {
     dataManager = BookingDataManager(sharedPreferences!);
     await _loadUserTimeZone();
     getServicesDetails(context);
+    getUserLoyaltyPoints();
+  }
+
+  Future<void> getUserLoyaltyPoints() async {
+    try {
+      final response = await ApiFuntions().getdatauser(context, Constant.getUserDetails);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['status'] == 'success' && body['data'] != null) {
+          if (mounted) {
+            setState(() {
+              userLoyaltyPoints = body['data']['loyaltyPoints'] ?? 0;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Failed to load user loyalty points: $e");
+    }
   }
 
   Future<void> _loadUserTimeZone() async {
@@ -114,7 +136,7 @@ class _BookingActivityState extends State<BookingActivity> {
             child: IconButton(
             icon: Icon(
               isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: isBookmarked ? const Color(0xFF1CB273) : Colors.black87,
+              color: isBookmarked ? const Color(0xFF192028) : Colors.black87,
                 size: 20,
             ),
             onPressed: _toggleBookmark,
@@ -259,7 +281,7 @@ class _BookingActivityState extends State<BookingActivity> {
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Color(0xFF166534), Color(0xFF1CB273)],
+                                colors: [Color(0xFF166534), Color(0xFF192028)],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
@@ -621,11 +643,11 @@ class _BookingActivityState extends State<BookingActivity> {
                                     decoration: BoxDecoration(
                                       color: dateController.text.isEmpty
                                           ? Colors.grey[50]
-                                          : const Color(0xFF1CB273).withOpacity(0.06),
+                                          : const Color(0xFF192028).withOpacity(0.06),
                                       border: Border.all(
                                         color: dateController.text.isEmpty
                                             ? Colors.grey[300]!
-                                            : const Color(0xFF1CB273),
+                                            : const Color(0xFF192028),
                                         width: 1.5,
                                       ),
                                       borderRadius: BorderRadius.circular(14),
@@ -636,7 +658,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                           Icons.calendar_today_rounded,
                                           color: dateController.text.isEmpty
                                               ? Colors.grey[400]
-                                              : const Color(0xFF1CB273),
+                                              : const Color(0xFF192028),
                                           size: 20,
                                         ),
                                         const SizedBox(width: 12),
@@ -666,11 +688,11 @@ class _BookingActivityState extends State<BookingActivity> {
                                     decoration: BoxDecoration(
                                       color: timeController.text.isEmpty
                                           ? Colors.grey[50]
-                                          : const Color(0xFF1CB273).withOpacity(0.06),
+                                          : const Color(0xFF192028).withOpacity(0.06),
                                       border: Border.all(
                                         color: timeController.text.isEmpty
                                             ? Colors.grey[300]!
-                                            : const Color(0xFF1CB273),
+                                            : const Color(0xFF192028),
                                         width: 1.5,
                                       ),
                                       borderRadius: BorderRadius.circular(14),
@@ -681,7 +703,7 @@ class _BookingActivityState extends State<BookingActivity> {
                                           Icons.access_time_rounded,
                                           color: timeController.text.isEmpty
                                               ? Colors.grey[400]
-                                              : const Color(0xFF1CB273),
+                                              : const Color(0xFF192028),
                                           size: 20,
                                         ),
                                         const SizedBox(width: 12),
@@ -706,7 +728,7 @@ class _BookingActivityState extends State<BookingActivity> {
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              const Icon(Icons.timer_rounded, size: 14, color: Color(0xFF1CB273)),
+                              const Icon(Icons.timer_rounded, size: 14, color: Color(0xFF192028)),
                               const SizedBox(width: 6),
                               Text(
                                 "Estimated: ${selectionType == "service" ? (selectedServiceDuration ?? bookingdata.serviceDuration ?? "30") : (bookingdata.serviceDuration ?? "30")} minutes",
@@ -763,7 +785,128 @@ class _BookingActivityState extends State<BookingActivity> {
                 ),
               ),
             ),
-         const SizedBox(height: 24),
+            
+            if (userLoyaltyPoints > 0) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: redeemPoints 
+                      ? ColorClass.base_light_color 
+                      : Colors.white,
+                  border: Border.all(
+                    color: redeemPoints 
+                        ? ColorClass.base_color 
+                        : Colors.grey[200]!,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.stars_rounded,
+                      color: redeemPoints 
+                          ? ColorClass.base_color 
+                          : Colors.grey[400],
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Redeem Loyalty Points",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: "Pop600",
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "You have $userLoyaltyPoints points. Get \$${userLoyaltyPoints * 50} off this booking.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: "Pop400",
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: redeemPoints,
+                      activeColor: ColorClass.base_color,
+                      onChanged: (val) {
+                        setState(() {
+                          redeemPoints = val;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // Price Summary Block
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Subtotal", style: TextStyle(fontFamily: "Pop500", color: Colors.black54)),
+                      Text(
+                        "\$${selectionType == 'package' ? (selectedPackagePrice ?? 0) : totalServicePrice}",
+                        style: const TextStyle(fontFamily: "Pop600", color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                  if (redeemPoints && userLoyaltyPoints > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Loyalty Discount", style: TextStyle(fontFamily: "Pop500", color: Colors.red)),
+                        Text(
+                          "- \$${userLoyaltyPoints * 50}",
+                          style: const TextStyle(fontFamily: "Pop600", color: Colors.red),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Total Pay", style: TextStyle(fontFamily: "Pop600", fontWeight: FontWeight.bold, color: Colors.black87)),
+                      Text(
+                        "\$${(selectionType == 'package' ? (selectedPackagePrice ?? 0) : totalServicePrice) - (redeemPoints ? userLoyaltyPoints * 50 : 0) < 0 ? 0 : (selectionType == 'package' ? (selectedPackagePrice ?? 0) : totalServicePrice) - (redeemPoints ? userLoyaltyPoints * 50 : 0)}",
+                        style: TextStyle(
+                          fontFamily: "Pop700",
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: ColorClass.base_color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
 
                   // Book Now Button (Moved inside scroll)
                   GestureDetector(
@@ -808,14 +951,14 @@ class _BookingActivityState extends State<BookingActivity> {
                           end: Alignment.centerRight,
                           colors: [
                             Color(0xFF166534),
-                            Color(0xFF1CB273),
+                            Color(0xFF192028),
                             Color(0xFF00E676),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1CB273).withOpacity(0.4),
+                            color: const Color(0xFF192028).withOpacity(0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -1208,7 +1351,8 @@ class _BookingActivityState extends State<BookingActivity> {
           _userTimeZone,
           packageId: selectedPackageId,
           packageName: selectedPackageName,
-          packagePrice: selectedPackagePrice);
+          packagePrice: selectedPackagePrice,
+          pointsRedeemed: redeemPoints ? userLoyaltyPoints : 0);
       
       if (!mounted || !context.mounted) {
         CommonWidget.safePop(context);

@@ -1355,7 +1355,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: (offer.isActive ?? true) ? Colors.green : Colors.grey,
+                            color: (offer.isActive ?? true) ? ColorClass.base_color : Colors.grey,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -1445,7 +1445,7 @@ class _ProfileActivityState extends State<ProfileActivity> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: (offer.isActive ?? true) ? Colors.green : Colors.grey,
+                    color: (offer.isActive ?? true) ? ColorClass.base_color : Colors.grey,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

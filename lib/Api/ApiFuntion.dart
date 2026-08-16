@@ -8,6 +8,9 @@ import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+
 import '../Common/CommonWidget.dart';
 import '../Common/Constant.dart';
 import '../features/log_in/ui/new_login_activity.dart';
@@ -66,7 +69,7 @@ class ApiFuntions {
             }
             
             if (context.mounted && errorMessage.isNotEmpty) {
-              CommonWidget.errorShowSnackBarFor(context, "$errorMessage Error Code");
+              CommonWidget.errorShowSnackBarFor(context, errorMessage);
             }
           } catch (e) {
             debugPrint("Error parsing error response: $e");
@@ -149,7 +152,7 @@ class ApiFuntions {
           }
           
           if (context.mounted && errorMessage.isNotEmpty) {
-            CommonWidget.errorShowSnackBarFor(context, "$errorMessage Error Code");
+            CommonWidget.errorShowSnackBarFor(context, errorMessage);
           }
           debugPrint(response.body);
           debugPrint(errorMessage);
@@ -236,7 +239,7 @@ class ApiFuntions {
 
           if (message['message'].length > 0) {
             var mes = message['message'][0];
-            CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+            CommonWidget.errorShowSnackBarFor(context, mes.toString());
           }
           var mes = message['message'];
           debugPrint(response.body);
@@ -325,7 +328,7 @@ class ApiFuntions {
           Map<String, dynamic> message = (jsonDecode(response.body));
           if (message['message'].length > 0) {
             var mes = message['message'][0];
-            CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+            CommonWidget.errorShowSnackBarFor(context, mes.toString());
           }
           var mes = message['message'];
           debugPrint(response.body);
@@ -354,9 +357,67 @@ class ApiFuntions {
     }
   }
 
+  Future<File> _compressImageIfNeeded(File file, int maxImageSize) async {
+    if (kIsWeb) {
+      return file;
+    }
+    if (!await file.exists()) {
+      return file;
+    }
+    final originalSize = await file.length();
+    if (originalSize <= maxImageSize) {
+      return file;
+    }
+    final tempDir = await getTemporaryDirectory();
+    File compressedFile = file;
+    int quality = 85;
+    int minWidth = 2000;
+    int minHeight = 2000;
+    for (int i = 0; i < 6; i++) {
+      final targetPath = '${tempDir.path}/offer_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+      final xFile = await FlutterImageCompress.compressAndGetFile(
+        compressedFile.path,
+        targetPath,
+        format: CompressFormat.jpeg,
+        quality: quality,
+        minWidth: minWidth,
+        minHeight: minHeight,
+        keepExif: false,
+      );
+      if (xFile == null) {
+        break;
+      }
+      compressedFile = File(xFile.path);
+      final compressedSize = await compressedFile.length();
+      if (compressedSize <= maxImageSize) {
+        return compressedFile;
+      }
+      quality = quality > 30 ? quality - 15 : quality;
+      minWidth = minWidth > 900 ? (minWidth * 0.8).round() : minWidth;
+      minHeight = minHeight > 900 ? (minHeight * 0.8).round() : minHeight;
+    }
+    return compressedFile;
+  }
+
+  String _getFileNameFromPath(String filePath) {
+    var fileName = filePath.split('/').last;
+    if (fileName.isEmpty || fileName == filePath) {
+      fileName = filePath.split('\\').last;
+    }
+    return fileName;
+  }
+
+  String _getFileExtension(String fileName) {
+    final lastDotIndex = fileName.lastIndexOf('.');
+    if (lastDotIndex > 0 && lastDotIndex < fileName.length - 1) {
+      return fileName.substring(lastDotIndex).toLowerCase();
+    }
+    return '';
+  }
+
   Future<http.Response> sendMultipartRequest(BuildContext context, String url,
       List<File> files, Map<String, dynamic> data,
-      {String filekey = "file"}) async {
+      {String filekey = "file", bool skipAutoNavigation = false}) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(Constant.accessToken) ?? "";
     
@@ -369,56 +430,32 @@ class ApiFuntions {
         "Authorization": "Bearer $token",
         "ngrok-skip-browser-warning": "true"
       });
-      // File size limits (in bytes)
-      const int maxImageSize = 5 * 1024 * 1024; // 5 MB for images
-      const int maxDocumentSize = 10 * 1024 * 1024; // 10 MB for documents
+       // File size limits (in bytes)
+      const int maxImageSize = 900 * 1024; // 900 KB for images to stay under server's 1 MB Nginx limit
       const int maxFileSize = 100 * 1024 * 1024; // 100 MB absolute max
 
-      // Allowed file extensions (all lowercase since we convert to lowercase)
+      // Allowed image extensions only
       final allowedImageExtensions = ['.jpg', '.jpeg', '.png'];
-      final allowedDocumentExtensions = ['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.ppt', '.pptx'];
+      final heicExtensions = ['.heic', '.heif']; // iPhone formats — auto-converted to JPEG
 
       // Add files to the request with validation
       for (var file in files) {
         Uint8List? fileBytes;
+        File uploadFile = file;
         String fileName;
         String fileExtension = '';
         int fileSize = 0;
         
-        // On web, read file as bytes since file.path might be invalid
         if (kIsWeb) {
           try {
             fileBytes = await file.readAsBytes();
             fileSize = fileBytes.length;
-            
-            // Try to extract file name from path, but use fallback if path is invalid
-            try {
-              var pathParts = file.path.split('/');
-              if (pathParts.isNotEmpty && pathParts.last.isNotEmpty && pathParts.last != file.path) {
-                fileName = pathParts.last;
-              } else {
-                pathParts = file.path.split('\\');
-                if (pathParts.isNotEmpty && pathParts.last.isNotEmpty && pathParts.last != file.path) {
-                  fileName = pathParts.last;
-                } else {
-                  // Fallback: use a default name based on content type detection
-                  fileName = 'uploaded_file';
-                }
-              }
-            } catch (e) {
-              debugPrint('⚠️ Could not extract file name from path, using fallback: $e');
+            fileName = _getFileNameFromPath(file.path);
+            if (fileName.isEmpty || fileName == file.path) {
               fileName = 'uploaded_file';
             }
-            
-            // Try to detect extension from file name
-            final lastDotIndex = fileName.lastIndexOf('.');
-            if (lastDotIndex > 0 && lastDotIndex < fileName.length - 1) {
-              fileExtension = fileName.substring(lastDotIndex).toLowerCase();
-            }
-            
-            // If no extension found, try to detect from file bytes (magic numbers)
+            fileExtension = _getFileExtension(fileName);
             if (fileExtension.isEmpty && fileBytes.isNotEmpty) {
-              // Check for image signatures
               if (fileBytes.length >= 2) {
                 if (fileBytes[0] == 0xFF && fileBytes[1] == 0xD8) {
                   fileExtension = '.jpg';
@@ -430,165 +467,161 @@ class ApiFuntions {
                 }
               }
             }
-            
             debugPrint('📁 Web File: $fileName, Extension: $fileExtension, Size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB');
           } catch (e) {
-            if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-            CommonWidget.errorShowSnackBarFor(context, 'Error reading file on web: ${e.toString()}');
+            if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+              CommonWidget.safePop(context);
+            }
+            if (context.mounted) {
+              CommonWidget.errorShowSnackBarFor(context, 'Error reading file on web: ${e.toString()}');
+            }
             throw Exception('Error reading file on web: $e');
           }
         } else {
-          // Mobile: use file path
-          // Handle both forward and backward slashes for cross-platform compatibility
-          fileName = file.path.split('/').last;
-          if (fileName.isEmpty || fileName == file.path) {
-            fileName = file.path.split('\\').last;
-          }
+          fileName = _getFileNameFromPath(file.path);
+          fileExtension = _getFileExtension(fileName).toLowerCase();
           
-          // Extract file extension safely
-          final lastDotIndex = fileName.lastIndexOf('.');
-          if (lastDotIndex > 0 && lastDotIndex < fileName.length - 1) {
-            fileExtension = fileName.substring(lastDotIndex).toLowerCase();
-          } else {
-            if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-            CommonWidget.errorShowSnackBarFor(context, 'File has no extension: $fileName');
+          // ── HEIC / HEIF → JPEG auto-conversion ──────────────────────────
+          if (heicExtensions.contains(fileExtension)) {
+            debugPrint('🔄 HEIC detected — converting to JPEG automatically...');
+            try {
+              final tempDir = await getTemporaryDirectory();
+              final targetPath = '${tempDir.path}/converted_${DateTime.now().millisecondsSinceEpoch}.jpg';
+              final xFile = await FlutterImageCompress.compressAndGetFile(
+                file.path,
+                targetPath,
+                format: CompressFormat.jpeg,
+                quality: 90,
+                keepExif: false,
+              );
+              if (xFile != null) {
+                uploadFile = File(xFile.path);
+                fileName = _getFileNameFromPath(uploadFile.path);
+                fileExtension = '.jpg';
+                debugPrint('✅ HEIC → JPEG conversion successful: $fileName');
+              } else {
+                debugPrint('⚠️ HEIC conversion returned null — using original file');
+              }
+            } catch (convErr) {
+              debugPrint('⚠️ HEIC conversion failed ($convErr) — using original file');
+            }
+          }
+          // ────────────────────────────────────────────────────────────────
+
+          if (fileExtension.isEmpty) {
+            if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+              CommonWidget.safePop(context);
+            }
+            if (context.mounted) {
+              CommonWidget.errorShowSnackBarFor(context, 'File has no extension: $fileName');
+            }
             throw Exception('File has no extension: $fileName');
           }
-          
-          debugPrint('📁 Mobile File: $fileName, Extension: $fileExtension, Full Path: ${file.path}');
-          
-          // Check if file exists and get size
+          debugPrint('📁 Mobile File: $fileName, Extension: $fileExtension, Full Path: ${uploadFile.path}');
           try {
-            if (!await file.exists()) {
-              if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-              CommonWidget.errorShowSnackBarFor(context, 'File not found: $fileName');
+            if (!await uploadFile.exists()) {
+              if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+                CommonWidget.safePop(context);
+              }
+              if (context.mounted) {
+                CommonWidget.errorShowSnackBarFor(context, 'File not found: $fileName');
+              }
               throw Exception('File not found: $fileName');
             }
+            fileSize = await uploadFile.length();
           } catch (e) {
-            if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-            CommonWidget.errorShowSnackBarFor(context, 'Error checking file: $e');
+            if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+              CommonWidget.safePop(context);
+            }
+            if (context.mounted) {
+              CommonWidget.errorShowSnackBarFor(context, 'Error checking file: $e');
+            }
             throw Exception('Error checking file: $e');
-          }
-
-          try {
-            fileSize = await file.length();
-          } catch (e) {
-            if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-            CommonWidget.errorShowSnackBarFor(context, 'Error reading file size: $e');
-            throw Exception('Error reading file size: $e');
           }
         }
         
         debugPrint('📊 File size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB');
         
-        // Validate file size
         if (fileSize > maxFileSize) {
-          if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-          CommonWidget.errorShowSnackBarFor(context, 'File size exceeds maximum limit (100 MB)');
+          if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+            CommonWidget.safePop(context);
+          }
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, 'File size exceeds maximum limit (100 MB)');
+          }
           throw Exception('File size exceeds maximum limit: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB');
         }
 
-        // Validate file format
         bool isImage = allowedImageExtensions.contains(fileExtension);
-        bool isDocument = allowedDocumentExtensions.contains(fileExtension);
         
-        debugPrint('🔍 Is Image: $isImage, Is Document: $isDocument');
-        debugPrint('🔍 Allowed Image Extensions: $allowedImageExtensions');
-        debugPrint('🔍 Allowed Document Extensions: $allowedDocumentExtensions');
-        
-        if (!isImage && !isDocument) {
-          if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-          CommonWidget.errorShowSnackBarFor(context, 'Unsupported file format: $fileExtension. Please use images (JPG, PNG) or documents (PDF, DOC, XLS, PPT)');
+        if (!isImage) {
+          if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+            CommonWidget.safePop(context);
+          }
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, 'Only image files (JPG, PNG) are allowed. Please choose an image.');
+          }
           throw Exception('Unsupported file format: $fileExtension');
         }
 
-        // Validate size based on file type
+        // After HEIC conversion, re-evaluate isImage with updated extension
+        isImage = allowedImageExtensions.contains(fileExtension);
+
+        if (!kIsWeb && isImage && fileSize > maxImageSize) {
+          uploadFile = await _compressImageIfNeeded(file, maxImageSize);
+          fileSize = await uploadFile.length();
+          fileName = _getFileNameFromPath(uploadFile.path);
+          fileExtension = _getFileExtension(fileName);
+          isImage = allowedImageExtensions.contains(fileExtension);
+        }
+
         if (isImage && fileSize > maxImageSize) {
-          if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-          CommonWidget.errorShowSnackBarFor(context, 'Image size exceeds maximum limit (5 MB). Please compress the image.');
+          if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+            CommonWidget.safePop(context);
+          }
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, 'Image size exceeds maximum limit (1 MB). Please choose a smaller image.');
+          }
           throw Exception('Image size exceeds maximum limit: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB');
         }
 
-        if (isDocument && fileSize > maxDocumentSize) {
-          if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-          CommonWidget.errorShowSnackBarFor(context, 'Document size exceeds maximum limit (10 MB)');
-          throw Exception('Document size exceeds maximum limit: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB');
-        }
-
-        MediaType? contentType;
-        if (fileExtension == '.pdf') {
-          contentType = MediaType('application', 'pdf');
-        } else if (fileExtension == '.doc' || fileExtension == '.docx') {
-          contentType = MediaType('application', 'msword');
-        } else if (fileExtension == '.xlsx' || fileExtension == '.xls') {
-          contentType = MediaType('application', 'vnd.ms-excel');
-        } else if (fileExtension == '.ppt' || fileExtension == '.pptx') {
-          contentType = MediaType('application', 'vnd.ms-powerpoint');
-        } else if (isImage) {
-          // Set content type for images
-          if (fileExtension == '.png') {
-            contentType = MediaType('image', 'png');
-          } else if (fileExtension == '.jpg' || fileExtension == '.jpeg') {
-            contentType = MediaType('image', 'jpeg');
-          }
-        }
-
-        debugPrint('📄 Content Type: ${contentType?.mimeType ?? "NULL"}');
-
-        if (contentType != null) {
-          try {
-            if (kIsWeb && fileBytes != null) {
-              // On web, use bytes directly
-              request.files.add(
-                http.MultipartFile.fromBytes(
-                  filekey,
-                  fileBytes,
-                  filename: fileName,
-                  contentType: contentType,
-                ),
-              );
-            } else {
-              // On mobile, use file path
-              request.files.add(
-                await http.MultipartFile.fromPath(
-                  filekey,
-                  file.path,
-                  filename: fileName,
-                  contentType: contentType,
-                ),
-              );
-            }
-          } catch (e) {
-            if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-            CommonWidget.errorShowSnackBarFor(context, 'Error reading file: ${e.toString()}');
-            throw Exception('Error reading file: $e');
-          }
+        MediaType contentType;
+        if (fileExtension == '.png') {
+          contentType = MediaType('image', 'png');
         } else {
-          if (context.mounted && Navigator.canPop(context)) {
-        CommonWidget.safePop(context);
-      }
-          CommonWidget.errorShowSnackBarFor(context, 'Unsupported file format: $fileName');
-          throw Exception('Unsupported file format: $fileName');
+          contentType = MediaType('image', 'jpeg');
+        }
+
+        debugPrint('📄 Content Type: ${contentType.mimeType}');
+
+        try {
+          if (kIsWeb && fileBytes != null) {
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                filekey,
+                fileBytes,
+                filename: fileName,
+                contentType: contentType,
+              ),
+            );
+          } else {
+            request.files.add(
+              await http.MultipartFile.fromPath(
+                filekey,
+                uploadFile.path,
+                filename: fileName,
+                contentType: contentType,
+              ),
+            );
+          }
+        } catch (e) {
+          if (!skipAutoNavigation && context.mounted && Navigator.canPop(context)) {
+            CommonWidget.safePop(context);
+          }
+          if (context.mounted) {
+            CommonWidget.errorShowSnackBarFor(context, 'Error reading file: ${e.toString()}');
+          }
+          throw Exception('Error reading file: $e');
         }
       }
       data.forEach((key, value) {
@@ -618,7 +651,7 @@ class ApiFuntions {
         Map<String, dynamic> message = (jsonDecode(response.body));
         if (context.mounted && message['message'].length > 0) {
           var mes = message['message'][0];
-          CommonWidget.errorShowSnackBarFor(context, "$mes Error Code");
+          CommonWidget.errorShowSnackBarFor(context, mes.toString());
         }
         debugPrint('Failed: ${response.statusCode}');
         debugPrint('Error: ${response.body}');
@@ -646,6 +679,75 @@ class ApiFuntions {
       
       if (context.mounted) CommonWidget.errorShowSnackBarFor(context, errorMessage);
       throw Exception(errorMessage);
+    }
+  }
+
+  Future<http.Response> deletedatauser(BuildContext context, String endpoint) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    String token = sharedPreferences.getString(Constant.accessToken) ?? "";
+    try {
+      List<InternetAddress> result = [];
+      if (!kIsWeb) {
+        result = await InternetAddress.lookup('google.com');
+      }
+      if ((result.isNotEmpty && result[0].rawAddress.isNotEmpty) || kIsWeb) {
+        final url = '${Constant.baseurl}$endpoint';
+        debugPrint('🔴 DELETE Request: $url');
+
+        final response = await http.delete(Uri.parse(url), headers: {
+          "Authorization": "Bearer $token",
+          "ngrok-skip-browser-warning": "true"
+        });
+
+        debugPrint('🟢 DELETE Response ($url)');
+        debugPrint('📊 Status Code: ${response.statusCode}');
+        debugPrint('📄 Body: ${response.body}');
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return response;
+        } else if (response.statusCode == 401) {
+          debugPrint(response.body);
+          sharedPreferences.clear();
+          if (context.mounted) {
+            CommonWidget.navigateToKillAllScreen(
+                context, const NewLoginActivity());
+          }
+          return response;
+        } else {
+          try {
+            Map<String, dynamic> message = (jsonDecode(response.body));
+            String errorMessage = "";
+            if (message['message'] != null) {
+              if (message['message'] is List && (message['message'] as List).isNotEmpty) {
+                errorMessage = (message['message'] as List)[0].toString();
+              } else if (message['message'] is List && (message['message'] as List).isEmpty) {
+                errorMessage = "An error occurred";
+              } else {
+                errorMessage = message['message'].toString();
+              }
+            }
+            
+            if (context.mounted && errorMessage.isNotEmpty) {
+              CommonWidget.errorShowSnackBarFor(context, errorMessage);
+            }
+          } catch (e) {
+            debugPrint("Error parsing error response: $e");
+          }
+          debugPrint(response.body);
+          return response;
+        }
+      } else {
+        debugPrint("Check Network Connection");
+        if (context.mounted) showSnackBar(context, "Please Check Network Connection");
+        return Response(
+            '{"status":"error","message":"Please Check Network Connection"}',
+            500);
+      }
+    } on SocketException catch (_) {
+      debugPrint("SocketException: Please Check Network Connection");
+      if (context.mounted) showSnackBar(context, "Please Check Network Connection");
+      return Response(
+          '{"status":"error","message":"Please Check Network Connection"}',
+          500);
     }
   }
 

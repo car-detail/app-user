@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:car_app/Common/Color.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
@@ -12,16 +13,16 @@ import 'package:google_maps_places_autocomplete_widgets/address_autocomplete_wid
 import 'package:car_app/features/home_module/data_manager/home_data_manager.dart';
 import 'package:car_app/features/home_module/model/offer_list_model.dart';
 import 'package:car_app/features/specialists_module/ui/specialists_activity.dart';
-import 'package:car_app/features/booking/ui/booking_activity.dart';
 import 'package:car_app/features/booking_model/ui/booking_list_activity.dart';
-import 'package:car_app/features/explore_module/ui/explore_list_map_activity.dart';
 import 'package:car_app/features/bookmark_model/ui/bookmark_activity.dart';
 import 'package:car_app/features/log_in/ui/profile_activity.dart';
+import 'package:car_app/features/log_in/ui/new_login_activity.dart';
 import 'package:car_app/features/notification_model/ui/notification_activity.dart';
 import 'package:car_app/features/home_module/ui/search_results_screen.dart';
 import 'package:car_app/features/home_module/ui/all_vendors_screen.dart';
 import 'package:car_app/features/categories_module/ui/all_categories_screen.dart';
 import 'package:car_app/features/home_module/ui/location_picker_screen.dart';
+import 'loyalty_points_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,6 +40,7 @@ import '../model/services_model_data.dart';
 import '../model/mixed_vendor_data.dart';
 import '../model/notification_data_bean.dart';
 import '../data_manager/home_data_manager.dart';
+import 'package:car_app/features/booking_model/model/booking_list_bean.dart' as booking_bean;
 
 class HomeActivity extends StatefulWidget {
   final GlobalKey? locationKey;
@@ -60,6 +62,8 @@ class HomeActivity extends StatefulWidget {
 
 class _HomeActivityState extends State<HomeActivity> {
   List<CategoryData> categoryData = [];
+  List<booking_bean.Records> recentCompletedBookings = [];
+  int userLoyaltyPoints = 0;
   List<ServicesData> servicesData = [];
   List<ServicesData> filteredServicesData = [];
   List<MixedVendorData> mixedVendorsData = [];
@@ -200,8 +204,8 @@ class _HomeActivityState extends State<HomeActivity> {
     await sharedPreferences?.setString(Constant.lat, lat.toString());
     await sharedPreferences?.setString(Constant.long, lng.toString());
 
-    // Persist location to DB so it's available across devices/reinstalls
-    if (dataManager != null && mounted) {
+    // Persist location to DB only for authenticated users
+    if (dataManager != null && mounted && (sharedPreferences?.getString(Constant.id) ?? "").isNotEmpty) {
       await dataManager!.syncLocationToApi(context, address, lat, lng);
     }
     
@@ -389,7 +393,7 @@ class _HomeActivityState extends State<HomeActivity> {
             "Current Location";
         // Always update to current GPS address on app start
         await sharedPreferences?.setString(Constant.location, address);
-        if (mounted) {
+        if (mounted && (sharedPreferences?.getString(Constant.id) ?? "").isNotEmpty) {
           dataManager?.syncLocationToApi(context, address, position.latitude, position.longitude);
         }
         if (mounted) {
@@ -405,10 +409,10 @@ class _HomeActivityState extends State<HomeActivity> {
 
   start() async {
     try {
-    sharedPreferences = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    dataManager = HomeDataManager(sharedPreferences!);
-    bookmarkDataManager = CategoriesListDataManager(sharedPreferences!);
+      sharedPreferences = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      dataManager = HomeDataManager(sharedPreferences!);
+      bookmarkDataManager = CategoriesListDataManager(sharedPreferences!);
 
       setState(() {
         _isLoading = true;
@@ -427,6 +431,8 @@ class _HomeActivityState extends State<HomeActivity> {
           getOffer(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
           getMixedVendors(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
           getNotifications(context),
+          getRecentCompletedBookings(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
+          getUserDetails(context).timeout(const Duration(seconds: 10), onTimeout: () {}),
         ]);
       }
     } finally {
@@ -438,8 +444,58 @@ class _HomeActivityState extends State<HomeActivity> {
     }
   }
 
+  Future<void> getRecentCompletedBookings(BuildContext context) async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) return;
+    try {
+      var response = await dataManager!.getMyBookings(context);
+      if (response.statusCode == 200) {
+        var body = jsonDecode(response.body);
+        if (body['status'] == 'success' && body['data'] != null) {
+          var recordsData = body['data']['records'] as List;
+          List<booking_bean.Records> fetched = recordsData
+              .map((r) => booking_bean.Records.fromJson(r))
+              .toList();
+          
+          if (mounted) {
+            setState(() {
+              recentCompletedBookings = fetched
+                  .where((b) => b.orderStatus == 'Completed')
+                  .toList();
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Failed to fetch bookings: $e");
+    }
+  }
+
+  Future<void> getUserDetails(BuildContext context) async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) return;
+    try {
+      var response = await dataManager!.apiFuntions.getdatauser(context, Constant.getUserDetails);
+      if (response.statusCode == 200) {
+        var body = jsonDecode(response.body);
+        if (body['status'] == 'success' && body['data'] != null) {
+          if (mounted) {
+            setState(() {
+              userLoyaltyPoints = body['data']['loyaltyPoints'] ?? 0;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Failed to fetch user details: $e");
+    }
+  }
+
   getNotifications(BuildContext context) async {
     if (!mounted) return;
+    // Skip notifications for guest users — requires authentication
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) return;
     try {
       var response = await dataManager!.getNotification(context);
       debugPrint('🔔 Notifications API Response Status: ${response.statusCode}');
@@ -652,7 +708,7 @@ class _HomeActivityState extends State<HomeActivity> {
                           end: Alignment.bottomRight,
                           colors: [
                             Color(0xFF166534),
-                            Color(0xFF1CB273),
+                            Color(0xFF192028),
                             Color(0xFF00E676),
                           ],
                         ),
@@ -662,7 +718,7 @@ class _HomeActivityState extends State<HomeActivity> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF1CB273).withOpacity(0.4),
+                            color: Color(0xFF192028).withOpacity(0.4),
                             blurRadius: 16,
                             offset: Offset(0, 6),
                           ),
@@ -803,6 +859,7 @@ class _HomeActivityState extends State<HomeActivity> {
                                     ),
                                     Expanded(
                                       child: AddressAutocompleteTextField(
+                                        key: const ValueKey('home_address_autocomplete'),
                                         style: const TextStyle(
                                           color: Colors.black87,
                                           fontSize: 13,
@@ -1070,9 +1127,9 @@ class _HomeActivityState extends State<HomeActivity> {
                                 "Explore Map",
                               Icons.map_rounded,
                                 () {
-                                  CommonWidget.navigateToScreen(context, const ExploreActivity());
+                                  CommonWidget.navigateToScreen(context, const ExploreActivity(startWithMap: true));
                                 },
-                              Colors.green,
+                              ColorClass.base_color,
                             ),
                             _buildCircularQuickAction(
                               "Profile",
@@ -1085,6 +1142,8 @@ class _HomeActivityState extends State<HomeActivity> {
                           ],
                         ),
                         const SizedBox(height: 20),
+                        _buildLoyaltyBanner(),
+                        _buildBookAgainSection(),
                         // Outlets Section (Reference Style)
                         Container(
                           key: widget.nearbyVendorsKey,
@@ -1216,7 +1275,7 @@ class _HomeActivityState extends State<HomeActivity> {
                       GestureDetector(
                         onTap: () {
                           CommonWidget.navigateToScreen(
-                              context, NotificationActivity(const []));
+                              context, NotificationActivity(notificationsList));
                         },
                         child: Container(
                       padding: const EdgeInsets.all(8),
@@ -1510,7 +1569,7 @@ class _HomeActivityState extends State<HomeActivity> {
     // Default colorful icon based on category
     final colors = [
       [Colors.orange.shade50, Colors.orange.shade400, Colors.orange.shade600],
-      [Colors.green.shade50, Colors.green.shade400, Colors.green.shade600],
+      [ColorClass.base_light_color, ColorClass.base_color, ColorClass.base_color],
       [Colors.pink.shade50, Colors.pink.shade400, Colors.pink.shade600],
       [Colors.teal.shade50, Colors.teal.shade400, Colors.teal.shade600],
       [Colors.amber.shade50, Colors.amber.shade400, Colors.amber.shade600],
@@ -1765,6 +1824,216 @@ class _HomeActivityState extends State<HomeActivity> {
                         ],
                       ),
                     ),
+      ),
+    );
+  }
+
+  Widget _buildBookAgainSection() {
+    if (recentCompletedBookings.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Book Again?",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: "Pop600",
+                color: Colors.black87,
+              ),
+            ),
+            Text(
+              "Based on history",
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontFamily: "Pop400",
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 130,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: recentCompletedBookings.length > 5 ? 5 : recentCompletedBookings.length,
+            itemBuilder: (context, index) {
+              final booking = recentCompletedBookings[index];
+              return Container(
+                width: 250,
+                margin: const EdgeInsets.only(right: 14),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.grey.withOpacity(0.08)),
+                ),
+                child: Row(
+                  children: [
+                    // Service Image/Icon
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: ColorClass.base_light_color,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: booking.serviceImage != null && booking.serviceImage!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(booking.serviceImage!, fit: BoxFit.cover),
+                            )
+                          : Icon(Icons.car_repair, color: ColorClass.base_color),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            booking.serviceTitle ?? "Car Service",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Pop600",
+                              color: Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            booking.vendorDisplayName ?? "My Vendor",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontFamily: "Pop400",
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (booking.vendorId != null) {
+                                CommonWidget.navigateToScreen(
+                                  context,
+                                  SpecialistsActivity(booking.vendorId!),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorClass.base_color,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                              minimumSize: const Size(80, 26),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              "Book Again",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildLoyaltyBanner() {
+    if (!_isUserLoggedIn) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () {
+        CommonWidget.navigateToScreen(
+          context,
+          LoyaltyPointsScreen(points: userLoyaltyPoints),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [ColorClass.base_color, const Color(0xFF166534)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: ColorClass.base_color.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.stars_rounded, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Cahrz Loyalty Club",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Pop600",
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "You have $userLoyaltyPoints loyalty points",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 12,
+                      fontFamily: "Pop400",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white),
+          ],
+        ),
       ),
     );
   }
@@ -2030,7 +2299,7 @@ class _HomeActivityState extends State<HomeActivity> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: vendor.isOpen ? Colors.green.withOpacity(0.9) : Colors.red.withOpacity(0.9),
+                      color: vendor.isOpen ? ColorClass.base_color.withOpacity(0.9) : Colors.red.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
@@ -2497,7 +2766,7 @@ class _HomeActivityState extends State<HomeActivity> {
                         const SizedBox(width: 4),
                         Text(
                           offer.distance != null 
-                              ? "${(offer.distance! / 1000).toStringAsFixed(1)} km away"
+                              ? "${(offer.distance! / 1609.344).toStringAsFixed(1)} miles away"
                               : "Near you",
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
@@ -2940,7 +3209,12 @@ class _HomeActivityState extends State<HomeActivity> {
                     }
                   }
                   
-                  offerListData.add(offer);
+                  // Only show offers that are near the user (within 50 miles / 80467 meters)
+                  if (offer.distance == null || offer.distance! <= maxDistanceMeters) {
+                    offerListData.add(offer);
+                  } else {
+                    debugPrint("Filtered out offer '${offer.title}' because it is ${offer.distance! / 1000} km away.");
+                  }
                 } catch (e, st) {
                   debugPrint("Error parsing individual offer: $e\n$st");
                 }
@@ -3028,7 +3302,54 @@ class _HomeActivityState extends State<HomeActivity> {
         );
   }
 
+  void _showLoginRequiredDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Login Required",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                  ),
+                ).then((value) {
+                  if (value == true) {
+                    // Refresh state if needed
+                  }
+                });
+              },
+              child: const Text("Log In"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _openInMaps(MixedVendorData vendor) async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to view directions.");
+      return;
+    }
     // Open the vendor location in Google Maps
     final lat = vendor.latitude;
     final lng = vendor.longitude;
@@ -3312,7 +3633,7 @@ class _GooglePlacesDetailPage extends StatelessWidget {
                   if (vendor.phone != null && vendor.phone!.isNotEmpty)
                     Row(
                       children: [
-                        const Icon(Icons.phone, color: Colors.green, size: 20),
+                        Icon(Icons.phone, color: ColorClass.base_color, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           vendor.phone!,
@@ -3401,6 +3722,11 @@ class _GooglePlacesDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // Cahrz Merchant Partnership and Onboarding Section
+                  _buildCahrzPartnerCard(context),
                 ],
               ),
             ),
@@ -3411,7 +3737,400 @@ class _GooglePlacesDetailPage extends StatelessWidget {
     );
   }
 
+  Widget _buildCahrzPartnerCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF166534), Color(0xFF192028)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF166534).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.storefront_rounded, color: Colors.amber, size: 24),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Claim this Business",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: "Pop600",
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  "PARTNER",
+                  style: TextStyle(
+                    color: Colors.amber,
+                    fontSize: 9,
+                    fontFamily: "Pop600",
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Subtext
+          Text(
+            "This business is not registered on Cahrz yet. Recommend them to claim their profile to receive direct customer bookings and grow online!",
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: "Pop400",
+              color: Colors.white.withOpacity(0.9),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Grid of benefits (glassmorphic cards)
+          Row(
+            children: [
+              Expanded(
+                child: _buildBenefitChip(Icons.percent_rounded, "0% Commission"),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildBenefitChip(Icons.calendar_today_rounded, "Direct Booking"),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildBenefitChip(Icons.analytics_rounded, "Live Analytics"),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildBenefitChip(Icons.bolt_rounded, "Instant Payouts"),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final box = context.findRenderObject() as RenderBox?;
+                    final shareText = "Hey! I found your business \"${vendor.name}\" on Google Places and would love to book your car services directly on Cahrz.\n\n"
+                        "Register on Cahrz Vendor to manage bookings, keep 100% of your earnings, and get direct local customers!\n\n"
+                        "Download the Cahrz Vendor App:\n"
+                        "iOS: https://apps.apple.com/in/app/cahrz-vendor/id6749635800\n"
+                        "Android: https://play.google.com/store/apps/details?id=com.cahrz.vendor\n"
+                        "Or register online: https://vendor.cahrz.com";
+                    Share.share(
+                      shareText,
+                      subject: "Join Cahrz as a Partner Vendor!",
+                      sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+                    );
+                  },
+                  icon: Icon(Icons.share_rounded, size: 18, color: ColorClass.base_color),
+                  label: Text(
+                    "Share Invite",
+                    style: TextStyle(
+                      fontFamily: "Pop600",
+                      color: ColorClass.base_color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: ColorClass.base_color,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showQrCodeDialog(context),
+                  icon: const Icon(Icons.qr_code_2_rounded, size: 18, color: Colors.white),
+                  label: const Text(
+                    "Show QR Code",
+                    style: TextStyle(
+                      fontFamily: "Pop600",
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white, width: 1.5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.amber),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 11,
+                fontFamily: "Pop500",
+                color: Colors.white,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQrCodeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Scan to Register",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontFamily: "Pop600",
+                        color: Colors.black87,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // QR Code Container with nice borders and shadow
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fapps.apple.com%2Fin%2Fapp%2Fcahrz-vendor%2Fid6749635800",
+                        width: 180,
+                        height: 180,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return SizedBox(
+                            width: 180,
+                            height: 180,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 180,
+                            height: 180,
+                            color: Colors.grey[100],
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.qr_code_2_rounded, size: 48, color: Colors.grey),
+                                SizedBox(height: 8),
+                                Text("QR unavailable", style: TextStyle(color: Colors.grey)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Onboarding Steps
+                const Text(
+                  "How to claim your profile:",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: "Pop600",
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildStepRow("1", "Show this QR code to the business owner/manager."),
+                _buildStepRow("2", "Let them scan it with their phone camera."),
+                _buildStepRow("3", "They'll land on our registration portal to claim this profile!"),
+                const SizedBox(height: 24),
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Clipboard.setData(const ClipboardData(text: "https://apps.apple.com/in/app/cahrz-vendor/id6749635800"));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Registration link copied to clipboard!"),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        label: const Text("Copy Link"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ColorClass.base_color,
+                          side: BorderSide(color: ColorClass.base_color),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorClass.base_color,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text("Done"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStepRow(String number, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              color: ColorClass.base_color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              number,
+              style: TextStyle(
+                fontSize: 11,
+                fontFamily: "Pop600",
+                color: ColorClass.base_color,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: "Pop400",
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Future<void> _openInMapsFromDetailPage(BuildContext context, MixedVendorData vendor) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String userId = prefs.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to view directions.");
+      return;
+    }
     final lat = vendor.latitude;
     final lng = vendor.longitude;
     
@@ -3434,7 +4153,13 @@ class _GooglePlacesDetailPage extends StatelessWidget {
     }
   }
 
-  static void _callVendorFromDetailPage(BuildContext context, MixedVendorData vendor) {
+  static Future<void> _callVendorFromDetailPage(BuildContext context, MixedVendorData vendor) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String userId = prefs.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to call this vendor.");
+      return;
+    }
     if (vendor.phone != null && vendor.phone!.isNotEmpty) {
       final uri = Uri.parse('tel:${vendor.phone}');
       launchUrl(uri, mode: LaunchMode.externalApplication).catchError((e) {
@@ -3444,5 +4169,47 @@ class _GooglePlacesDetailPage extends StatelessWidget {
     } else {
       CommonWidget.errorShowSnackBarFor(context, "Phone number not available");
     }
+  }
+
+  static void _showLoginRequiredDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Login Required",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                  ),
+                ).then((value) {
+                  if (value == true) {
+                    // Do nothing, state should refresh if they try the action again
+                  }
+                });
+              },
+              child: const Text("Log In"),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

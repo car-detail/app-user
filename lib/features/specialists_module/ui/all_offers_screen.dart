@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:car_app/Common/Color.dart';
 import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/Common/ShimmerLoader.dart';
+import '../../../Api/ApiFuntion.dart';
+import '../../../Common/Constant.dart';
 
 class AllOffersScreen extends StatefulWidget {
   final String vendorId;
@@ -126,211 +128,238 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
   }
 
   Widget _buildOfferCard(Map<String, dynamic> offer) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-            // Offer Image
-            Stack(
-              children: [
-                SizedBox(
-                  height: 220,
-              width: double.infinity,
-              child: offer['image'] != null && offer['image'].isNotEmpty
-                  ? Image.network(
-                      offer['image'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                            return _buildPlaceholderImage();
-                      },
-                    )
-                      : _buildPlaceholderImage(),
-                ),
-                // Gradient Overlay
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
+    return GestureDetector(
+      onTap: () {
+        try {
+          ApiFuntions().postdatauser(
+            context,
+            "${Constant.trackOfferView}${offer['_id'] ?? offer['id']}",
+            {},
+            skipAutoNavigation: true,
+          );
+        } catch (e) {
+          debugPrint("Failed to track offer view: $e");
+        }
+        _claimOffer(offer);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Offer Image
+              Stack(
+                children: [
+                  SizedBox(
+                    height: 220,
+                    width: double.infinity,
+                    child: offer['image'] != null && offer['image'].isNotEmpty
+                        ? Image.network(
+                            offer['image'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildPlaceholderImage();
+                            },
+                          )
+                        : _buildPlaceholderImage(),
+                  ),
+                  // Gradient Overlay
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                        ),
                       ),
                     ),
-            ),
-          ),
-                // Valid Till Badge - Top Right
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-              children: [
-                        Icon(Icons.calendar_today_rounded, size: 14, color: Colors.grey[700]),
-                        const SizedBox(width: 6),
-                        Text(
-                          _formatDate(offer['validUntil']),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontFamily: "Pop600",
-                            color: Colors.grey[800],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-                // Discount Badge - Top Left
-                if (offer['discount'] != null && offer['discount'] > 0)
+                  // Valid Till Badge - Top Right
                   Positioned(
                     top: 16,
-                    left: 16,
+                    right: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.grey[900],
+                        color: Colors.white.withOpacity(0.95),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: Text(
-                        "${offer['discount'] ?? 0}% OFF",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: "Pop600",
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            offer['validUntil'] == null || offer['validUntil'].toString().isEmpty
+                                ? Icons.all_inclusive_rounded
+                                : Icons.calendar_today_rounded,
+                            size: 14,
+                            color: offer['validUntil'] == null || offer['validUntil'].toString().isEmpty
+                                ? ColorClass.base_color
+                                : Colors.grey[700],
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            offer['validUntil'] == null || offer['validUntil'].toString().isEmpty
+                                ? 'Forever'
+                                : _formatDate(offer['validUntil']),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: "Pop600",
+                              color: offer['validUntil'] == null || offer['validUntil'].toString().isEmpty
+                                  ? ColorClass.base_color
+                                  : Colors.grey[800],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Discount Badge - Top Left
+                  if (offer['discount'] != null && offer['discount'] > 0)
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          "${offer['discount'] ?? 0}% OFF",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontFamily: "Pop600",
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                // Title and Description - Bottom Overlay
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (offer['title'] != null && offer['title'].toString().isNotEmpty)
-                      Text(
-                            offer['title'] ?? 'Special Offer',
-                        style: TextStyle(
-                              fontSize: 22,
-                              fontFamily: "Pop600",
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(0, 1),
-                                  blurRadius: 3,
-                                  color: Colors.black.withOpacity(0.5),
-                                ),
-                              ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                        if (offer['description'] != null && offer['description'].toString().isNotEmpty) ...[
-                const SizedBox(height: 8),
-                          Text(
-                            offer['description'] ?? '',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: "Pop400",
-                              color: Colors.white.withOpacity(0.9),
-                              height: 1.4,
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(0, 1),
-                                  blurRadius: 2,
-                                  color: Colors.black.withOpacity(0.3),
-                          ),
-                        ],
+                  // Title and Description - Bottom Overlay
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (offer['title'] != null && offer['title'].toString().isNotEmpty)
+                            Text(
+                              offer['title'] ?? 'Special Offer',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontFamily: "Pop600",
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 3,
+                                    color: Colors.black.withOpacity(0.5),
+                                  ),
+                                ],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          if (offer['description'] != null && offer['description'].toString().isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              offer['description'] ?? '',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Pop400",
+                                color: Colors.white.withOpacity(0.9),
+                                height: 1.4,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 2,
+                                    color: Colors.black.withOpacity(0.3),
+                                  ),
+                                ],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
+                ],
+              ),
+              // Additional Info Section
+              if (offer['originalPrice'] != null && offer['discountedPrice'] != null)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Text(
+                        "\$${offer['originalPrice']}",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Pop400",
+                          color: Colors.grey[500],
+                          decoration: TextDecoration.lineThrough,
+                        ),
                       ),
-                  ],
-                ),
-            // Additional Info Section
-            if (offer['originalPrice'] != null && offer['discountedPrice'] != null)
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Text(
-                      "\$${offer['originalPrice']}",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: "Pop400",
-                        color: Colors.grey[500],
-                        decoration: TextDecoration.lineThrough,
+                      const SizedBox(width: 12),
+                      Text(
+                        "\$${offer['discountedPrice']}",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontFamily: "Pop600",
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      "\$${offer['discountedPrice']}",
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontFamily: "Pop600",
-                        color: Colors.black87,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                    ],
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -357,9 +386,9 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
   }
 
   String _formatDate(dynamic date) {
-    if (date == null) return 'N/A';
+    if (date == null) return 'Forever';
     final dateStr = date.toString().trim();
-    if (dateStr.isEmpty) return 'N/A';
+    if (dateStr.isEmpty) return 'Forever';
     
     try {
       // Try standard DateTime.parse first
@@ -381,8 +410,7 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
             return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
           }
         }
-      } catch (e2) {
-      }
+      } catch (e2) {}
       return 'Invalid Date';
     }
   }
@@ -479,9 +507,23 @@ class _AllOffersScreenState extends State<AllOffersScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              CommonWidget.successShowSnackBarFor(context, "Offer claimed successfully!");
+              try {
+                final response = await ApiFuntions().postdatauser(
+                  context,
+                  "${Constant.claimOffer}${offer['_id'] ?? offer['id']}",
+                  {},
+                  skipAutoNavigation: true,
+                );
+                if (response.statusCode == 200 || response.statusCode == 201) {
+                  if (context.mounted) {
+                    CommonWidget.successShowSnackBarFor(context, "Offer claimed successfully!");
+                  }
+                }
+              } catch (e) {
+                debugPrint("Failed to claim offer: $e");
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorClass.base_color,

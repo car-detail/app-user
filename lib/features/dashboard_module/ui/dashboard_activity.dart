@@ -10,6 +10,11 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:car_app/features/home_module/data_manager/home_data_manager.dart';
+import 'package:car_app/features/home_module/model/notification_data_bean.dart';
+import 'package:car_app/features/notification_model/ui/notification_activity.dart';
+import 'package:car_app/Common/NotificationService.dart';
+import 'package:car_app/Common/Constant.dart';
 
 import '../../../Common/Color.dart';
 import '../../../Common/CommonWidget.dart';
@@ -43,11 +48,24 @@ class _DashboardActivityState extends State<DashboardActivity> {
   final GlobalKey _categoriesKey = GlobalKey();
   final GlobalKey _nearbyVendorsKey = GlobalKey();
   
+  late final List<Widget> _pageNo;
+  
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     selectedpage = widget.currentIndex;
+    _pageNo = [
+      HomeActivity(
+        locationKey: _locationKey,
+        searchKey: _searchKey,
+        categoriesKey: _categoriesKey,
+        nearbyVendorsKey: _nearbyVendorsKey,
+      ),
+      ExploreActivity(key: _exploreKey),
+      BookingListActivity(key: BookingListActivity.bookingListKey),
+      const ProfileViewActivity()
+    ];
     _loadUserDetails();
     
     // Handle when app is opened from a terminated state via notification
@@ -67,13 +85,28 @@ class _DashboardActivityState extends State<DashboardActivity> {
     // Listen for foreground messages to refresh data
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('🔔 User Dashboard received foreground message: ${message.data}');
+      
+      final isBookingNotification = message.data['bookingId'] != null ||
+          message.data['id'] != null ||
+          message.data['type']?.toString().contains('BOOKING') == true ||
+          message.notification?.title?.toLowerCase().contains('booking') == true ||
+          message.notification?.body?.toLowerCase().contains('booking') == true;
+
+      if (isBookingNotification && message.notification != null) {
+        NotificationService.showBookingNotification(
+          id: message.hashCode,
+          title: message.notification?.title ?? "Booking Update",
+          body: message.notification?.body ?? "",
+        );
+      }
+
       if (message.data['type'] == 'BOOKING_CONFIRMED' || 
           message.data['type'] == 'BOOKING_CANCELLED' ||
           message.data['type'] == 'BOOKING_COMPLETED') {
         debugPrint('🔔 Booking update detected. Refreshing data...');
         if (mounted) {
           _loadUserDetails();
-          if (context.mounted && message.notification != null) {
+          if (context.mounted && message.notification != null && !isBookingNotification) {
             CommonWidget.successShowSnackBarFor(context, "${message.notification?.title}: ${message.notification?.body}");
           }
         }
@@ -97,20 +130,46 @@ class _DashboardActivityState extends State<DashboardActivity> {
       } else {
         BookingListActivity.targetFilterType = 'Pending';
       }
-    }
-    
-    if (mounted) {
-      setState(() {
-        selectedpage = 2; // Navigate to Bookings tab (index 2 in user app)
-      });
       
-      if (bookingId != null && bookingId.toString().isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          selectedpage = 2; // Navigate to Bookings tab (index 2 in user app)
+        });
+        
         WidgetsBinding.instance.addPostFrameCallback((_) {
           BookingListActivity.bookingListKey.currentState?.handleDeepLink(
             BookingListActivity.targetBookingId ?? "",
             BookingListActivity.targetFilterType ?? "Pending"
           );
         });
+      }
+    } else {
+      // General notification click -> Navigate to NotificationActivity
+      if (mounted) {
+        _fetchAndNavigateToNotifications();
+      }
+    }
+  }
+
+  Future<void> _fetchAndNavigateToNotifications() async {
+    try {
+      final sharedPrefs = await SharedPreferences.getInstance();
+      final dataManager = HomeDataManager(sharedPrefs);
+      final response = await dataManager.getNotification(context);
+      List<Notifications> notificationsList = [];
+      if (response.statusCode == 200) {
+        final data = NotificationDataBean.fromJson(jsonDecode(response.body));
+        if (data.status == "success" && data.data != null) {
+          notificationsList = data.data?.notifications ?? [];
+        }
+      }
+      if (mounted && context.mounted) {
+        CommonWidget.navigateToScreen(context, NotificationActivity(notificationsList));
+      }
+    } catch (e) {
+      debugPrint('🔔 Error fetching notifications on click: $e');
+      if (mounted && context.mounted) {
+        CommonWidget.navigateToScreen(context, NotificationActivity(const []));
       }
     }
   }
@@ -119,6 +178,10 @@ class _DashboardActivityState extends State<DashboardActivity> {
   Future<void> _loadUserDetails() async {
     try {
       final sharedPrefs = await SharedPreferences.getInstance();
+      // Skip API call entirely for guest users
+      final String userId = sharedPrefs.getString(Constant.id) ?? "";
+      if (userId.isEmpty) return;
+
       loginDataManager = LoginDataManager(sharedPrefs);
       final response = await loginDataManager!.getUserDetails(context);
       if (response.statusCode == 200) {
@@ -194,17 +257,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
     } catch (e) {
     }
   }
-  List<Widget> get _pageNo => [
-    HomeActivity(
-      locationKey: _locationKey,
-      searchKey: _searchKey,
-      categoriesKey: _categoriesKey,
-      nearbyVendorsKey: _nearbyVendorsKey,
-    ),
-    ExploreActivity(key: _exploreKey),
-    BookingListActivity(key: BookingListActivity.bookingListKey),
-    const ProfileViewActivity()
-  ];
+  // Persistent pages list initialized in initState
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +381,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
               ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1CB273),
+                    color: const Color(0xFF192028),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: Row(

@@ -16,6 +16,7 @@ import '../../bookmark_model/ui/bookmark_activity.dart';
 import '../../home_module/model/services_model_data.dart';
 import '../../home_module/model/mixed_vendor_data.dart';
 import '../../specialists_module/ui/specialists_activity.dart';
+import '../../log_in/ui/new_login_activity.dart';
 import '../data_manager/categories_list_data_manager.dart';
 import '../model/services_post_bean.dart';
 
@@ -421,7 +422,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                   end: Alignment.bottomRight,
                   colors: [
                     Color(0xFF166534),
-                    Color(0xFF1CB273),
+                    Color(0xFF192028),
                     Color(0xFF00E676),
                   ],
                 ),
@@ -440,7 +441,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           end: Alignment.bottomRight,
                           colors: [
                             const Color(0xFF166534),
-                            const Color(0xFF1CB273).withOpacity(0.8),
+                            const Color(0xFF192028).withOpacity(0.8),
                           ],
                         ),
                       ),
@@ -929,7 +930,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: vendor.isOpen ? Colors.green : Colors.red,
+                          color: vendor.isOpen ? ColorClass.base_color : Colors.red,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -1168,7 +1169,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: vendor.isOpen ? Colors.green : Colors.red,
+                              color: vendor.isOpen ? ColorClass.base_color : Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -1432,7 +1433,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: vendor.isOpen ? Colors.green : Colors.red,
+                              color: vendor.isOpen ? ColorClass.base_color : Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -1511,7 +1512,7 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                         icon: const Icon(Icons.phone, size: 18),
                         label: const Text('Call'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: ColorClass.base_color,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -1531,6 +1532,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   }
 
   void _navigateToVendor(MixedVendorData vendor) {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to view directions.");
+      return;
+    }
     // Open Google Maps with vendor location
     final lat = vendor.latitude;
     final lng = vendor.longitude;
@@ -1543,6 +1549,11 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
   }
 
   void _callVendor(MixedVendorData vendor) async {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to call this vendor.");
+      return;
+    }
     final raw = vendor.phone?.trim();
     if (raw == null || raw.isEmpty) {
       CommonWidget.errorShowSnackBarFor(context, 'Phone number not available for this vendor');
@@ -1563,6 +1574,48 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
     } catch (e) {
       CommonWidget.errorShowSnackBarFor(context, 'Could not start call');
     }
+  }
+
+  void _showLoginRequiredDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Login Required",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                  ),
+                ).then((value) {
+                  if (value == true) {
+                    // Do nothing, state should refresh if they try the action again
+                  }
+                });
+              },
+              child: const Text("Log In"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showOfflineMessage() {

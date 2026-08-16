@@ -17,7 +17,8 @@ import '../../dashboard_module/ui/dashboard_activity.dart';
 /// Fresh, clean login screen for vendor app
 /// Uses direct API-based authentication without Firebase Phone Auth
 class NewLoginActivity extends StatefulWidget {
-  const NewLoginActivity({super.key});
+  final bool returnToPrevious;
+  const NewLoginActivity({super.key, this.returnToPrevious = false});
 
   @override
   State<NewLoginActivity> createState() => _NewLoginActivityState();
@@ -25,6 +26,7 @@ class NewLoginActivity extends StatefulWidget {
 
 class _NewLoginActivityState extends State<NewLoginActivity> {
   var mobileController = TextEditingController();
+  var otpController = TextEditingController();
   String selectedCountryCode = '+1'; // Default to US
   String selectedCountryIsoCode = 'US';
   ApiFuntions apiFuntions = ApiFuntions();
@@ -112,7 +114,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                       end: Alignment.bottomRight,
                       colors: [
                         Color(0xFF166534),
-                        Color(0xFF1CB273),
+                        Color(0xFF192028),
                         Color(0xFF26D17A),
                       ],
                     ),
@@ -239,6 +241,37 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                                 ),
                               ),
                       ),
+                      
+                      if (!_isOTPSent) ...[
+                        const SizedBox(height: 16),
+                        Center(
+                          child: TextButton(
+                            onPressed: () async {
+                              await sharedPreferences?.setString(Constant.id, '');
+                              await sharedPreferences?.setString(Constant.accessToken, '');
+                              if (context.mounted) {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (BuildContext context) => DashboardActivity(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                            },
+                            child: Text(
+                              "Explore as Guest",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Pop600",
+                                color: ColorClass.base_color,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       
                       const SizedBox(height: 24),
                       
@@ -371,7 +404,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: TextField(
-        controller: mobileController,
+        controller: otpController,
         keyboardType: TextInputType.number,
         inputFormatters: [
           FilteringTextInputFormatter.digitsOnly,
@@ -409,20 +442,15 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   }
 
   void _sendOTP() async {
-    // If we're resending, the controller might be empty or have an OTP
-    // so we use the stored phone number
-    if (_isOTPSent && _enteredPhone.isNotEmpty) {
-      mobileController.text = _enteredPhone;
+    if (!_isOTPSent) {
+      if (BaseActivity.checkEmptyField(
+          editingController: mobileController,
+          message: "Please Enter Mobile Number",
+          context: context)) {
+        return;
+      }
+      _enteredPhone = mobileController.text.trim();
     }
-
-    if (BaseActivity.checkEmptyField(
-        editingController: mobileController,
-        message: "Please Enter Mobile Number",
-        context: context)) {
-      return;
-    }
-
-    _enteredPhone = mobileController.text.trim();
     
     // Validate phone number based on country
     Map<String, int> validationRules = _getPhoneValidationRules(selectedCountryIsoCode);
@@ -482,7 +510,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
             _isOTPSent = true;
             _verificationId = verificationId;
             _resendToken = resendToken;
-            mobileController.clear();
+            otpController.clear();
           });
           
           if (resendToken != null) {
@@ -511,13 +539,13 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
 
   void _verifyOTP() async {
     if (BaseActivity.checkEmptyField(
-        editingController: mobileController,
+        editingController: otpController,
         message: "Please Enter OTP",
         context: context)) {
       return;
     }
     
-    String otp = mobileController.text.trim();
+    String otp = otpController.text.trim();
     if (otp.length != 6) {
       CommonWidget.errorShowSnackBarFor(context, "Please enter a valid 6-digit OTP");
       return;
@@ -560,9 +588,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   }
 
   void _resendOTP() {
-    // Re-populate controller with stored phone number before resending
     if (_enteredPhone.isNotEmpty) {
-      mobileController.text = _enteredPhone;
       _sendOTP();
     } else {
       setState(() {
@@ -640,7 +666,11 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
             
             // 8. Navigate to dashboard
             if (context.mounted) {
-              CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+              if (widget.returnToPrevious) {
+                Navigator.pop(context, true);
+              } else {
+                CommonWidget.navigateToKillAllScreen(context, DashboardActivity());
+              }
             }
           } else {
             throw Exception(resData['message'] ?? "Backend verification failed");

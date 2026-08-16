@@ -28,67 +28,195 @@ class _NotificationActivityState extends State<NotificationActivity> {
     debugPrint('🔔 Notifications marked as read at: ${DateTime.now().toIso8601String()}');
   }
 
+  void _showNotificationDetailDialog(BuildContext context, Notifications data) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF192028).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.notifications_active_rounded, color: Color(0xFF192028), size: 24),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  data.title ?? "Notification Detail",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  CommonWidget.formatTimeAgo(data.createdAt),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+                Text(
+                  data.body ?? "",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF192028),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      "Close",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('🔔 NotificationActivity build: isEmpty=${widget.notificationsList.isEmpty}');
     return Scaffold(
+      backgroundColor: Color(0xFFF0FDF4),
       body: Column(
         children: [
-          CommonWidget.gettopbar("Notification", context),
-          const SizedBox(
-            height: 10,
+          Container(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 12, bottom: 20, left: 20, right: 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF166534), Color(0xFF192028)],
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => CommonWidget.safePop(context),
+                  child: Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Notifications", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    Text("Stay up to date", style: TextStyle(color: Colors.white70, fontSize: 13)),
+                  ],
+                ),
+              ],
+            ),
           ),
           if (widget.notificationsList.isNotEmpty)
             Expanded(
                 child: ListView.builder(
-                    padding: EdgeInsets.zero,
+                  padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     itemCount: widget.notificationsList.length,
                     itemBuilder: (context, index) {
-                      var data = widget.notificationsList[index];
-                      return Container(
-                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                                height: 60,
-                                width: 60,
+                    var data = widget.notificationsList[index];
+                      return GestureDetector(
+                        onTap: () => _showNotificationDetailDialog(context, data),
+                        child: Container(
+                          margin: EdgeInsets.fromLTRB(16, 6, 16, 6),
+                          padding: EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 3))],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                height: 48, width: 48,
                                 decoration: BoxDecoration(
-                                    color: ColorClass.base_light_color,
-                                    borderRadius: const BorderRadius.all(
-                                        Radius.circular(30))),
-                                child: Center(
-                                    child: Image.asset(
-                                  CommonWidget.getImagePath("noti_icon.png"),
-                                  height: 25,
-                                  width: 25,
-                                ))),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            Expanded(
+                                  gradient: LinearGradient(colors: [Color(0xFF192028), Color(0xFF00C853)]),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(Icons.notifications_rounded, color: Colors.white, size: 22),
+                              ),
+                              SizedBox(width: 14),
+                              Expanded(
                                 child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CommonWidget.getTextWidget500(data.title ?? "",
-                                    color: ColorClass.base_color,
-                                    textAlign: TextAlign.start,
-                                    size: 14),
-                                CommonWidget.getTextRich("", data.body ?? "",
-                                    textsize: 12)
-                              ],
-                            )),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            CommonWidget.getTextWidget500(
-                                CommonWidget.formatTimeAgo(data.createdAt),
-                                size: 10,
-                                color: Colors.grey[600]!)
-                          ],
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            data.title ?? "",
+                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
+                                          ),
+                                        ),
+                                        Text(
+                                          CommonWidget.formatTimeAgo(data.createdAt),
+                                          style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(data.body ?? "", style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }))
@@ -98,17 +226,18 @@ class _NotificationActivityState extends State<NotificationActivity> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_off_outlined,
-                      size: 60, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    "No new notifications yet",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                      fontFamily: "Pop500",
+                  Container(
+                    width: 80, height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Color(0xFF192028).withOpacity(0.15), Color(0xFF00C853).withOpacity(0.1)]),
+                      shape: BoxShape.circle,
                     ),
+                    child: Icon(Icons.notifications_off_rounded, size: 36, color: Color(0xFF192028)),
                   ),
+                  SizedBox(height: 20),
+                  Text("No notifications yet", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.black87, letterSpacing: -0.5)),
+                  SizedBox(height: 8),
+                  Text("You're all caught up!", style: TextStyle(fontSize: 14, color: Colors.grey[500])),
                 ],
               ),
             ))

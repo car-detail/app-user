@@ -77,7 +77,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+                colors: [Color(0xFF166534), Color(0xFF192028), Color(0xFF00E676)],
               ),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(30),
@@ -85,7 +85,7 @@ class _BookmarkActivityState extends State<BookmarkActivity> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFF1CB273).withOpacity(0.4),
+                  color: Color(0xFF192028).withOpacity(0.4),
                   blurRadius: 16,
                   offset: Offset(0, 6),
                 ),

@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data_manager/specialists_data_manager.dart';
 import '../utils/package_mapper.dart';
 import '../../booking_model/ui/booking_activity.dart';
+import '../../log_in/ui/new_login_activity.dart';
+import '../../../Common/Constant.dart';
 
 class AllPackagesScreen extends StatefulWidget {
   final String vendorId;
@@ -128,7 +130,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+              colors: [Color(0xFF166534), Color(0xFF192028), Color(0xFF00E676)],
             ),
           ),
         ),
@@ -417,6 +419,11 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   }
 
   void _bookPackage(Map<String, dynamic> package) {
+    final String userId = _sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      _showLoginRequiredDialog(context, "Sign in to book this package.");
+      return;
+    }
     // Navigate directly to booking page with vendor ID
     if (widget.vendorId.isNotEmpty) {
       CommonWidget.navigateToScreen(
@@ -426,5 +433,47 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     } else {
       CommonWidget.errorShowSnackBarFor(context, "Vendor information is missing. Cannot proceed with booking.");
     }
+  }
+
+  void _showLoginRequiredDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "Login Required",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => CommonWidget.safePop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: ColorClass.base_color,
+              ),
+              onPressed: () {
+                CommonWidget.safePop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                  ),
+                ).then((value) {
+                  if (value == true) {
+                    // Do nothing, state should refresh if they try the action again
+                  }
+                });
+              },
+              child: const Text("Log In"),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

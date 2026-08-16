@@ -6,6 +6,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../log_in/ui/new_login_activity.dart';
 
 import '../../../Common/Color.dart';
 import '../../../Common/Constant.dart';
@@ -56,6 +57,17 @@ class BookingListActivityState extends State<BookingListActivity> {
   start() async {
     sharedPreferences = await SharedPreferences.getInstance();
     dataManager = BookingDataManager(sharedPreferences!);
+    
+    final String userId = sharedPreferences!.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      return;
+    }
+    
     DateTime dateTime = DateTime.now();
     final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
     //getBookingList(context);
@@ -70,6 +82,169 @@ class BookingListActivityState extends State<BookingListActivity> {
 
   @override
   Widget build(BuildContext context) {
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    final bool isGuest = userId.isEmpty;
+    
+    if (isGuest && !isLoading) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: Colors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.grey[50],
+          body: Column(
+            children: [
+              // Modern Header
+              Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                ),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF166534), Color(0xFF192028), Color(0xFF00E676)],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CommonWidget.buildGreenHeaderBackButton(context),
+                    const SizedBox(width: 16),
+                    const Text(
+                      "Bookings",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontFamily: "Pop600",
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 24,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: ColorClass.base_color.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.calendar_month_outlined,
+                            size: 80,
+                            color: ColorClass.base_color,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          "Sign in to view your bookings",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: "Pop700",
+                            color: Colors.black87,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Log in or register to schedule services, view upcoming bookings, and keep track of your order history.",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: "Pop400",
+                            color: Colors.grey[500],
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          width: double.infinity,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF192028), Color(0xFF00E676)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF192028).withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const NewLoginActivity(returnToPrevious: true),
+                                ),
+                              ).then((value) {
+                                if (value == true) {
+                                  // Refresh state if needed
+                                }
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              "Log In / Register",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: "Pop600",
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -94,7 +269,7 @@ class BookingListActivityState extends State<BookingListActivity> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF166534), Color(0xFF1CB273), Color(0xFF00E676)],
+                colors: [Color(0xFF166534), Color(0xFF192028), Color(0xFF00E676)],
               ),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(30),
@@ -102,7 +277,7 @@ class BookingListActivityState extends State<BookingListActivity> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFF1CB273).withOpacity(0.4),
+                  color: Color(0xFF192028).withOpacity(0.4),
                   blurRadius: 16,
                   offset: Offset(0, 6),
                 ),
@@ -194,7 +369,7 @@ class BookingListActivityState extends State<BookingListActivity> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1CB273) : Colors.transparent,
+          color: isSelected ? const Color(0xFF192028) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -218,12 +393,12 @@ class BookingListActivityState extends State<BookingListActivity> {
         color: isHighlighted ? const Color(0xFFE8F5E9) : Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isHighlighted ? const Color(0xFF1CB273) : const Color(0xFFE0E0E0),
+          color: isHighlighted ? const Color(0xFF192028) : const Color(0xFFE0E0E0),
           width: isHighlighted ? 2.0 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: isHighlighted ? const Color(0xFF1CB273).withOpacity(0.2) : Colors.black.withOpacity(0.05),
+            color: isHighlighted ? const Color(0xFF192028).withOpacity(0.2) : Colors.black.withOpacity(0.05),
             blurRadius: isHighlighted ? 12 : 3,
             offset: const Offset(0, 1),
           ),
@@ -300,19 +475,19 @@ class BookingListActivityState extends State<BookingListActivity> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1CB273).withOpacity(0.1),
+                          color: const Color(0xFF192028).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: const Color(0xFF1CB273).withOpacity(0.3)),
+                          border: Border.all(color: const Color(0xFF192028).withOpacity(0.3)),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.notifications_active, color: Color(0xFF1CB273), size: 8),
+                            Icon(Icons.notifications_active, color: Color(0xFF192028), size: 8),
                             SizedBox(width: 4),
                             Text(
                               "Selected",
                               style: TextStyle(
-                                color: Color(0xFF1CB273),
+                                color: Color(0xFF192028),
                                 fontSize: 8,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -673,7 +848,7 @@ class BookingListActivityState extends State<BookingListActivity> {
       case 'pending':
         return Colors.orange;
       case 'completed':
-        return Colors.green;
+        return ColorClass.base_color;
       case 'cancelled':
         return Colors.red;
       default:
@@ -683,6 +858,15 @@ class BookingListActivityState extends State<BookingListActivity> {
 
   getBookingListFilter(BuildContext context) async {
     if (!mounted || !context.mounted) return;
+    
+    final String userId = sharedPreferences?.getString(Constant.id) ?? "";
+    if (userId.isEmpty) {
+      setState(() {
+        isLoading = false;
+        records.clear();
+      });
+      return;
+    }
     
     setState(() {
       isLoading = true;
@@ -923,7 +1107,7 @@ class BookingListActivityState extends State<BookingListActivity> {
                                     contentPadding:
                                         const EdgeInsets.fromLTRB(10, 10, 10, 10),
                                     filled: true,
-                                    fillColor: Colors.green[50],
+                                    fillColor: ColorClass.base_light_color,
                                     hintText: "Enter Reason....",
                                     hintStyle: const TextStyle(
                                         color: Colors.grey,
@@ -949,8 +1133,8 @@ class BookingListActivityState extends State<BookingListActivity> {
                                       margin: const EdgeInsets.only(right: 5),
                                       child: CommonWidget.getButtonWidget(
                                           "No",
-                                          Colors.green[300]!,
-                                          Colors.green[300]!)),
+                                          ColorClass.base_color!,
+                                          ColorClass.base_color!)),
                                 )),
                                 Expanded(
                                     child: GestureDetector(
