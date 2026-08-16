@@ -1325,25 +1325,29 @@ class ExploreActivityState extends State<ExploreActivity> {
   Widget _buildVendorCard(MixedVendorData vendor) {
     final isAppVendor = vendor.isAppVendor;
     final isOffline = isAppVendor && !vendor.isOpen;
-    
+    final accent = isOffline
+        ? Colors.grey
+        : isAppVendor
+            ? ColorClass.base_color
+            : const Color(0xFF2563EB);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isOffline ? Colors.grey[100] : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: isOffline ? Border.all(color: Colors.grey[300]!) : null,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: accent.withOpacity(0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(22),
           onTap: () {
             if (isAppVendor) {
               _navigateToBooking(vendor);
@@ -1351,153 +1355,171 @@ class ExploreActivityState extends State<ExploreActivity> {
               _showGoogleVendorBottomSheet(vendor);
             }
           },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Vendor Image
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[100],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
-                        ? Image.network(
-                            vendor.imageUrl!,
-                            fit: BoxFit.cover,
-                            headers: const {
-                              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return _buildVendorIcon(isAppVendor);
-                            },
-                          )
-                        : _buildVendorIcon(isAppVendor),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Vendor Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Vendor Type Tag
-                      _buildVendorTypeTag(vendor.isAppVendor),
-                      const SizedBox(height: 4),
-                      // Vendor Name and Offline Badge
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              vendor.name,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: "Pop600",
-                                color: isOffline ? Colors.grey[600] : Colors.black87,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: vendor.isOpen ? ColorClass.base_light_color : Colors.red[100],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                vendor.isOpen ? "OPEN NOW" : "CLOSED",
-                                style: TextStyle(
-                                  color: vendor.isOpen ? ColorClass.base_color : Colors.red[700],
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      // Location
-                      Text(
-                        vendor.address ?? "Location not available",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontFamily: "Pop400",
-                          color: isOffline ? Colors.grey[500] : Colors.grey[600],
+          child: Opacity(
+            opacity: isOffline ? 0.6 : 1,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Vendor Image
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Colors.grey[100],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Distance and Type
-                      Row(
-                        children: [
-                          ...[
-                          Icon(
-                            Icons.location_on,
-                            size: 16,
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: vendor.imageUrl != null && vendor.imageUrl!.isNotEmpty
+                          ? Image.network(
+                              vendor.imageUrl!,
+                              fit: BoxFit.cover,
+                              headers: const {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                              },
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildVendorIcon(isAppVendor);
+                              },
+                            )
+                          : _buildVendorIcon(isAppVendor),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Vendor Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            _buildVendorTypeTag(vendor.isAppVendor),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: vendor.isOpen ? ColorClass.base_color : Colors.red[600],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    vendor.isOpen ? "OPEN NOW" : "CLOSED",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontFamily: "Pop700",
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Vendor Name
+                        Text(
+                          vendor.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontFamily: "Pop600",
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Location
+                        Text(
+                          vendor.address ?? "Location not available",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: "Pop400",
                             color: Colors.grey[600],
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} miles",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: "Pop400",
-                              color: isOffline ? Colors.grey[500] : Colors.grey[600],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 10),
+                        // Distance and Type
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _buildVendorMetaChip(
+                              Icons.location_on_rounded,
+                              "${(vendor.distance! * 0.000621371).toStringAsFixed(1)} mi",
+                              Colors.grey[700]!,
+                              Colors.grey[100]!,
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                        ],
-                          // Vendor Type Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isOffline
-                                  ? Colors.red.withOpacity(0.1)
-                                  : isAppVendor 
-                                      ? ColorClass.base_color.withOpacity(0.1)
-                                      : Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                            _buildVendorMetaChip(
+                              isOffline
+                                  ? Icons.power_off_rounded
+                                  : isAppVendor
+                                      ? Icons.verified_rounded
+                                      : Icons.public_rounded,
+                              isOffline ? "Offline" : (isAppVendor ? "App Vendor" : "Google Places"),
+                              accent,
+                              accent.withOpacity(0.1),
                             ),
-                            child: Text(
-                              isOffline 
-                                  ? "Offline" 
-                                  : isAppVendor 
-                                      ? "App Vendor" 
-                                      : "Google Places",
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontFamily: "Pop500",
-                                color: isOffline
-                                    ? Colors.red
-                                    : isAppVendor 
-                                        ? ColorClass.base_color 
-                                        : Colors.blue,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-
-              ],
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildVendorMetaChip(IconData icon, String label, Color color, Color bg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, fontFamily: "Pop500", color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

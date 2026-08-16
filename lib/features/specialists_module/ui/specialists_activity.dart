@@ -1039,6 +1039,49 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                       ],
                     ),
                   ],
+                  if (_hasOperatingHours()) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0EA5E9).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.schedule_rounded, color: Color(0xFF0EA5E9), size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _formatOperatingHours(),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontFamily: "Pop600",
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                if (_formatOperatingDays() != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _formatOperatingDays()!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontFamily: "Pop400",
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1046,6 +1089,55 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         ),
       ),
     );
+  }
+
+  bool _hasOperatingHours() {
+    final open = servicesDetailsData.vendorId?.openTime;
+    final close = servicesDetailsData.vendorId?.closeTime;
+    return (open != null && open.isNotEmpty) || (close != null && close.isNotEmpty);
+  }
+
+  String _formatOperatingHours() {
+    final open = servicesDetailsData.vendorId?.openTime;
+    final close = servicesDetailsData.vendorId?.closeTime;
+    if (open != null && open.isNotEmpty && close != null && close.isNotEmpty) {
+      return "$open - $close";
+    }
+    if (open != null && open.isNotEmpty) return "Opens $open";
+    if (close != null && close.isNotEmpty) return "Closes $close";
+    return "Hours not available";
+  }
+
+  String? _formatOperatingDays() {
+    final days = servicesDetailsData.vendorId?.daysAvailable;
+    if (days == null || days.isEmpty) return null;
+
+    const order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const abbrev = {
+      'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu',
+      'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun',
+    };
+    final sorted = days.toSet().toList()
+      ..sort((a, b) => order.indexOf(a).compareTo(order.indexOf(b)));
+
+    if (sorted.length == 7) return "Open every day";
+
+    // Collapse a consecutive run into "Mon - Fri" style ranges.
+    final labels = <String>[];
+    int i = 0;
+    while (i < sorted.length) {
+      int j = i;
+      while (j + 1 < sorted.length && order.indexOf(sorted[j + 1]) == order.indexOf(sorted[j]) + 1) {
+        j++;
+      }
+      if (j > i) {
+        labels.add("${abbrev[sorted[i]] ?? sorted[i]} - ${abbrev[sorted[j]] ?? sorted[j]}");
+      } else {
+        labels.add(abbrev[sorted[i]] ?? sorted[i]);
+      }
+      i = j + 1;
+    }
+    return labels.join(', ');
   }
 
   Widget _buildServicesSection(BuildContext context) {

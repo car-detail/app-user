@@ -292,6 +292,7 @@ class VendorId {
   String? openTime;
   String? closeTime;
   bool? isShopOpen;
+  List<String>? daysAvailable;
 
   VendorId(
       {this.sId,
@@ -300,7 +301,8 @@ class VendorId {
         this.displayPicture,
         this.openTime,
         this.closeTime,
-        this.isShopOpen});
+        this.isShopOpen,
+        this.daysAvailable});
 
   VendorId.fromJson(Map<String, dynamic> json) {
     try {
@@ -311,6 +313,9 @@ class VendorId {
       openTime = json['openTime']?.toString();
       closeTime = json['closeTime']?.toString();
       isShopOpen = json['isShopOpen'] is bool ? json['isShopOpen'] : json['isShopOpen']?.toString().toLowerCase() == 'true';
+      daysAvailable = json['daysAvailable'] is List
+          ? (json['daysAvailable'] as List).map((e) => e.toString()).toList()
+          : null;
     } catch (e) {
       // Set default values to prevent crashes
       sId = json['_id']?.toString();
@@ -320,6 +325,7 @@ class VendorId {
       openTime = "";
       closeTime = "";
       isShopOpen = false;
+      daysAvailable = null;
     }
   }
 
@@ -332,6 +338,7 @@ class VendorId {
     data['openTime'] = openTime;
     data['closeTime'] = closeTime;
     data['isShopOpen'] = isShopOpen;
+    data['daysAvailable'] = daysAvailable;
     return data;
   }
 }
