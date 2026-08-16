@@ -96,112 +96,66 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
         return true;
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: ColorClass.base_color,
         body: SafeArea(
           top: false,
+          bottom: false,
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Header with gradient
-                Container(
-                  width: double.infinity,
-                  constraints: BoxConstraints(
-                    minHeight: 260 + MediaQuery.of(context).padding.top,
-                  ),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF192028),
-                        Color(0xFF2A3542),
-                        Color(0xFF0D1116),
-                      ],
+                // Photo header -- same composition as the get-started screen
+                Stack(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 220 + MediaQuery.of(context).padding.top,
+                      child: Image.asset(
+                        'assets/vetor/car-wash-detailing-station.jpg',
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-                  child: Stack(
-                    children: [
-                      // Decorative circles
-                      Positioned(
-                        top: -50,
-                        right: -50,
-                        child: Container(
-                          width: 300,
-                          height: 300,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.12),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 50,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              ColorClass.base_color.withOpacity(0),
+                              ColorClass.base_color,
+                            ],
                           ),
                         ),
                       ),
+                    ),
+                    if (_isOTPSent)
                       Positioned(
-                        bottom: -30,
-                        left: -30,
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.1),
-                          ),
+                        top: MediaQuery.of(context).padding.top + 8,
+                        left: 8,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () {
+                            setState(() {
+                              _isOTPSent = false;
+                            });
+                          },
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 20),
-                            // Back button
-                            if (_isOTPSent)
-                              IconButton(
-                                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                                onPressed: () {
-                                  setState(() {
-                                    _isOTPSent = false;
-                                  });
-                                },
-                              ),
-                            const SizedBox(height: 60),
-                            // Title
-                            const Text(
-                              "Get Started",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -1.0,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _isOTPSent 
-                                ? "Enter the verification code" 
-                                : "Enter your mobile number to continue",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-              
-                // Login Form -- curved white sheet overlapping the dark header
+
+                // Charcoal panel -- matches the get-started screen's bottom sheet
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(top: -28),
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
+                  decoration: BoxDecoration(
+                    color: ColorClass.base_color,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(28),
                       topRight: Radius.circular(28),
                     ),
@@ -209,22 +163,43 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const Text(
+                        "Get Started",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _isOTPSent
+                            ? "Enter the verification code"
+                            : "Enter your mobile number to continue",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
 
-                      if (!_isOTPSent) 
+                      if (!_isOTPSent)
                         // Mobile Number Input with Country Code
                         _buildMobileInput()
                       else
                         // OTP Input
                         _buildOTPInput(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Action Button
                       ElevatedButton(
                         onPressed: _isLoading ? null : (_isOTPSent ? _verifyOTP : _sendOTP),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorClass.base_color,
-                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.white,
+                          foregroundColor: ColorClass.base_color,
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
@@ -232,24 +207,25 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                           elevation: 0,
                         ),
                         child: _isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
                                 ),
                               )
                             : Text(
                                 _isOTPSent ? "Verify OTP" : "Send OTP",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
+                                  color: ColorClass.base_color,
                                 ),
                               ),
                       ),
-                      
+
                       if (!_isOTPSent) ...[
                         const SizedBox(height: 16),
                         Center(
@@ -270,9 +246,9 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                             child: Text(
                               "Explore as Guest",
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontFamily: "Pop600",
-                                color: ColorClass.base_color,
+                                color: Colors.white.withOpacity(0.85),
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
                               ),
@@ -280,15 +256,15 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                           ),
                         ),
                       ],
-                      
-                      const SizedBox(height: 24),
-                      
+
+                      const SizedBox(height: 16),
+
                       if (_isOTPSent && _resendCountdown > 0)
                         Center(
                           child: Text(
                             "Resend OTP in $_resendCountdown seconds",
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Colors.white.withOpacity(0.5),
                               fontSize: 14,
                             ),
                           ),
@@ -300,7 +276,7 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
                             child: Text(
                               "Resend OTP",
                               style: TextStyle(
-                                color: _isLoading ? Colors.grey : ColorClass.base_color,
+                                color: _isLoading ? Colors.white.withOpacity(0.4) : Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
@@ -366,9 +342,8 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!),
             ),
             child: TextField(
               controller: mobileController,
@@ -407,9 +382,8 @@ class _NewLoginActivityState extends State<NewLoginActivity> {
   Widget _buildOTPInput() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
       ),
       child: TextField(
         controller: otpController,
