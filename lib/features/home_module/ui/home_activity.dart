@@ -2578,7 +2578,21 @@ class _HomeActivityState extends State<HomeActivity> {
 
   // Build Full Width Offer Card for Carousel
   Widget _buildOfferCarouselSection() {
-    if (offerListData.isEmpty) return const SizedBox.shrink();
+    if (offerListData.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            'assets/images/ChatGPT Image Aug 17, 2026, 04_13_05 AM.png',
+            width: double.infinity,
+            height: 180,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+          ),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
