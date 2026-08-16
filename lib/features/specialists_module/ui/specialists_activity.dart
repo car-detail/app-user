@@ -21,6 +21,7 @@ import 'offer_list_widget.dart';
 import 'all_packages_screen.dart';
 import 'all_offers_screen.dart';
 import '../utils/package_mapper.dart';
+import '../../../design_system/components/bouncy_tap.dart';
 
 class SpecialistsActivity extends StatefulWidget {
   String servicesData;
@@ -665,49 +666,27 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
 
   Widget _buildAboutSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header with light grey background
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-            children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: ColorClass.base_color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(Icons.description, color: ColorClass.base_color, size: 16),
-                ),
-              const SizedBox(width: 8),
-              const Text(
-                  "About",
-                style: TextStyle(
-                    fontSize: 15,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          _buildSectionHeader(
+            "About",
+            Icons.description_rounded,
+            [ColorClass.base_color, const Color(0xFF0D1116)],
           ),
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
           Text(
             servicesDetailsData.about ?? "No description available for this service.",
             style: TextStyle(
@@ -745,6 +724,52 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       }
     }
     return categories.toList();
+  }
+
+  // Shared colorful section header used across tab content (About, Services,
+  // Packages, Offers, Gallery, Reviews) so every tab reads consistently
+  // instead of each having its own slightly-different flat grey header.
+  Widget _buildSectionHeader(String title, IconData icon, List<Color> gradient, {String? badge}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: gradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 17,
+            fontFamily: "Pop600",
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (badge != null) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: gradient.first.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              badge,
+              style: TextStyle(fontSize: 11, fontFamily: "Pop600", color: gradient.last),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   // Build categories chips
@@ -1025,41 +1050,26 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
 
   Widget _buildServicesSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: ColorClass.base_color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(Icons.build_circle_rounded, color: ColorClass.base_color, size: 16),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                "Available Services",
-                style: TextStyle(
-                    fontSize: 15,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          _buildSectionHeader(
+            "Available Services",
+            Icons.build_circle_rounded,
+            const [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            badge: "${servicesDetailsData.services.length}",
           ),
           const SizedBox(height: 16),
           // Show all services directly
@@ -1495,59 +1505,28 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: ColorClass.base_color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(Icons.inventory_2_rounded, color: ColorClass.base_color, size: 16),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                "Service Packages",
-                style: TextStyle(
-                    fontSize: 15,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                ),
-              ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  "${servicesDetailsData.packages.length}",
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontFamily: "Pop600",
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          _buildSectionHeader(
+            "Service Packages",
+            Icons.inventory_2_rounded,
+            const [Color(0xFFF59E0B), Color(0xFFD97706)],
+            badge: "${servicesDetailsData.packages.length}",
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           // Show all packages directly
           ...servicesDetailsData.packages.map((package) => _buildVendorPackageCard(package)),
         ],
@@ -2071,87 +2050,85 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   }
 
   Widget _buildGallerySection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          "Gallery",
+          Icons.photo_library_rounded,
+          const [Color(0xFFA855F7), Color(0xFF7C3AED)],
+          badge: "${detailImages.length} photo${detailImages.length == 1 ? '' : 's'}",
+        ),
+        const SizedBox(height: 14),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.15,
           ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
+          itemCount: detailImages.length,
+          itemBuilder: (context, index) {
+            return BouncyTap(
+              onTap: () {
+                CommonWidget.navigateToScreen(
+                  context,
+                  ZoomableImageList(
+                    imageUrls: detailImages,
+                    currentIndex: index,
+                  ),
+                );
+              },
+              child: Container(
                 decoration: BoxDecoration(
-                  color: ColorClass.base_color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(Icons.photo_library, color: ColorClass.base_color, size: 16),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "Gallery",
-                style: TextStyle(
-                  fontSize: 15,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 80,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: detailImages.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    CommonWidget.navigateToScreen(
-                      context,
-                      ZoomableImageList(
-                        imageUrls: detailImages,
-                        currentIndex: index,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(18),
+                  color: Colors.grey[100],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
                         detailImages[index],
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Icon(
-                            Icons.image,
+                            Icons.image_rounded,
                             color: Colors.grey[400],
                             size: 32,
                           );
                         },
                       ),
-                    ),
+                      Positioned(
+                        right: 8,
+                        bottom: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -2166,67 +2143,28 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header with light grey background
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-            children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: ColorClass.base_color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(Icons.local_offer_rounded, color: ColorClass.base_color, size: 16),
-                ),
-              const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    "Special Offers",
-                style: TextStyle(
-                      fontSize: 15,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    "${activeOffers.length}",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: "Pop600",
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-                ),
-              ),
-          const SizedBox(height: 12),
+          _buildSectionHeader(
+            "Special Offers",
+            Icons.local_offer_rounded,
+            const [Color(0xFFEF4444), Color(0xFFDC2626)],
+            badge: "${activeOffers.length}",
+          ),
+          const SizedBox(height: 14),
           // Show only active offers (isCurrentlyActive == true)
           ...activeOffers.map((offer) => _buildOfferPreviewCard(offer)),
         ],
@@ -2560,74 +2498,30 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
   }
 
   Widget _buildReviewsSection(BuildContext context) {
+    final hasReviews = servicesDetailsData.totalReviews != null && servicesDetailsData.totalReviews! > 0;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header with light grey background
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-            children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: ColorClass.base_color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(Icons.star_rounded, color: ColorClass.base_color, size: 16),
-                ),
-              const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                "Customer Reviews",
-                style: TextStyle(
-                      fontSize: 15,
-                  fontFamily: "Pop600",
-                  color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                ),
-              ),
-            ],
+          _buildSectionHeader(
+            "Customer Reviews",
+            Icons.star_rounded,
+            const [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+            badge: hasReviews ? "${servicesDetailsData.totalReviews}" : null,
           ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              if (servicesDetailsData.totalReviews != null && servicesDetailsData.totalReviews! > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    "${servicesDetailsData.totalReviews}",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: "Pop600",
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           if (servicesDetailsData.totalReviews != null && servicesDetailsData.totalReviews! > 0) ...[
             GestureDetector(
               onTap: () {
