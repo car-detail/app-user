@@ -1190,202 +1190,163 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.grey[200]!,
-                width: 1,
-              ),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Service Image
-                if (servicesDetailsData.coverImage != null && servicesDetailsData.coverImage!.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                    child: SizedBox(
-                      height: 180,
-                      width: double.infinity,
-                      child: Image.network(
-                        servicesDetailsData.coverImage!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 180,
-                            color: Colors.grey[100],
-                            child: Icon(Icons.local_car_wash_rounded, color: Colors.grey[400], size: 48),
-                          );
-                        },
-                      ),
-                    ),
-                  )
-                else if (servicesDetailsData.vendorId?.displayPicture != null && 
-                         servicesDetailsData.vendorId!.displayPicture!.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                    child: SizedBox(
-                      height: 180,
-                      width: double.infinity,
-                      child: Image.network(
-                        servicesDetailsData.vendorId!.displayPicture!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 180,
-                            color: Colors.grey[100],
-                            child: Icon(Icons.local_car_wash_rounded, color: Colors.grey[400], size: 48),
-                          );
-                        },
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    height: 180,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Icon(Icons.local_car_wash_rounded, color: Colors.grey[400], size: 48),
+                // Service Image with title/category overlaid on a gradient + floating price badge
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
+                  child: SizedBox(
+                    height: 190,
+                    width: double.infinity,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildServiceHeroImage(),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.55),
+                              ],
+                              stops: const [0.4, 1.0],
+                            ),
+                          ),
+                        ),
+                        if (servicesDetailsData.price != null && servicesDetailsData.price! > 0)
+                          Positioned(
+                            top: 14,
+                            right: 14,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF192028), Color(0xFF0D1116)],
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                "\$${servicesDetailsData.price}",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: "Pop600",
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          left: 16,
+                          right: 16,
+                          bottom: 14,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: ColorClass.base_color,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  servicesDetailsData.categoryName ?? "Car Wash",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: "Pop500",
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                servicesDetailsData.serviceTitle ?? "Car Service",
+                                style: TextStyle(
+                                  fontSize: 19,
+                                  fontFamily: "Pop600",
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      offset: const Offset(0, 1),
+                                      blurRadius: 4,
+                                      color: Colors.black.withOpacity(0.5),
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 // Service Content
                 Padding(
                   padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            servicesDetailsData.serviceTitle ?? "Car Service",
-                            style: const TextStyle(
-                                    fontSize: 18,
-                              fontFamily: "Pop600",
-                              color: Colors.black87,
-                                    fontWeight: FontWeight.bold,
-                            ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Duration / Capacity chips
+                      if (servicesDetailsData.serviceDuration != null || servicesDetailsData.timeSlotCapacity != null)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (servicesDetailsData.serviceDuration != null)
+                              _buildMetaChip(Icons.access_time_rounded, "${servicesDetailsData.serviceDuration}", const Color(0xFF0EA5E9)),
+                            if (servicesDetailsData.timeSlotCapacity != null)
+                              _buildMetaChip(Icons.people_rounded, "${servicesDetailsData.timeSlotCapacity} per slot", const Color(0xFFF59E0B)),
+                          ],
+                        ),
+                      if (servicesDetailsData.serviceDuration != null || servicesDetailsData.timeSlotCapacity != null)
+                        const SizedBox(height: 12),
+                      // Service Description
+                      if (servicesDetailsData.about != null && servicesDetailsData.about!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                            servicesDetailsData.categoryName ?? "Car Wash",
+                          child: Text(
+                            servicesDetailsData.about!,
                             style: TextStyle(
-                                      fontSize: 13,
-                                      fontFamily: "Pop500",
-                                      color: Colors.grey[700],
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (servicesDetailsData.price != null && servicesDetailsData.price! > 0)
-                      Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                                color: Colors.grey[800],
-                                borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          "\$${servicesDetailsData.price}",
-                          style: const TextStyle(
-                                  fontSize: 16,
-                            fontFamily: "Pop600",
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Service Duration
-                if (servicesDetailsData.serviceDuration != null) ...[
-                  Row(
-                    children: [
-                            Icon(Icons.access_time_rounded, color: Colors.grey[600], size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Duration: ${servicesDetailsData.serviceDuration}",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontFamily: "Pop400",
-                                color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                        const SizedBox(height: 12),
-                ],
-                // Time Slot Capacity
-                if (servicesDetailsData.timeSlotCapacity != null) ...[
-                  Row(
-                    children: [
-                            Icon(Icons.people_rounded, color: Colors.grey[600], size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Capacity: ${servicesDetailsData.timeSlotCapacity} customers per slot",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontFamily: "Pop400",
-                                  color: Colors.grey[700],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                        const SizedBox(height: 12),
-                ],
-                // Service Description
-                if (servicesDetailsData.about != null && servicesDetailsData.about!.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      servicesDetailsData.about!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: "Pop400",
-                        color: Colors.grey[700],
+                              fontSize: 14,
+                              fontFamily: "Pop400",
+                              color: Colors.grey[700],
                               height: 1.5,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1444,6 +1405,60 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
+  Widget _buildServiceHeroImage() {
+    final coverImage = servicesDetailsData.coverImage;
+    if (coverImage != null && coverImage.isNotEmpty) {
+      return Image.network(
+        coverImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildServiceHeroImageFallback(),
+      );
+    }
+    final vendorImage = servicesDetailsData.vendorId?.displayPicture;
+    if (vendorImage != null && vendorImage.isNotEmpty) {
+      return Image.network(
+        vendorImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildServiceHeroImageFallback(),
+      );
+    }
+    return _buildServiceHeroImageFallback();
+  }
+
+  Widget _buildServiceHeroImageFallback() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [ColorClass.base_color.withOpacity(0.8), ColorClass.base_color.withOpacity(0.6)],
+        ),
+      ),
+      child: const Icon(Icons.local_car_wash_rounded, color: Colors.white, size: 48),
+    );
+  }
+
+  Widget _buildMetaChip(IconData icon, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 15),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, fontFamily: "Pop500", color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildServiceInfoItem({
     required IconData icon,
     required String title,
@@ -1451,19 +1466,28 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.10), color.withOpacity(0.03)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.15), width: 1),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(height: 10),
           Text(
             title,
             style: TextStyle(
@@ -1471,18 +1495,16 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               fontFamily: "Pop500",
               color: Colors.grey[600],
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontFamily: "Pop600",
               color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
-            textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1582,16 +1604,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1604,25 +1622,22 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
               Container(
                 height: 160,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      ColorClass.base_color,
-                      ColorClass.base_color.withOpacity(0.7),
-                    ],
+                    colors: [Color(0xFFF59E0B), Color(0xFFDC2626)],
                   ),
                 ),
                 child: coverImage != null && coverImage.toString().isNotEmpty
                     ? ClipRRect(
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
                         child: Image.network(
                           coverImage.toString(),
@@ -1630,21 +1645,38 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                           height: 160,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: ColorClass.base_color,
-                              child: Icon(
-                                Icons.card_giftcard,
-                                color: Colors.white.withOpacity(0.3),
-                                size: 48,
-                              ),
+                            return Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Positioned(
+                                  right: -10,
+                                  bottom: -14,
+                                  child: Icon(
+                                    Icons.card_giftcard_rounded,
+                                    color: Colors.white.withOpacity(0.18),
+                                    size: 130,
+                                  ),
+                                ),
+                                Icon(Icons.card_giftcard_rounded, color: Colors.white.withOpacity(0.9), size: 48),
+                              ],
                             );
                           },
                         ),
                       )
-                    : Icon(
-                        Icons.card_giftcard,
-                        color: Colors.white.withOpacity(0.3),
-                        size: 48,
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            right: -10,
+                            bottom: -14,
+                            child: Icon(
+                              Icons.card_giftcard_rounded,
+                              color: Colors.white.withOpacity(0.18),
+                              size: 130,
+                            ),
+                          ),
+                          Icon(Icons.card_giftcard_rounded, color: Colors.white.withOpacity(0.9), size: 48),
+                        ],
                       ),
               ),
               // Gradient Overlay
@@ -1652,15 +1684,15 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 height: 160,
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.6),
+                      Colors.black.withOpacity(0.45),
                     ],
                   ),
                 ),
@@ -1766,15 +1798,33 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 // Price Section
                 if (hasAnyPrice)
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: ColorClass.base_color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF59E0B), Color(0xFFDC2626)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFDC2626).withOpacity(0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.attach_money, color: ColorClass.base_color, size: 24),
-                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.attach_money_rounded, color: Colors.white, size: 22),
+                        ),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1782,28 +1832,28 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                               if (sVal > 0 && lVal > 0) ...[
                                 Text(
                                   "Small Vehicle: \$$sVal",
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: ColorClass.base_color,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   "Large Vehicle: \$$lVal",
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: ColorClass.base_color,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ] else if (pVal > 0) ...[
                                 Text(
                                   "\$$pVal",
-                                  style: TextStyle(
-                                    fontSize: 18,
+                                  style: const TextStyle(
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: ColorClass.base_color,
+                                    color: Colors.white,
                                     fontFamily: "Pop600",
                                   ),
                                 ),
@@ -2172,6 +2222,26 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     );
   }
 
+  Widget _buildOfferDecorativeBackground() {
+    return Stack(
+      children: [
+        Positioned(
+          right: -16,
+          top: -10,
+          child: Icon(Icons.local_offer_rounded, color: Colors.white.withOpacity(0.14), size: 110),
+        ),
+        Positioned(
+          left: 30,
+          bottom: -24,
+          child: Icon(Icons.local_offer_rounded, color: Colors.white.withOpacity(0.10), size: 70),
+        ),
+        Center(
+          child: Icon(Icons.local_offer_rounded, color: Colors.white.withOpacity(0.9), size: 42),
+        ),
+      ],
+    );
+  }
+
   Widget _buildOfferPreviewCard(Offers offer) {
     // Add null safety check
     final offerTitle = offer.title ?? "Special Offer";
@@ -2208,16 +2278,12 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -2228,134 +2294,121 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           Stack(
             children: [
               Container(
-                height: 240,
+                height: 170,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.orange[400]!,
-                      Colors.red[400]!,
-                    ],
+                    colors: [Color(0xFFF97316), Color(0xFFDC2626)],
                   ),
                 ),
                 child: imageUrl != null && imageUrl.isNotEmpty
                     ? ClipRRect(
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
                         child: Image.network(
                           imageUrl,
                           width: double.infinity,
-                          height: 240,
+                          height: 170,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.orange[400],
-                              child: Icon(
-                                Icons.local_offer_rounded,
-                                color: Colors.white.withOpacity(0.3),
-                                size: 48,
-                              ),
-                            );
-                          },
+                          errorBuilder: (context, error, stackTrace) => _buildOfferDecorativeBackground(),
                         ),
                       )
-                    : Icon(
-                        Icons.local_offer_rounded,
-                        color: Colors.white.withOpacity(0.3),
-                        size: 48,
-                      ),
+                    : _buildOfferDecorativeBackground(),
               ),
               // Gradient Overlay
               Container(
-                height: 240,
+                height: 170,
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.7),
+                      Colors.black.withOpacity(0.55),
+                    ],
+                    stops: const [0.3, 1.0],
+                  ),
+                ),
+              ),
+              // Discount / Offer Badge - Top Left
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        discount != null && discount > 0 ? Icons.percent_rounded : Icons.local_offer_rounded,
+                        color: const Color(0xFFDC2626),
+                        size: 15,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        discount != null && discount > 0 ? "$discount% OFF" : "Limited Offer",
+                        style: const TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Pop600",
+                          letterSpacing: 0.3,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-              // Discount Badge - Top Left (only if discount exists and > 0)
-              if (discount != null && discount > 0)
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.red[700],
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.percent, color: Colors.white, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          "$discount% OFF",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Pop600",
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               // Title and Category - Bottom Overlay
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: Container(
+                child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: ColorClass.base_color.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                      Text(
+                        offerTitle,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Pop700",
+                          shadows: [
+                            Shadow(
+                              offset: const Offset(0, 1),
+                              blurRadius: 4,
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          offerTitle,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Pop700",
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (categoryName != null && categoryName.isNotEmpty) ...[
                         const SizedBox(height: 8),
