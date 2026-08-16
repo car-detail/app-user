@@ -1981,26 +1981,16 @@ class _HomeActivityState extends State<HomeActivity> {
         margin: const EdgeInsets.only(bottom: 24),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [ColorClass.base_color, const Color(0xFF0D1116)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.white,
+          border: Border.all(color: Colors.black, width: 1.5),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: ColorClass.base_color.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+              decoration: const BoxDecoration(
+                color: Colors.black,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.stars_rounded, color: Colors.white, size: 28),
@@ -2013,7 +2003,7 @@ class _HomeActivityState extends State<HomeActivity> {
                   const Text(
                     "Cahrz Loyalty Club",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       fontFamily: "Pop600",
@@ -2023,7 +2013,7 @@ class _HomeActivityState extends State<HomeActivity> {
                   Text(
                     "You have $userLoyaltyPoints loyalty points",
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.black.withOpacity(0.7),
                       fontSize: 12,
                       fontFamily: "Pop400",
                     ),
@@ -2031,7 +2021,7 @@ class _HomeActivityState extends State<HomeActivity> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            const Icon(Icons.chevron_right_rounded, color: Colors.black),
           ],
         ),
       ),
