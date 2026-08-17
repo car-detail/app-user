@@ -36,6 +36,7 @@ import 'package:google_maps_places_autocomplete_widgets/widgets/address_autocomp
 import '../../../Common/CommonBean.dart';
 import '../../categories_module/ui/sevice_list_screen.dart';
 import '../../explore_module/ui/explore_activity.dart';
+import '../../workfolio_module/ui/workfolio_activity.dart';
 import '../../categories_module/data_manager/categories_list_data_manager.dart';
 import '../model/category_model_data.dart';
 import '../model/services_model_data.dart';
@@ -1114,8 +1115,10 @@ class _HomeActivityState extends State<HomeActivity> {
                         const SizedBox(height: 20),
                         // Quick Actions - Useful Features
                         const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
                   children: [
                             StaggeredFadeIn(
                               child: _buildCircularQuickAction(
@@ -1127,6 +1130,7 @@ class _HomeActivityState extends State<HomeActivity> {
                                 const Color(0xFF3B82F6),
                               ),
                             ),
+                            const SizedBox(width: 18),
                             StaggeredFadeIn(
                               delay: const Duration(milliseconds: 60),
                               child: _buildCircularQuickAction(
@@ -1138,6 +1142,7 @@ class _HomeActivityState extends State<HomeActivity> {
                                 const Color(0xFFF59E0B),
                               ),
                             ),
+                            const SizedBox(width: 18),
                             StaggeredFadeIn(
                               delay: const Duration(milliseconds: 120),
                               child: _buildCircularQuickAction(
@@ -1149,8 +1154,21 @@ class _HomeActivityState extends State<HomeActivity> {
                                 ColorClass.base_color,
                               ),
                             ),
+                            const SizedBox(width: 18),
                             StaggeredFadeIn(
                               delay: const Duration(milliseconds: 180),
+                              child: _buildCircularQuickAction(
+                                "Workfolio",
+                                Icons.photo_library_rounded,
+                                () {
+                                  CommonWidget.navigateToScreen(context, const WorkfolioActivity());
+                                },
+                                const Color(0xFFEC4899),
+                              ),
+                            ),
+                            const SizedBox(width: 18),
+                            StaggeredFadeIn(
+                              delay: const Duration(milliseconds: 240),
                               child: _buildCircularQuickAction(
                                 "Profile",
                                 Icons.person_rounded,
@@ -1161,6 +1179,7 @@ class _HomeActivityState extends State<HomeActivity> {
                               ),
                             ),
                           ],
+                          ),
                         ),
                         const SizedBox(height: 20),
                         _buildLoyaltyBanner(),

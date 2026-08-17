@@ -41,6 +41,12 @@ class Constant {
   static var trackOfferView = "$versionNumber/offers/track-view/";
   static var claimOffer = "$versionNumber/offers/claim/";
 
+  // Workfolio (community image feed)
+  static var workfolioCreate = "$versionNumber/workfolio/create";
+  static var workfolioFeed = "$versionNumber/workfolio/feed?";
+  static var workfolioLike = "$versionNumber/workfolio/like/";
+  static var workfolioDelete = "$versionNumber/workfolio/";
+
 
   static double textsise14 = 14;
 
