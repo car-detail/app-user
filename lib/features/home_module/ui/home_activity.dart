@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:car_app/Common/Color.dart';
-import 'package:car_app/Common/ShimmerLoader.dart';
+import 'package:car_app/design_system/components/car_loader.dart';
 import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/Common/Constant.dart';
 import 'package:car_app/Common/ModernDesignSystem.dart';
@@ -1016,61 +1016,8 @@ class _HomeActivityState extends State<HomeActivity> {
                   onRefresh: () async {
                     await start();
                   },
-                  child: _isLoading 
-                    ? SingleChildScrollView(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Categories Shimmer
-                            ShimmerLoader.buildSleekShimmer(width: 150, height: 20),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              height: 120,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: 5,
-                                itemBuilder: (context, index) => Container(
-                                  width: 100,
-                                  margin: const EdgeInsets.only(right: 16),
-                                  child: ShimmerLoader.buildSleekShimmer(
-                                    width: 100,
-                                    height: 120,
-                                    borderRadius: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            // Quick Actions Shimmer
-                            ShimmerLoader.buildSleekShimmer(width: 150, height: 20),
-                            const SizedBox(height: 12),
-                            ShimmerLoader.buildSleekShimmer(
-                              width: double.infinity,
-                              height: 100,
-                              borderRadius: 12,
-                            ),
-                            const SizedBox(height: 24),
-                            // Services Shimmer
-                            ShimmerLoader.buildSleekShimmer(width: 150, height: 20),
-                            const SizedBox(height: 12),
-                            ...List.generate(3, (index) => ShimmerLoader.buildServiceCardShimmer()),
-                            const SizedBox(height: 24),
-                            // Offers Shimmer
-                            ShimmerLoader.buildSleekShimmer(width: 150, height: 20),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              height: 150,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: 3,
-                                itemBuilder: (context, index) => ShimmerLoader.buildOfferCardShimmer(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
+                  child: _isLoading
+                    ? const Center(child: CarLoader())
                     : SingleChildScrollView(
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(), // Smooth scrolling

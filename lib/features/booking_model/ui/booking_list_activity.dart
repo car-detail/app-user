@@ -17,7 +17,7 @@ import '../../specialists_module/ui/specialists_activity.dart';
 import '../data_model/booking_data_manager.dart';
 import '../model/booking_list_bean.dart';
 import '../model/complete_model_bean.dart';
-import '../../../Common/ShimmerLoader.dart';
+import '../../../design_system/components/car_loader.dart';
 import 'ride_share_card_activity.dart';
 
 class BookingListActivity extends StatefulWidget {
@@ -334,10 +334,7 @@ class BookingListActivityState extends State<BookingListActivity> {
                 }
               },
             child: isLoading
-                ? SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ShimmerLoader.buildListShimmer(itemCount: 5),
-                  )
+                ? const Center(child: CarLoader())
                 : records.isEmpty
                     ? _buildEmptyState()
                     : ListView.builder(

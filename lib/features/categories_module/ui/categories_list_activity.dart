@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../Common/CommonWidget.dart';
-import '../../../Common/ShimmerLoader.dart';
 import '../../bookmark_model/ui/bookmark_activity.dart';
 import '../../home_module/model/services_model_data.dart';
 import '../../home_module/model/mixed_vendor_data.dart';

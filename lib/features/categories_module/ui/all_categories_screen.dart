@@ -5,7 +5,7 @@ import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/features/categories_module/ui/categories_list_activity.dart';
 import 'package:car_app/features/categories_module/data_manager/categories_list_data_manager.dart';
 import 'package:car_app/features/home_module/model/category_model_data.dart';
-import 'package:car_app/Common/ShimmerLoader.dart';
+import 'package:car_app/design_system/components/car_loader.dart';
 
 class AllCategoriesScreen extends StatefulWidget {
   const AllCategoriesScreen({super.key});
@@ -100,24 +100,7 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            ShimmerLoader.buildSleekShimmer(
-              width: double.infinity,
-              height: 200,
-              borderRadius: 12,
-            ),
-            const SizedBox(height: 16),
-            ShimmerLoader.buildSleekShimmer(
-              width: double.infinity,
-              height: 200,
-              borderRadius: 12,
-            ),
-          ],
-        ),
-    );
+    return const Center(child: CarLoader());
   }
 
   Widget _buildEmptyState() {

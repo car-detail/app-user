@@ -19,7 +19,7 @@ import '../../booking_model/ui/booking_activity.dart';
 import '../../specialists_module/ui/specialists_activity.dart';
 import '../../home_module/ui/location_picker_screen.dart';
 import '../../log_in/ui/new_login_activity.dart';
-import '../../../Common/ShimmerLoader.dart';
+import '../../../design_system/components/car_loader.dart';
 
 class ExploreActivity extends StatefulWidget {
   final bool startWithMap;
@@ -971,12 +971,7 @@ class ExploreActivityState extends State<ExploreActivity> {
           // Content
           Expanded(
             child: isLoading
-                ? SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ShimmerLoader.buildListShimmer(itemCount: 8),
-                    ),
-                  )
+                ? const Center(child: CarLoader())
                 : isMapView
                     ? _buildMapView()
                     : RefreshIndicator(

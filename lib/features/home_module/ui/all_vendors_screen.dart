@@ -6,7 +6,7 @@ import 'package:car_app/Common/CommonWidget.dart';
 import 'package:car_app/features/specialists_module/ui/specialists_activity.dart';
 import 'package:car_app/features/home_module/data_manager/home_data_manager.dart';
 import 'package:car_app/features/home_module/model/mixed_vendor_data.dart';
-import 'package:car_app/Common/ShimmerLoader.dart';
+import 'package:car_app/design_system/components/car_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:car_app/Common/Constant.dart';
 import 'package:geolocator/geolocator.dart';
@@ -287,22 +287,7 @@ class _AllVendorsScreenState extends State<AllVendorsScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: List.generate(
-          3,
-          (index) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: ShimmerLoader.buildSleekShimmer(
-              width: double.infinity,
-              height: 120,
-              borderRadius: 12,
-            ),
-          ),
-        ),
-      ),
-    );
+    return const Center(child: CarLoader());
   }
 
   Widget _buildEmptyState() {
