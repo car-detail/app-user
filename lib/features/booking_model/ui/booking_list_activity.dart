@@ -18,6 +18,7 @@ import '../data_model/booking_data_manager.dart';
 import '../model/booking_list_bean.dart';
 import '../model/complete_model_bean.dart';
 import '../../../Common/ShimmerLoader.dart';
+import 'ride_share_card_activity.dart';
 
 class BookingListActivity extends StatefulWidget {
   const BookingListActivity({super.key});
@@ -693,27 +694,48 @@ class BookingListActivityState extends State<BookingListActivity> {
                   ),
                 ],
                 
-                // Add Review button for completed bookings
+                // Add Review + Share buttons for completed bookings
                 if (data.orderStatus == "Completed") ...[
                   const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Navigate to rating screen
-                        // CommonWidget.navigateToScreen(context, RatingReviewScreen(data.sId.toString()));
-                      },
-                      icon: const Icon(Icons.star, size: 16),
-                      label: const Text("Add Review", style: TextStyle(fontSize: 13)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            // TODO: Navigate to rating screen
+                            // CommonWidget.navigateToScreen(context, RatingReviewScreen(data.sId.toString()));
+                          },
+                          icon: const Icon(Icons.star, size: 16),
+                          label: const Text("Add Review", style: TextStyle(fontSize: 13)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            CommonWidget.navigateToScreen(context, RideShareCardActivity(data));
+                          },
+                          icon: const Icon(Icons.ios_share_rounded, size: 16),
+                          label: const Text("Share", style: TextStyle(fontSize: 13)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorClass.base_color,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 
