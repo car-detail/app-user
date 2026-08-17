@@ -204,7 +204,7 @@ class _SplashScreenActivityState extends State<SplashScreenActivity>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Wheels On Demand",
+                    "Clean Car, Happy Ride",
                     style: TextStyle(
                       fontSize: 28,
                       fontFamily: "Pop600",
