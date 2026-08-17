@@ -162,9 +162,15 @@
   },
   "hotPaths": [
     {
+      "path": "lib/features/specialists_module/ui/specialists_activity.dart",
+      "accessCount": 73,
+      "lastAccessed": 1786923167214,
+      "type": "directory"
+    },
+    {
       "path": "lib/features/home_module/ui/home_activity.dart",
-      "accessCount": 34,
-      "lastAccessed": 1776793561229,
+      "accessCount": 66,
+      "lastAccessed": 1786921077520,
       "type": "directory"
     },
     {
@@ -175,15 +181,15 @@
     },
     {
       "path": "lib/features/explore_module/ui/explore_activity.dart",
-      "accessCount": 16,
-      "lastAccessed": 1776792425052,
+      "accessCount": 24,
+      "lastAccessed": 1786923543191,
       "type": "directory"
     },
     {
-      "path": "lib/features/specialists_module/ui/specialists_activity.dart",
-      "accessCount": 13,
-      "lastAccessed": 1776793576616,
-      "type": "directory"
+      "path": "lib/features/log_in/ui/new_login_activity.dart",
+      "accessCount": 15,
+      "lastAccessed": 1786911482632,
+      "type": "file"
     },
     {
       "path": "lib/features/home_module/ui/all_vendors_screen.dart",
@@ -196,12 +202,6 @@
       "accessCount": 7,
       "lastAccessed": 1776792483003,
       "type": "directory"
-    },
-    {
-      "path": "lib/features/log_in/ui/new_login_activity.dart",
-      "accessCount": 6,
-      "lastAccessed": 1776792254758,
-      "type": "file"
     },
     {
       "path": "lib/Common/CommonWidget.dart",
@@ -240,6 +240,18 @@
       "type": "file"
     },
     {
+      "path": "lib/Common/Color.dart",
+      "accessCount": 6,
+      "lastAccessed": 1786910928360,
+      "type": "file"
+    },
+    {
+      "path": "lib/features/SplashScreenActivity.dart",
+      "accessCount": 6,
+      "lastAccessed": 1786925587887,
+      "type": "file"
+    },
+    {
       "path": "lib/features/specialists_module/ui/all_offers_screen.dart",
       "accessCount": 4,
       "lastAccessed": 1776792718062,
@@ -256,6 +268,18 @@
       "accessCount": 4,
       "lastAccessed": 1776793568959,
       "type": "directory"
+    },
+    {
+      "path": "lib/Common/SimpleDesignSystem.dart",
+      "accessCount": 4,
+      "lastAccessed": 1786910982872,
+      "type": "file"
+    },
+    {
+      "path": "pubspec.yaml",
+      "accessCount": 4,
+      "lastAccessed": 1786924006599,
+      "type": "file"
     },
     {
       "path": "lib/features/categories_module/ui/categories_list_activity.dart",
@@ -282,6 +306,12 @@
       "type": "file"
     },
     {
+      "path": "lib/features/specialists_module/model/services_details_model_data.dart",
+      "accessCount": 3,
+      "lastAccessed": 1786923098772,
+      "type": "file"
+    },
+    {
       "path": "",
       "accessCount": 2,
       "lastAccessed": 1776169954374,
@@ -297,6 +327,12 @@
       "path": "lib/features/booking_model/data_model/booking_data_manager.dart",
       "accessCount": 2,
       "lastAccessed": 1776793352102,
+      "type": "file"
+    },
+    {
+      "path": "lib/Common/ModernDesignSystem.dart",
+      "accessCount": 2,
+      "lastAccessed": 1786910877678,
       "type": "file"
     },
     {
@@ -336,12 +372,6 @@
       "type": "directory"
     },
     {
-      "path": "lib/Common/Color.dart",
-      "accessCount": 1,
-      "lastAccessed": 1776792016280,
-      "type": "file"
-    },
-    {
       "path": "lib/Common/Constants.dart",
       "accessCount": 1,
       "lastAccessed": 1776792017001,
@@ -351,24 +381,6 @@
       "path": "lib/Common/ContainerDecoration.dart",
       "accessCount": 1,
       "lastAccessed": 1776792017522,
-      "type": "file"
-    },
-    {
-      "path": "lib/Common/SimpleDesignSystem.dart",
-      "accessCount": 1,
-      "lastAccessed": 1776792017696,
-      "type": "file"
-    },
-    {
-      "path": "lib/Common/ModernDesignSystem.dart",
-      "accessCount": 1,
-      "lastAccessed": 1776792017788,
-      "type": "file"
-    },
-    {
-      "path": "pubspec.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1776792017878,
       "type": "file"
     },
     {
@@ -394,6 +406,30 @@
       "accessCount": 1,
       "lastAccessed": 1776792725143,
       "type": "directory"
+    },
+    {
+      "path": "assets/images/first_image.png",
+      "accessCount": 1,
+      "lastAccessed": 1786911370445,
+      "type": "file"
+    },
+    {
+      "path": "assets/vetor/car-wash-detailing-station.jpg",
+      "accessCount": 1,
+      "lastAccessed": 1786911377633,
+      "type": "file"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "accessCount": 1,
+      "lastAccessed": 1786924299710,
+      "type": "file"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "accessCount": 1,
+      "lastAccessed": 1786925214662,
+      "type": "file"
     }
   ],
   "userDirectives": []
