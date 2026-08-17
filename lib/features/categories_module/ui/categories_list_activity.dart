@@ -457,10 +457,18 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                         onTap: () {
                           CommonWidget.safePop(context);
                         },
-                        child: Image.asset(
-                          CommonWidget.getImagePath("backspace.png"),
-                          height: 40,
+                        child: Container(
                           width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -474,10 +482,18 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                               onTap: () {
                                 _showFilterDialog();
                               },
-                              child: const Icon(
-                                Icons.filter_list,
-                                color: Colors.white,
-                                size: 24,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.filter_list_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -486,10 +502,18 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           CommonWidget.navigateToScreen(
                               context, const BookmarkActivity());
                         },
-                        child: Image.asset(
-                          CommonWidget.getImagePath("bookmark.png"),
-                          height: 40,
+                        child: Container(
                           width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.bookmark_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                             ),
                           ],
@@ -819,24 +843,6 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                           ],
                         ),
                       ),
-                      // Category indicator
-                      if (vendor.category != null && vendor.category!.isNotEmpty)
-                        Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            vendor.category!,
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: Colors.orange[700],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
                       // Vendor type indicator
                       if (vendor.isAppVendor)
                         Container(
@@ -873,6 +879,18 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                     ],
                   ),
                   
+                  if (_formatVendorCategories(vendor.services).isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: _formatVendorCategories(vendor.services)
+                          .take(3)
+                          .map((c) => _buildCategoryChip(c, Colors.orange[700]!))
+                          .toList(),
+                    ),
+                  ],
+
                   if (vendor.address != null) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -885,9 +903,26 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  
+
+                  if (_formatOperatingHours(vendor) != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time_rounded, size: 12, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatOperatingHours(vendor)!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 6),
-                  
+
                   Row(
                     children: [
                       // Distance
@@ -951,6 +986,68 @@ class _CategoriesListActivityState extends State<CategoriesListActivity> {
         ),
       ),
     );
+  }
+
+  List<String> _formatVendorCategories(List<String> raw) {
+    final seen = <String>{};
+    final formatted = <String>[];
+    for (final entry in raw) {
+      final label = entry
+          .replaceAll('_', ' ')
+          .split(' ')
+          .where((w) => w.isNotEmpty)
+          .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+          .join(' ');
+      if (label.isNotEmpty && seen.add(label.toLowerCase())) {
+        formatted.add(label);
+      }
+    }
+    return formatted;
+  }
+
+  Widget _buildCategoryChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// Formats a time value that may be a plain "9:00 AM" string or a full
+  /// ISO datetime (backend stores hours as a datetime with a dummy date)
+  /// into a clean "4:00 PM" display, reading the UTC-labeled hour/minute
+  /// directly rather than converting to the device's local timezone.
+  String _formatTimeValue(String raw) {
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+
+    final hour24 = parsed.hour;
+    final minute = parsed.minute;
+    final period = hour24 >= 12 ? "PM" : "AM";
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final minuteStr = minute.toString().padLeft(2, '0');
+    return "$hour12:$minuteStr $period";
+  }
+
+  String? _formatOperatingHours(MixedVendorData vendor) {
+    final open = vendor.openTime;
+    final close = vendor.closeTime;
+    if (open != null && open.isNotEmpty && close != null && close.isNotEmpty) {
+      return "${_formatTimeValue(open)} - ${_formatTimeValue(close)}";
+    }
+    if (open != null && open.isNotEmpty) return "Opens ${_formatTimeValue(open)}";
+    if (close != null && close.isNotEmpty) return "Closes ${_formatTimeValue(close)}";
+    return null;
   }
 
   bool _isCarRelatedCategory(String category) {

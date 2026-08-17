@@ -17,6 +17,8 @@ class MixedVendorData {
   final bool isAppVendor;
   final List<String> services;
   final String? category;
+  final String? openTime;
+  final String? closeTime;
   bool isBookmarked;
 
   MixedVendorData({
@@ -35,6 +37,8 @@ class MixedVendorData {
     required this.isAppVendor,
     this.services = const [],
     this.category,
+    this.openTime,
+    this.closeTime,
     this.isBookmarked = false,
   });
 
@@ -87,6 +91,10 @@ class MixedVendorData {
       isAppVendor: true,
       services: _extractServices(vendor['services']),
       category: vendor['categoryName']?.toString(),
+      openTime: (vendor['vendorId'] is Map ? (vendor['vendorId'] as Map)['openTime'] : null)?.toString() ??
+          vendor['openTime']?.toString(),
+      closeTime: (vendor['vendorId'] is Map ? (vendor['vendorId'] as Map)['closeTime'] : null)?.toString() ??
+          vendor['closeTime']?.toString(),
       isBookmarked: vendor['isBookmarked'] ?? false,
     );
   }

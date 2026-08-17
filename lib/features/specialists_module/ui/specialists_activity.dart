@@ -1097,14 +1097,32 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     return (open != null && open.isNotEmpty) || (close != null && close.isNotEmpty);
   }
 
+  /// Formats a time value that may be a plain "9:00 AM" string or a full
+  /// ISO datetime (backend stores hours as a datetime with a dummy date,
+  /// e.g. "2026-07-07T16:00:00.000Z") into a clean "4:00 PM" display.
+  /// Reads the UTC-labeled hour/minute directly rather than converting to
+  /// the device's local timezone, since the date component is a dummy
+  /// placeholder and not a real calendar date to localize against.
+  String _formatTimeValue(String raw) {
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+
+    final hour24 = parsed.hour;
+    final minute = parsed.minute;
+    final period = hour24 >= 12 ? "PM" : "AM";
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final minuteStr = minute.toString().padLeft(2, '0');
+    return "$hour12:$minuteStr $period";
+  }
+
   String _formatOperatingHours() {
     final open = servicesDetailsData.vendorId?.openTime;
     final close = servicesDetailsData.vendorId?.closeTime;
     if (open != null && open.isNotEmpty && close != null && close.isNotEmpty) {
-      return "$open - $close";
+      return "${_formatTimeValue(open)} - ${_formatTimeValue(close)}";
     }
-    if (open != null && open.isNotEmpty) return "Opens $open";
-    if (close != null && close.isNotEmpty) return "Closes $close";
+    if (open != null && open.isNotEmpty) return "Opens ${_formatTimeValue(open)}";
+    if (close != null && close.isNotEmpty) return "Closes ${_formatTimeValue(close)}";
     return "Hours not available";
   }
 
