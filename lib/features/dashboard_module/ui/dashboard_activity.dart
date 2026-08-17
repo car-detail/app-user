@@ -21,6 +21,7 @@ import '../../../Common/CommonWidget.dart';
 import '../../../Common/ModernDesignSystem.dart';
 import '../../../Common/TourGuide.dart';
 import '../../explore_module/ui/explore_activity.dart';
+import '../../workfolio_module/ui/workfolio_activity.dart';
 
 class DashboardActivity extends StatefulWidget {
   int currentIndex;
@@ -41,6 +42,7 @@ class _DashboardActivityState extends State<DashboardActivity> {
   final GlobalKey _exploreNavKey = GlobalKey();
   final GlobalKey _bookingsNavKey = GlobalKey();
   final GlobalKey _profileNavKey = GlobalKey();
+  final GlobalKey _feedNavKey = GlobalKey();
   
   // Home screen tour guide keys
   final GlobalKey _locationKey = GlobalKey();
@@ -64,7 +66,8 @@ class _DashboardActivityState extends State<DashboardActivity> {
       ),
       ExploreActivity(key: _exploreKey),
       BookingListActivity(key: BookingListActivity.bookingListKey),
-      const ProfileViewActivity()
+      const ProfileViewActivity(),
+      const WorkfolioActivity(),
     ];
     _loadUserDetails();
     
@@ -347,6 +350,13 @@ class _DashboardActivityState extends State<DashboardActivity> {
               label: 'Profile',
               index: 3,
               isSelected: selectedpage == 3,
+            ),
+            _buildNavItem(
+              key: _feedNavKey,
+              icon: Icons.photo_library_rounded,
+              label: 'Feed',
+              index: 4,
+              isSelected: selectedpage == 4,
             ),
           ],
         ),

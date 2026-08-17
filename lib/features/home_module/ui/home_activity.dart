@@ -1105,7 +1105,7 @@ class _HomeActivityState extends State<HomeActivity> {
                             StaggeredFadeIn(
                               delay: const Duration(milliseconds: 180),
                               child: _buildCircularQuickAction(
-                                "Workfolio",
+                                "Feed",
                                 Icons.photo_library_rounded,
                                 () {
                                   CommonWidget.navigateToScreen(context, const WorkfolioActivity());
