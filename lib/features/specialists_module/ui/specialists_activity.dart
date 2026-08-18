@@ -488,18 +488,22 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
         color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(30),
       ),
-      child: Row(
-        children: availableTabs.map((tab) {
-          final isSelected = selectedTab == tab["key"];
-          return Expanded(
-            child: _buildTabButton(
-              tab["title"] as String,
-              tab["icon"] as IconData,
-              isSelected,
-              tab["key"] as String,
-            ),
-          );
-        }).toList(),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: availableTabs.map((tab) {
+            final isSelected = selectedTab == tab["key"];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: _buildTabButton(
+                tab["title"] as String,
+                tab["icon"] as IconData,
+                isSelected,
+                tab["key"] as String,
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -515,7 +519,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
