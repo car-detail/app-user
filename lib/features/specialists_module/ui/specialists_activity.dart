@@ -22,6 +22,7 @@ import 'all_packages_screen.dart';
 import 'all_offers_screen.dart';
 import '../utils/package_mapper.dart';
 import '../../../design_system/components/bouncy_tap.dart';
+import '../../../design_system/components/car_loader.dart';
 import '../../workfolio_module/ui/vendor_feed_tab.dart';
 
 class SpecialistsActivity extends StatefulWidget {
@@ -110,9 +111,7 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(ColorClass.base_color),
-              ),
+              const CarLoader(),
               const SizedBox(height: 16),
               Text(
                 "Loading vendor details...",
