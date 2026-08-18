@@ -2362,16 +2362,14 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     final validUntil = offer.validUntil;
     final serviceId = offer.service;
     
-    // Find the service associated with this offer to get category name and price
+    // Find the service associated with this offer to get category name
     String? categoryName;
-    int? servicePrice;
     if (serviceId != null && serviceId.isNotEmpty && servicesDetailsData.services.isNotEmpty) {
       final service = servicesDetailsData.services.firstWhere(
         (s) => s.sId == serviceId,
         orElse: () => servicesDetailsData.services.first,
       );
       categoryName = service.categoryName;
-      servicePrice = service.price;
     }
     
     // Format valid until date
@@ -2564,59 +2562,6 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 const SizedBox(height: 16),
-                // Price Section (only if service price exists)
-                if (servicePrice != null && servicePrice > 0) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: ColorClass.base_color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.attach_money, color: ColorClass.base_color, size: 24),
-                        const SizedBox(width: 8),
-                        // Show discounted price if discount exists, otherwise show original price
-                        if (discount != null && discount > 0) ...[
-                          // Original price with strikethrough
-                          Text(
-                            "\$$servicePrice",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[600],
-                              fontFamily: "Pop500",
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Discounted price
-                          Text(
-                            "\$${(servicePrice * (1 - discount / 100)).toStringAsFixed(0)}",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: ColorClass.base_color,
-                              fontFamily: "Pop600",
-                            ),
-                          ),
-                        ] else ...[
-                          // Just show original price
-                          Text(
-                            "Service Price: \$$servicePrice",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: ColorClass.base_color,
-                              fontFamily: "Pop600",
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
                 // Info Row
                 Row(
                   children: [
