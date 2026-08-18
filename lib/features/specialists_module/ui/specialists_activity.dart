@@ -1014,12 +1014,27 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                           const SizedBox(width: 12),
                         ],
                         if (hasPrice) ...[
-                          Text(
-                            "From \$${servicesDetailsData.price}",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontFamily: "Pop600",
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
                               color: ColorClass.base_color,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: ColorClass.base_color.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              "From \$${servicesDetailsData.price}",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontFamily: "Pop600",
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
