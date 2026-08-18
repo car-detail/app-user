@@ -22,6 +22,7 @@ import 'all_packages_screen.dart';
 import 'all_offers_screen.dart';
 import '../utils/package_mapper.dart';
 import '../../../design_system/components/bouncy_tap.dart';
+import '../../workfolio_module/ui/vendor_feed_tab.dart';
 
 class SpecialistsActivity extends StatefulWidget {
   String servicesData;
@@ -476,7 +477,9 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
     if (detailImages.isNotEmpty) {
       availableTabs.add({"title": "Gallery", "icon": Icons.photo_library_rounded, "key": "Gallery"});
     }
-    
+
+    availableTabs.add({"title": "Feed", "icon": Icons.dynamic_feed_rounded, "key": "Feed"});
+
     availableTabs.add({"title": "Reviews", "icon": Icons.star_rounded, "key": "Reviews"});
     
     return Container(
@@ -614,6 +617,8 @@ class _SpecialistsActivityState extends State<SpecialistsActivity> {
                 ],
               )
             : _buildEmptyTabState("No gallery images available", Icons.photo_library_outlined);
+      case "Feed":
+        return VendorFeedTab(vendorId: widget.servicesData);
       case "Reviews":
         return Column(
           children: [
