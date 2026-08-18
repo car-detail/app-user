@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776739090032,
+  "lastScanned": 1786963317462,
   "projectRoot": "/Users/macbook/Anuj/cahrz/app-user",
   "techStack": {
     "languages": [],
@@ -39,35 +39,37 @@
     "android": {
       "path": "android",
       "purpose": null,
-      "fileCount": 8,
-      "lastAccessed": 1776739090007,
+      "fileCount": 11,
+      "lastAccessed": 1786963317440,
       "keyFiles": [
         "build.gradle",
+        "build.gradle.kts",
+        "car_app_android.iml",
         "gradle.properties",
-        "gradlew",
-        "gradlew.bat",
-        "key.properties.template"
+        "gradlew"
       ]
     },
     "assets": {
       "path": "assets",
       "purpose": "Static assets",
-      "fileCount": 0,
-      "lastAccessed": 1776739090008,
+      "fileCount": 1,
+      "lastAccessed": 1786963317440,
       "keyFiles": []
     },
     "build": {
       "path": "build",
       "purpose": "Build output",
-      "fileCount": 0,
-      "lastAccessed": 1776739090009,
-      "keyFiles": []
+      "fileCount": 2,
+      "lastAccessed": 1786963317441,
+      "keyFiles": [
+        "0ea6338a9744699c4765127c07d5f7ae.cache.dill.track.dill"
+      ]
     },
     "fonts": {
       "path": "fonts",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1776739090010,
+      "lastAccessed": 1786963317441,
       "keyFiles": [
         "Poppins-Bold 700.ttf",
         "Poppins-Bold.ttf",
@@ -79,30 +81,49 @@
     "ios": {
       "path": "ios",
       "purpose": null,
-      "fileCount": 4,
-      "lastAccessed": 1776739090012,
+      "fileCount": 6,
+      "lastAccessed": 1786963317441,
       "keyFiles": [
         "Podfile",
         "Podfile.lock",
-        "fix_app_framework_version.sh"
+        "fix_app_framework_version.sh",
+        "freesound_community-car-horn-beep-beep-two-beeps-honk-honk-6188.mp3"
       ]
     },
     "lib": {
       "path": "lib",
       "purpose": "Library code",
       "fileCount": 3,
-      "lastAccessed": 1776739090012,
+      "lastAccessed": 1786963317442,
       "keyFiles": [
         "ZoomImageList.dart",
         "firebase_options.dart",
         "main.dart"
       ]
     },
+    "linux": {
+      "path": "linux",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1786963317442,
+      "keyFiles": [
+        "CMakeLists.txt"
+      ]
+    },
+    "macos": {
+      "path": "macos",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1786963317443,
+      "keyFiles": [
+        "Podfile"
+      ]
+    },
     "test": {
       "path": "test",
       "purpose": "Test files",
       "fileCount": 1,
-      "lastAccessed": 1776739090012,
+      "lastAccessed": 1786963317443,
       "keyFiles": [
         "widget_test.dart"
       ]
@@ -111,29 +132,38 @@
       "path": "web",
       "purpose": null,
       "fileCount": 3,
-      "lastAccessed": 1776739090013,
+      "lastAccessed": 1786963317443,
       "keyFiles": [
         "favicon.png",
         "index.html",
         "manifest.json"
       ]
     },
+    "windows": {
+      "path": "windows",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1786963317444,
+      "keyFiles": [
+        "CMakeLists.txt"
+      ]
+    },
     "android/app": {
       "path": "android/app",
       "purpose": "Application code",
-      "fileCount": 3,
-      "lastAccessed": 1776739090015,
+      "fileCount": 4,
+      "lastAccessed": 1786963317444,
       "keyFiles": [
         "build.gradle",
-        "google-services.json",
-        "proguard-rules.pro"
+        "build.gradle.kts",
+        "google-services.json"
       ]
     },
     "lib/Api": {
       "path": "lib/Api",
       "purpose": "API routes",
       "fileCount": 3,
-      "lastAccessed": 1776739090016,
+      "lastAccessed": 1786963317444,
       "keyFiles": [
         "ApiFuntion.dart",
         "api_end_point.dart",
@@ -144,7 +174,7 @@
       "path": "lib/Models",
       "purpose": "Data models",
       "fileCount": 2,
-      "lastAccessed": 1776739090016,
+      "lastAccessed": 1786963317444,
       "keyFiles": [
         "check_dialog_box.dart",
         "image_module_data.dart"
@@ -154,7 +184,7 @@
       "path": "lib/services",
       "purpose": "Business logic services",
       "fileCount": 1,
-      "lastAccessed": 1776739090017,
+      "lastAccessed": 1786963317445,
       "keyFiles": [
         "google_places_service.dart"
       ]
@@ -163,14 +193,14 @@
   "hotPaths": [
     {
       "path": "lib/features/specialists_module/ui/specialists_activity.dart",
-      "accessCount": 73,
-      "lastAccessed": 1786923167214,
+      "accessCount": 89,
+      "lastAccessed": 1787028662670,
       "type": "directory"
     },
     {
       "path": "lib/features/home_module/ui/home_activity.dart",
-      "accessCount": 66,
-      "lastAccessed": 1786921077520,
+      "accessCount": 74,
+      "lastAccessed": 1786993531361,
       "type": "directory"
     },
     {
@@ -181,9 +211,15 @@
     },
     {
       "path": "lib/features/explore_module/ui/explore_activity.dart",
-      "accessCount": 24,
-      "lastAccessed": 1786923543191,
+      "accessCount": 27,
+      "lastAccessed": 1786965262092,
       "type": "directory"
+    },
+    {
+      "path": "lib/features/categories_module/ui/categories_list_activity.dart",
+      "accessCount": 16,
+      "lastAccessed": 1786965251270,
+      "type": "file"
     },
     {
       "path": "lib/features/log_in/ui/new_login_activity.dart",
@@ -193,9 +229,21 @@
     },
     {
       "path": "lib/features/home_module/ui/all_vendors_screen.dart",
-      "accessCount": 12,
-      "lastAccessed": 1776792612101,
+      "accessCount": 15,
+      "lastAccessed": 1786965274688,
       "type": "directory"
+    },
+    {
+      "path": "lib/features/booking_model/ui/booking_list_activity.dart",
+      "accessCount": 13,
+      "lastAccessed": 1786965224914,
+      "type": "directory"
+    },
+    {
+      "path": "lib/features/dashboard_module/ui/dashboard_activity.dart",
+      "accessCount": 11,
+      "lastAccessed": 1786993556966,
+      "type": "file"
     },
     {
       "path": "lib/features/home_module/ui/search_results_screen.dart",
@@ -205,21 +253,21 @@
     },
     {
       "path": "lib/Common/CommonWidget.dart",
-      "accessCount": 6,
-      "lastAccessed": 1776792476750,
+      "accessCount": 7,
+      "lastAccessed": 1786964094920,
       "type": "file"
+    },
+    {
+      "path": "lib/features/specialists_module/ui/all_offers_screen.dart",
+      "accessCount": 7,
+      "lastAccessed": 1786965286378,
+      "type": "directory"
     },
     {
       "path": "lib/features/home_module/ui/location_picker_screen.dart",
       "accessCount": 6,
       "lastAccessed": 1776792493598,
       "type": "file"
-    },
-    {
-      "path": "lib/features/booking_model/ui/booking_list_activity.dart",
-      "accessCount": 6,
-      "lastAccessed": 1776792581022,
-      "type": "directory"
     },
     {
       "path": "lib/features/bookmark_model/ui/bookmark_activity.dart",
@@ -234,12 +282,6 @@
       "type": "directory"
     },
     {
-      "path": "lib/features/dashboard_module/ui/dashboard_activity.dart",
-      "accessCount": 6,
-      "lastAccessed": 1776793559716,
-      "type": "file"
-    },
-    {
       "path": "lib/Common/Color.dart",
       "accessCount": 6,
       "lastAccessed": 1786910928360,
@@ -252,21 +294,27 @@
       "type": "file"
     },
     {
-      "path": "lib/features/specialists_module/ui/all_offers_screen.dart",
-      "accessCount": 4,
-      "lastAccessed": 1776792718062,
+      "path": "lib/features/log_in/ui/profile_activity.dart",
+      "accessCount": 6,
+      "lastAccessed": 1786964634471,
       "type": "directory"
+    },
+    {
+      "path": "lib/features/specialists_module/ui/all_packages_screen.dart",
+      "accessCount": 6,
+      "lastAccessed": 1786965297843,
+      "type": "directory"
+    },
+    {
+      "path": "lib/Common/Constant.dart",
+      "accessCount": 5,
+      "lastAccessed": 1786964614394,
+      "type": "file"
     },
     {
       "path": "lib/features/log_in/ui/profile_view_activity.dart",
       "accessCount": 4,
       "lastAccessed": 1776792782879,
-      "type": "directory"
-    },
-    {
-      "path": "lib/features/log_in/ui/profile_activity.dart",
-      "accessCount": 4,
-      "lastAccessed": 1776793568959,
       "type": "directory"
     },
     {
@@ -282,9 +330,9 @@
       "type": "file"
     },
     {
-      "path": "lib/features/categories_module/ui/categories_list_activity.dart",
-      "accessCount": 3,
-      "lastAccessed": 1776792648009,
+      "path": "lib/features/categories_module/ui/all_categories_screen.dart",
+      "accessCount": 4,
+      "lastAccessed": 1786965236933,
       "type": "file"
     },
     {
@@ -294,21 +342,15 @@
       "type": "directory"
     },
     {
-      "path": "lib/features/specialists_module/ui/all_packages_screen.dart",
-      "accessCount": 3,
-      "lastAccessed": 1776792768178,
-      "type": "directory"
-    },
-    {
-      "path": "lib/Common/Constant.dart",
-      "accessCount": 3,
-      "lastAccessed": 1776793386386,
-      "type": "file"
-    },
-    {
       "path": "lib/features/specialists_module/model/services_details_model_data.dart",
       "accessCount": 3,
       "lastAccessed": 1786923098772,
+      "type": "file"
+    },
+    {
+      "path": "lib/features/home_module/model/mixed_vendor_data.dart",
+      "accessCount": 3,
+      "lastAccessed": 1786963403587,
       "type": "file"
     },
     {
@@ -333,6 +375,12 @@
       "path": "lib/Common/ModernDesignSystem.dart",
       "accessCount": 2,
       "lastAccessed": 1786910877678,
+      "type": "file"
+    },
+    {
+      "path": "lib/Api/ApiFuntion.dart",
+      "accessCount": 2,
+      "lastAccessed": 1786964587765,
       "type": "file"
     },
     {
@@ -396,12 +444,6 @@
       "type": "directory"
     },
     {
-      "path": "lib/features/categories_module/ui/all_categories_screen.dart",
-      "accessCount": 1,
-      "lastAccessed": 1776792629849,
-      "type": "file"
-    },
-    {
       "path": "lib/features/explore_module/ui/explore_list_map_activity.dart",
       "accessCount": 1,
       "lastAccessed": 1776792725143,
@@ -429,6 +471,24 @@
       "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
       "accessCount": 1,
       "lastAccessed": 1786925214662,
+      "type": "file"
+    },
+    {
+      "path": "lib/features/booking_model/model/booking_list_bean.dart",
+      "accessCount": 1,
+      "lastAccessed": 1786964072593,
+      "type": "file"
+    },
+    {
+      "path": "lib/features/booking_model/ui/ride_share_card_activity.dart",
+      "accessCount": 1,
+      "lastAccessed": 1786964150698,
+      "type": "file"
+    },
+    {
+      "path": "lib/features/workfolio_module/model/workfolio_post.dart",
+      "accessCount": 1,
+      "lastAccessed": 1786964651328,
       "type": "file"
     }
   ],

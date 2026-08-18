@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"grep -rn \\\"sendMultipartRequest\\\" lib --include=*.dart 2>/dev/null\\ngrep -rln \\\"sendMultipartRequest\\\" lib 2>/dev/null | head -5\"}",
+  "error": "Exit code 1\n(eval):1: no matches found: --include=*.dart",
+  "timestamp": "2026-08-17T11:03:11.470Z",
+  "retry_count": 1
+}
